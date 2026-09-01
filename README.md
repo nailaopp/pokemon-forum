@@ -1,20 +1,39 @@
 # 宝可梦小手机论坛 - SillyTavern 原生扩展
 
-基于原“测试论坛0.09 Android触摸修复版”移植，脱离 TavernHelper / JS-Slash-Runner，作为 SillyTavern 第三方 UI 扩展运行。
+这是基于“测试论坛0.01”版本重新制作的 SillyTavern 原生第三方扩展。
 
-## 功能
-- 洛托姆悬浮按钮
-- 手机论坛界面与状态栏拖动
-- 帖子、评论、楼中回复
-- 玩家论坛昵称/简介
-- 两个论坛的数据隔离
-- 当前聊天独立论坛存档
-- 帖子注入当前 SillyTavern AI 上下文
-- 可选世界书上下文
-- OpenAI-compatible API 生成帖子、评论和回复
+## 特点
+
+- 不依赖 TavernHelper / 酒馆助手 / JS-Slash-Runner
+- 使用 SillyTavern 原生 `SillyTavern.getContext()`
+- 使用聊天级 `chatMetadata` + `saveMetadata()` 保存论坛数据
+- 使用 SillyTavern 原生 `setExtensionPrompt()` 实现帖子注入正文
+- 帖子、评论、楼中回复、玩家身份标记保留
+- 两个论坛独立保存
+- 两个论坛可设置不同昵称和简介
+- 支持玩家发帖、评论、评论下回复
+- 支持 AI 自动生成帖子、评论和楼中回复
+- 保留手机界面、洛托姆悬浮图标和触摸拖动逻辑
+- 保留 API、模型和世界书相关设置；世界书接口不可用时会安全降级
+- 每个聊天使用独立论坛存档，不会主动把一个聊天的论坛内容写入另一个聊天
 
 ## 安装
-在 SillyTavern 的“安装扩展”中输入本仓库 Git URL。SillyTavern 会自动下载第三方扩展。
+
+在 SillyTavern 扩展管理器中选择通过 Git URL 安装，并输入：
+
+`https://github.com/nailaopp/pokemon-forum`
+
+## 仓库结构
+
+```text
+manifest.json
+index.js
+style.css
+README.md
+```
+
+`manifest.json` 必须位于仓库根目录。
 
 ## 注意
-Termux/Android 属于 SillyTavern 非官方支持的平台；扩展本身使用浏览器 DOM 和 SillyTavern 原生扩展 API，不依赖 TavernHelper。
+
+本扩展直接使用 SillyTavern 原生上下文 API，因此不需要安装酒馆助手。

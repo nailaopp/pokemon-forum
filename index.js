@@ -1,7 +1,4 @@
-/* 宝可梦小手机论坛 - SillyTavern 原生第三方扩展 */
-'use strict';
-
-
+(function () {
     'use strict';
 
     const NS = 'pkmn_phone_forum_v9';
@@ -31,123 +28,97 @@
     });
 
     // ============================================================
-    // SillyTavern 原生扩展 API
+    // SillyTavern 原生 API 适配
     // ============================================================
 
-    const ST = (() => {
-        try {
-            return window.SillyTavern || window.parent?.SillyTavern || null;
-        } catch (_) {
-            return null;
+    function getSTContext() {
+        const st = window.SillyTavern || window.parent?.SillyTavern;
+        if (!st || typeof st.getContext !== 'function') {
+            throw new Error('未找到 SillyTavern 原生上下文');
         }
-    })();
-
-    const STContext = (() => {
-        try {
-            return ST && typeof ST.getContext === 'function'
-                ? ST.getContext()
-                : null;
-        } catch (_) {
-            return null;
-        }
-    })();
-
-    if (!STContext) {
-        throw new Error('SillyTavern 原生扩展 API 不可用');
+        return st.getContext();
     }
 
-    function nativeChatMessages(start, options = {}) {
-        const chat = Array.isArray(STContext.chat) ? STContext.chat : [];
-        if (typeof start === 'number') {
-            if (start >= 0) return chat.slice(start);
-            return chat.slice(Math.max(0, chat.length + start));
-        }
-        if (typeof start === 'string' && /^-\d+$/.test(start)) {
-            return chat.slice(Math.max(0, chat.length - Number(start.slice(1))));
-        }
-        return chat.slice();
-    }
-
-    const TH = {
-        getChatMessages: nativeChatMessages,
-
-        getLastMessageId: () => {
-            const chat = Array.isArray(STContext.chat) ? STContext.chat : [];
-            return chat.length - 1;
-        },
-
-        getWorldbookNames: () => {
-            try {
-                if (typeof STContext.getWorldbookNames === 'function') {
-                    return STContext.getWorldbookNames();
-                }
-                if (typeof window.getWorldbookNames === 'function') {
-                    return window.getWorldbookNames();
-                }
-            } catch (_) {}
-            return [];
-        },
-
-        getWorldbook: async (name) => {
-            try {
-                if (typeof STContext.getWorldbook === 'function') {
-                    return await STContext.getWorldbook(name);
-                }
-                if (typeof window.getWorldbook === 'function') {
-                    return await window.getWorldbook(name);
-                }
-            } catch (_) {}
-            return [];
-        },
-
-        getCharacterName: () => {
-            try {
-                if (STContext.characterId !== undefined && Array.isArray(STContext.characters)) {
-                    const ch = STContext.characters[STContext.characterId];
-                    return ch?.name || '';
-                }
-                return STContext.character?.name || '';
-            } catch (_) {
-                return '';
+    const ST = {
+        getChatMessages(start = 0) {
+            const chat = getSTContext().chat;
+            if (!Array.isArray(chat)) return [];
+            if (typeof start === 'string' && /^-\d+$/.test(start)) {
+                return chat.slice(Number(start));
             }
+            return chat.slice(start);
         },
 
-        updateChatMetadata: (values, reset = false) => {
-            try {
-                if (typeof STContext.updateChatMetadata === 'function') {
-                    return STContext.updateChatMetadata(values, reset);
-                }
-                const meta = STContext.chatMetadata || {};
-                if (reset) {
-                    for (const key of Object.keys(meta)) delete meta[key];
-                }
-                Object.assign(meta, values || {});
-            } catch (_) {}
+        getCharacterName() {
+            const ctx = getSTContext();
+            return ctx.name2 || ctx.character?.name || '';
         },
 
-        saveChat: async () => {
+        getCurrentChatId() {
+            const st = window.SillyTavern || window.parent?.SillyTavern;
             try {
-                if (typeof STContext.saveMetadata === 'function') {
-                    await STContext.saveMetadata();
-                }
-                if (typeof STContext.saveChat === 'function') {
-                    await STContext.saveChat();
-                }
+                if (typeof st?.getCurrentChatId === 'function') return st.getCurrentChatId();
             } catch (_) {}
+            return st?.getContext?.()?.chatId ?? '';
         },
 
-        eventOn: (eventName, handler) => {
-            try {
-                if (STContext.eventSource?.on) {
-                    STContext.eventSource.on(eventName, handler);
-                    return true;
-                }
-            } catch (_) {}
+        getWorldbookNames() {
+            const ctx = getSTContext();
+            if (typeof ctx.getWorldbookNames === 'function') return ctx.getWorldbookNames();
+            const fn = window.getWorldbookNames || window.parent?.getWorldbookNames;
+            return typeof fn === 'function' ? fn() : [];
+        },
+
+        getWorldbook(name) {
+            const ctx = getSTContext();
+            if (typeof ctx.getWorldbook === 'function') return ctx.getWorldbook(name);
+            const fn = window.getWorldbook || window.parent?.getWorldbook;
+            return typeof fn === 'function' ? fn(name) : [];
+        },
+
+        updateChatMetadata(values) {
+            const ctx = getSTContext();
+            if (!ctx.chatMetadata) return false;
+            Object.assign(ctx.chatMetadata, values || {});
+            return true;
+        },
+
+        async saveChat() {
+            const ctx = getSTContext();
+            if (typeof ctx.saveMetadata === 'function') return ctx.saveMetadata();
+            if (typeof ctx.saveChat === 'function') return ctx.saveChat();
+        },
+
+        async setExtensionPrompt(id, content, enabled = true) {
+            const ctx = getSTContext();
+            if (typeof ctx.setExtensionPrompt !== 'function') {
+                throw new Error('当前 SillyTavern 没有 setExtensionPrompt 接口');
+            }
+            if (enabled) {
+                return ctx.setExtensionPrompt(id, content, 1, 0, false, 1);
+            }
+            return ctx.setExtensionPrompt(id, '', -1, 0, false, 1);
+        },
+
+        eventOn(eventName, handler) {
+            const ctx = getSTContext();
+            if (ctx.eventSource?.on) {
+                ctx.eventSource.on(eventName, handler);
+                return true;
+            }
+            const fn = window.eventOn || window.parent?.eventOn;
+            if (typeof fn === 'function') {
+                fn(eventName, handler);
+                return true;
+            }
             return false;
         },
-    };
 
-    const nativeEvents = STContext.event_types || {};
+        eventTypes() {
+            const ctx = getSTContext();
+            return ctx.eventTypes || window.tavern_events || {};
+        }
+    };
 
     // ============================================================
     // 默认论坛
@@ -437,16 +408,16 @@
         try {
 
             const char =
-                TH.getCharacterName
-                    ? TH.getCharacterName()
+                ST.getCharacterName
+                    ? ST.getCharacterName()
                     : '';
 
             let first = '';
 
-            if (TH.getChatMessages) {
+            if (ST.getChatMessages) {
 
                 const a =
-                    TH.getChatMessages(0);
+                    ST.getChatMessages(0);
 
                 if (a && a[0]) {
 
@@ -609,23 +580,8 @@
         );
 
         try {
-
-            if (TH.updateChatMetadata) {
-
-                TH.updateChatMetadata(
-                    {
-                        [NS]:
-                            clone(chatState)
-                    },
-                    false
-                );
-
-                if (TH.saveChat) {
-                    TH.saveChat()
-                        .catch(() => {});
-                }
-            }
-
+            ST.updateChatMetadata({ [NS]: clone(chatState) });
+            Promise.resolve(ST.saveChat()).catch(() => {});
         } catch (_) {}
     }
 
@@ -633,14 +589,11 @@
 
         try {
 
-            if (
-                typeof chatMetadata !== 'undefined' &&
-                chatMetadata &&
-                chatMetadata[NS]
-            ) {
+            const currentMetadata = getSTContext().chatMetadata;
+            if (currentMetadata && currentMetadata[NS]) {
 
                 const s =
-                    chatMetadata[NS];
+                    currentMetadata[NS];
 
                 if (
                     s &&
@@ -791,10 +744,10 @@
 
         try {
 
-            if (TH.getChatMessages) {
+            if (ST.getChatMessages) {
 
                 const msgs =
-                    TH.getChatMessages(
+                    ST.getChatMessages(
                         '-' + depth,
                         {
                             include_swipes: false
@@ -964,14 +917,14 @@
     }
 
     async function getSelectedWorldbookEntries(chatText) {
-        if (!config.worldbooks.length || !TH.getWorldbook) return [];
+        if (!config.worldbooks.length || !ST.getWorldbook) return [];
 
         const keywords = extractContextKeywords(chatText);
         const all = [];
 
         for (const name of config.worldbooks) {
             try {
-                const entries = await TH.getWorldbook(name);
+                const entries = await ST.getWorldbook(name);
                 if (!Array.isArray(entries)) continue;
 
                 entries
@@ -1515,6 +1468,9 @@
     // ============================================================
     // DOM / UI
     // ============================================================
+
+    // 样式由扩展目录中的 style.css 提供。
+
 
     // ============================================================
     // 手机按钮
@@ -2062,27 +2018,20 @@
             `当前聊天主角的论坛简介：${profile.bio || '未设置'}`,
             '',
             '【非常重要的身份规则】',
-            '1. 当前聊天中的主角/玩家，就是下面标记为【主角本人】的论坛用户。',
-            '2. 【主角本人】发布的帖子或评论，是主角自己亲手发出的内容；主角知道这些内容是自己说过/发过的。',
-            '3. 不要把【主角本人】的帖子或评论误认为其他网友，也不要让主角像第一次看到自己的发言一样陌生。',
-            '4. 论坛昵称是主角在该论坛使用的网名，与角色名字可以不同，但这是主角自己的账号。',
-            '5. 【论坛网友】均为其他用户，他们不知道主角的内在想法，除非论坛内容明确透露。',
+            '1. 标记为【主角本人】的帖子、评论、楼中回复，全部视为当前聊天主角自己发送的内容。',
+            '2. 标记为【论坛网友】的内容才是其他网友。',
+            '3. 主角知道自己的论坛昵称、帖子和评论，不要把自己的内容误认为陌生网友。',
+            '4. 论坛内容只是当前剧情的参考资料，不得凭空把论坛讨论当成现实中已经发生的剧情事实。',
             '',
-            `帖子标题：${t.title || ''}`,
-            `本帖楼主是否为主角本人：${t.isUserThread ? '是' : '否'}`,
-            ''
+            `【帖子】${t.title || '无标题'}`,
+            `楼主：${t.author || '匿名用户'}`
         ];
 
         (Array.isArray(t.posts) ? t.posts : []).forEach((p, i) => {
-            // 兼容旧数据：楼主帖子若标记 isUserThread，则首楼视为主角；
-            // 新数据的玩家回复明确使用 isUser。
-            const isMainCharacter = Boolean(
-                p.isUser || (i === 0 && t.isUserThread)
-            );
+            const isMainCharacter = Boolean(p.isUser || (i === 0 && t.isUserThread));
             const tag = isMainCharacter ? '【主角本人】' : '【论坛网友】';
             const bio = p.authorBio ? `（简介：${p.authorBio}）` : '';
             lines.push(`${i + 1}楼 ${tag} ${p.author || '匿名用户'}${bio}：${p.content || ''}`);
-
             const nested = Array.isArray(p.replies) ? p.replies : [];
             nested.forEach((r, ri) => {
                 const rTag = r.isUser ? '【主角本人】' : '【论坛网友】';
@@ -2095,32 +2044,180 @@
         return lines.join('\n');
     }
 
-    // 当前正在使用的 injectPrompts 返回的取消函数。
-    // 这是新版酒馆助手的标准提示词注入方式。
-    let forumInjectionUninject = null;
-
     async function setForumThreadInjection(t) {
-        if (typeof STContext.setExtensionPrompt !== 'function') {
-            showToast('当前 SillyTavern 不支持扩展提示词注入');
-            return false;
-        }
-
         try {
-            const content = t ? getThreadInjectionText(t) : '';
-            await STContext.setExtensionPrompt(
-                FORUM_INJECT_PROMPT_ID,
-                content,
-                content ? 1 : -1,
-                0,
-                false,
-                1,
-            );
-            injectedThreadId = t ? t.id : null;
+            if (!t) {
+                await ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, '', false);
+                injectedThreadId = null;
+                return true;
+            }
+
+            const content = getThreadInjectionText(t);
+            await ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, content, true);
+            injectedThreadId = t.id;
             return true;
         } catch (e) {
-            console.error('[宝可梦小手机论坛] 提示词注入失败', e);
-            showToast('提示词注入失败：' + (e?.message || e));
+            showToast('注入失败：' + (e?.message || e));
             return false;
+        }
+    }
+
+    async function toggleForumThreadInjection(t) {
+        if (!t) return;
+        if (injectedThreadId === t.id) {
+            const ok = await setForumThreadInjection(null);
+            if (ok) {
+                renderForumList();
+                if (currentThreadId === t.id) openThread(t.id);
+                showToast('已取消注入');
+            }
+            return;
+        }
+        const ok = await setForumThreadInjection(t);
+        if (ok) {
+            renderForumList();
+            if (currentThreadId === t.id) openThread(t.id);
+            showToast('已将本帖注入正文');
+        }
+    }
+
+    function clearForumThreadInjection() {
+        ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, '', false).catch?.(() => {});
+        injectedThreadId = null;
+    }
+
+    function renderForumList() {
+
+        renderTabs();
+
+        const arr =
+            threads().filter(
+                t =>
+                    t.board ===
+                    currentBoard
+            );
+
+        threadList.innerHTML =
+            '';
+
+        arr
+            .slice()
+            .reverse()
+            .forEach(
+                t => {
+
+                    const d =
+                        topDoc.createElement(
+                            'div'
+                        );
+
+                    d.className =
+                        'pkmn-thread-card';
+
+                    const firstPost = Array.isArray(t.posts) && t.posts[0] ? t.posts[0] : null;
+                    const avatarName = String(t.author || '匿名用户').trim().slice(0, 1) || '匿';
+                    const snippet = firstPost?.content || '';
+                    const commentCount = Math.max(0, (t.posts?.length || 1) - 1);
+                    const nestedCount = (t.posts || []).slice(1).reduce(
+                        (sum, p) => sum + ensureNestedReplies(p).length,
+                        0
+                    );
+
+                    d.innerHTML =
+                        `
+<div class="pkmn-thread-avatar">${esc(avatarName)}</div>
+<div class="pkmn-thread-body">
+    <div class="pkmn-thread-user">${esc(t.author || '匿名用户')}</div>
+    <div class="pkmn-thread-title">${esc(t.title || '无标题')}</div>
+    <div class="pkmn-thread-snippet">${esc(snippet)}</div>
+    <div class="pkmn-thread-footer">
+        <span class="pkmn-thread-stat">评论 ${commentCount + nestedCount}</span>
+        <span class="pkmn-thread-time">${esc(t.time || '刚刚')}</span>
+    </div>
+</div>
+
+<button class="pkmn-inject" title="将本帖注入正文（实际仍为提示词注入）">
+    ${injectedThreadId === t.id ? '✓ 已注入' : '注入正文'}
+</button>
+
+<button class="pkmn-del" title="删除帖子">✕</button>
+`;
+
+                    d.onclick =
+                        e => {
+
+                            if (
+                                e.target
+                                    .classList
+                                    .contains(
+                                        'pkmn-del'
+                                    )
+                            ) {
+                                return;
+                            }
+
+                            openThread(
+                                t.id
+                            );
+                        };
+
+                    const injectBtn = d.querySelector('.pkmn-inject');
+                    if (injectBtn) {
+                        injectBtn.onclick = async e => {
+                            e.stopPropagation();
+                            await toggleForumThreadInjection(t);
+                        };
+                    }
+
+                    d.querySelector(
+                        '.pkmn-del'
+                    ).onclick =
+                        e => {
+
+                            e.stopPropagation();
+
+                            if (
+                                confirm(
+                                    '删除这条帖子？'
+                                )
+                            ) {
+
+                                setThreads(
+                                    threads()
+                                        .filter(
+                                            x =>
+                                                x.id !==
+                                                t.id
+                                        )
+                                );
+
+                                saveChatState();
+
+                                renderForumList();
+                            }
+                        };
+
+                    threadList.appendChild(
+                        d
+                    );
+                }
+            );
+
+        if (!arr.length) {
+
+            threadList.innerHTML =
+                `
+<div style="
+padding:40px;
+text-align:center;
+color:#aaa;
+font-size:12px
+">
+本板块暂无帖子
+<br>
+点击“刷新/生成”开始
+</div>
+`;
         }
     }
 
@@ -4050,11 +4147,11 @@ ${esc(b.prompt)}
         try {
 
             if (
-                TH.getWorldbookNames
+                ST.getWorldbookNames
             ) {
 
                 names =
-                    TH.getWorldbookNames() ||
+                    ST.getWorldbookNames() ||
                     [];
             }
 
@@ -4615,18 +4712,24 @@ ${esc(name)}
         suppressNextOpen = false;
     }
 
-    // 悬浮按钮只使用 Pointer Events。不要在 touchstart/touchend 上 preventDefault，
-    // 否则部分 Android WebView 会直接取消后续 pointer 事件，导致既不能拖也不能点。
-    floatBtn.addEventListener('pointerdown', beginFloatDrag, { passive: false });
-    floatBtn.addEventListener('pointermove', moveFloatDrag, { passive: false });
-    floatBtn.addEventListener('pointerup', finishFloatDrag, { passive: false });
-    floatBtn.addEventListener('pointercancel', finishFloatDrag, { passive: false });
+    // 不把 pointermove/up 绑定在按钮自身上，避免 Android/WebView 在
+    // 手指离开按钮瞬间丢事件导致“拖不动/卡住/松手仍打开”的问题。
+    // 同时在悬浮按钮上阻断 click/touch 冒泡，避免酒馆底层导航收到同一次触摸。
+    ['click','touchstart','touchend'].forEach(type => {
+        floatBtn.addEventListener(type, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        }, { passive: false, capture: true });
+    });
 
-    // 兜底：手指移出按钮后仍保持拖动，并确保抬手一定能结束拖动。
+    floatBtn.addEventListener('pointerdown', beginFloatDrag, { passive: false, capture: true });
     dragWindow.addEventListener('pointermove', moveFloatDrag, { passive: false });
     dragWindow.addEventListener('pointerup', finishFloatDrag, { passive: false });
     dragWindow.addEventListener('pointercancel', finishFloatDrag, { passive: false });
-
+    floatBtn.addEventListener('lostpointercapture', e => {
+        if (dragState && e.pointerId === dragState.pointerId) finishFloatDrag(e);
+    });
 
     dragWindow.addEventListener('resize', () => {
         const rect = floatBtn.getBoundingClientRect();
@@ -4662,23 +4765,63 @@ ${esc(name)}
     // 自动聊天切换 / 新建聊天
     // ============================================================
 
-    try {
-        const changedEv = nativeEvents.CHAT_CHANGED || 'CHAT_CHANGED';
-        const createdEv = nativeEvents.CHAT_CREATED || 'CHAT_CREATED';
+    if (ST.eventOn) {
 
-        TH.eventOn(changedEv, newChatId => {
-            setTimeout(() => {
-                const key = newChatId !== undefined && newChatId !== null
-                    ? 'chat:' + String(newChatId)
-                    : getChatKey();
-                switchChat(key);
-            }, 300);
-        });
+        try {
 
-        TH.eventOn(createdEv, newChatId => {
-            setTimeout(() => resetForumForNewChat(newChatId), 300);
-        });
-    } catch (_) {}
+            const events = ST.eventTypes();
+            const changedEv = events.CHAT_CHANGED || 'CHAT_CHANGED';
+            const createdEv = events.CHAT_CREATED || 'CHAT_CREATED';
+
+            // 切换到已有聊天：
+            // 读取该 chatId 对应的论坛存档。
+            ST.eventOn(
+                changedEv,
+                newChatId => {
+
+                    setTimeout(
+                        () => {
+
+                            const key =
+                                newChatId !== undefined &&
+                                newChatId !== null
+                                    ? 'chat:' + String(newChatId)
+                                    : getChatKey();
+
+                            switchChat(
+                                key
+                            );
+
+                        },
+                        300
+                    );
+
+                }
+            );
+
+            // 创建新聊天：
+            // 无论之前论坛是什么内容，新聊天都从空论坛开始。
+            ST.eventOn(
+                createdEv,
+                newChatId => {
+
+                    setTimeout(
+                        () => {
+
+                            resetForumForNewChat(
+                                newChatId
+                            );
+
+                        },
+                        300
+                    );
+
+                }
+            );
+
+        } catch (_) {}
+    }
+
 
     // ============================================================
     // 定时兜底检测
@@ -4787,3 +4930,5 @@ ${esc(name)}
         '[宝可梦小手机论坛] 已启动。聊天独立存档：',
         chatState.chatKey
     );
+
+})();
