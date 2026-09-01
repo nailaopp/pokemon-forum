@@ -44,6 +44,28 @@ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!import
 color:#222!important
 }
 #pkmn-phone-panel.show{display:flex!important;flex-direction:column!important}
+#pkmn-phone-panel.compact{
+  height:325px!important;
+  max-height:325px!important;
+}
+
+#pkmn-expand-phone{
+position:absolute!important;
+right:48px!important;
+top:5px!important;
+width:34px!important;
+height:34px!important;
+z-index:30!important;
+border:0!important;
+border-radius:50%!important;
+background:rgba(0,0,0,.14)!important;
+color:#fff!important;
+font-size:18px!important;
+line-height:34px!important;
+padding:0!important;
+cursor:pointer!important;
+touch-action:manipulation!important
+}
 
 #pkmn-close-phone{
 position:absolute!important;
@@ -747,3 +769,6 @@ box-shadow:0 -8px 25px rgba(0,0,0,.15)
     #pkmn-phone-panel{height:calc(100vh - 12px)!important;}
   }
 }
+
+/* Compact mode must win over the Android small-screen height rule. */
+#pkmn-phone-panel.compact{height:325px!important;max-height:325px!important;}

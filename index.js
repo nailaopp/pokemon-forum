@@ -1533,8 +1533,12 @@
     panel.id =
         'pkmn-phone-panel';
 
+    // 默认使用半高手机窗口；点击右上角按钮可在半高/原始高度之间切换。
+    panel.dataset.compact = '1';
+
     panel.innerHTML = `
 
+<button id="pkmn-expand-phone" type="button" aria-label="放大/缩小">↕</button>
 <button id="pkmn-close-phone" type="button" aria-label="关闭">×</button>
 
 <div class="pkmn-status">
@@ -4769,6 +4773,194 @@ ${esc(name)}
         applyFloatPosition(rect.left, rect.top);
         saveFloatPosition();
     });
+
+    // ============================================================
+    // 手机窗口拖动 + 高度切换
+    // ============================================================
+
+    // 只允许拖动顶部状态栏中间的黑色刘海区域，避免误触论坛内容。
+    const phoneNotch = panel.querySelector('.pkmn-notch');
+    let phoneDrag = null;
+
+    function setPhonePosition(left, top) {
+        const vw = dragWindow.innerWidth || document.documentElement.clientWidth || 360;
+        const vh = dragWindow.innerHeight || document.documentElement.clientHeight || 640;
+        const rect = panel.getBoundingClientRect();
+        const halfW = rect.width / 2;
+        const halfH = rect.height / 2;
+        const minX = halfW + 4;
+        const maxX = Math.max(minX, vw - halfW - 4);
+        const minY = halfH + 4;
+        const maxY = Math.max(minY, vh - halfH - 4);
+        left = Math.min(maxX, Math.max(minX, left));
+        top = Math.min(maxY, Math.max(minY, top));
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+    }
+
+    function beginPhoneDrag(e) {
+        if (!e) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        const rect = panel.getBoundingClientRect();
+        phoneDrag = {
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            startCenterX: rect.left + rect.width / 2,
+            startCenterY: rect.top + rect.height / 2
+        };
+        try { phoneNotch.setPointerCapture(e.pointerId); } catch (_) {}
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function movePhoneDrag(e) {
+        if (!phoneDrag || !e || e.pointerId !== phoneDrag.pointerId) return;
+        setPhonePosition(
+            phoneDrag.startCenterX + e.clientX - phoneDrag.startX,
+            phoneDrag.startCenterY + e.clientY - phoneDrag.startY
+        );
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function endPhoneDrag(e) {
+        if (!phoneDrag) return;
+        if (e && e.pointerId !== undefined && e.pointerId !== phoneDrag.pointerId) return;
+        try { phoneNotch.releasePointerCapture(phoneDrag.pointerId); } catch (_) {}
+        phoneDrag = null;
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+    }
+
+    if (phoneNotch) {
+        phoneNotch.style.touchAction = 'none';
+        phoneNotch.addEventListener('pointerdown', beginPhoneDrag, { passive: false });
+        phoneNotch.addEventListener('pointermove', movePhoneDrag, { passive: false });
+        phoneNotch.addEventListener('pointerup', endPhoneDrag, { passive: false });
+        phoneNotch.addEventListener('pointercancel', endPhoneDrag, { passive: false });
+
+        // Android/WebView 触摸兜底。
+        let notchTouch = null;
+        phoneNotch.addEventListener('touchstart', e => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            const rect = panel.getBoundingClientRect();
+            notchTouch = { x:t.clientX, y:t.clientY, cx:rect.left + rect.width/2, cy:rect.top + rect.height/2 };
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive:false });
+        phoneNotch.addEventListener('touchmove', e => {
+            if (!notchTouch) return;
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            setPhonePosition(notchTouch.cx + t.clientX - notchTouch.x, notchTouch.cy + t.clientY - notchTouch.y);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive:false });
+        phoneNotch.addEventListener('touchend', e => {
+            notchTouch = null;
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive:false });
+    }
+
+    // 底部白色区域也作为手机窗口拖动手柄，方便 Android 触摸操作。
+    const phoneFooter = panel.querySelector('.pkmn-footer');
+    if (phoneFooter) {
+        phoneFooter.style.touchAction = 'none';
+        phoneFooter.style.cursor = 'grab';
+        let footerTouch = null;
+
+        phoneFooter.addEventListener('pointerdown', e => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            const rect = panel.getBoundingClientRect();
+            phoneDrag = {
+                pointerId: e.pointerId,
+                startX: e.clientX,
+                startY: e.clientY,
+                startCenterX: rect.left + rect.width / 2,
+                startCenterY: rect.top + rect.height / 2,
+                handle: phoneFooter
+            };
+            phoneFooter.style.cursor = 'grabbing';
+            try { phoneFooter.setPointerCapture(e.pointerId); } catch (_) {}
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+
+        phoneFooter.addEventListener('pointermove', e => {
+            if (!phoneDrag || phoneDrag.handle !== phoneFooter || e.pointerId !== phoneDrag.pointerId) return;
+            setPhonePosition(
+                phoneDrag.startCenterX + e.clientX - phoneDrag.startX,
+                phoneDrag.startCenterY + e.clientY - phoneDrag.startY
+            );
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+
+        const finishFooterPointer = e => {
+            if (!phoneDrag || phoneDrag.handle !== phoneFooter) return;
+            if (e && e.pointerId !== undefined && e.pointerId !== phoneDrag.pointerId) return;
+            try { phoneFooter.releasePointerCapture(phoneDrag.pointerId); } catch (_) {}
+            phoneDrag = null;
+            phoneFooter.style.cursor = 'grab';
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+        };
+        phoneFooter.addEventListener('pointerup', finishFooterPointer, { passive: false });
+        phoneFooter.addEventListener('pointercancel', finishFooterPointer, { passive: false });
+
+        phoneFooter.addEventListener('touchstart', e => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            const rect = panel.getBoundingClientRect();
+            footerTouch = { x: t.clientX, y: t.clientY, cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
+            phoneFooter.style.cursor = 'grabbing';
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+        phoneFooter.addEventListener('touchmove', e => {
+            if (!footerTouch) return;
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            setPhonePosition(footerTouch.cx + t.clientX - footerTouch.x, footerTouch.cy + t.clientY - footerTouch.y);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+        phoneFooter.addEventListener('touchend', e => {
+            footerTouch = null;
+            phoneFooter.style.cursor = 'grab';
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+        phoneFooter.addEventListener('touchcancel', e => {
+            footerTouch = null;
+            phoneFooter.style.cursor = 'grab';
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+    }
+
+    const expandPhoneBtn = $('pkmn-expand-phone');
+    if (expandPhoneBtn) {
+        expandPhoneBtn.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive:false });
+        expandPhoneBtn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const compact = panel.dataset.compact !== '0';
+            panel.dataset.compact = compact ? '0' : '1';
+            panel.classList.toggle('compact', !compact);
+            expandPhoneBtn.textContent = compact ? '↕' : '↕';
+            expandPhoneBtn.title = compact ? '缩小手机' : '恢复原大小';
+            // 尺寸变化后保持窗口中心不漂移。
+            const r = panel.getBoundingClientRect();
+            setPhonePosition(r.left + r.width/2, r.top + r.height/2);
+        });
+    }
 
     // 手机右上角独立关闭按钮：不依赖返回键，不触发 openView。
     const closePhoneBtn = $('pkmn-close-phone');
