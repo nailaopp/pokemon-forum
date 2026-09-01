@@ -29,7 +29,7 @@ left:50%!important;
 top:50%!important;
 right:auto!important;
 bottom:auto!important;
-transform:translate(-50%,-50%)!important;
+transform:none!important;
 width:min(350px,calc(100vw - 12px))!important;
 height:min(650px,calc(100dvh - 12px))!important;
 background:#f7f7f7!important;

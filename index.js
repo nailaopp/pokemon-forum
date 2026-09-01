@@ -4778,169 +4778,128 @@ ${esc(name)}
     // 手机窗口拖动 + 高度切换
     // ============================================================
 
-    // 只允许拖动顶部状态栏中间的黑色刘海区域，避免误触论坛内容。
+    // Android/WebView 兼容版：不依赖 Pointer Capture。
+    // 顶部黑色刘海和底部白色区域都是拖动手柄。
     const phoneNotch = panel.querySelector('.pkmn-notch');
+    const phoneFooter = panel.querySelector('.pkmn-footer');
     let phoneDrag = null;
 
-    function setPhonePosition(left, top) {
+    function setPhonePosition(centerX, centerY) {
         const vw = dragWindow.innerWidth || document.documentElement.clientWidth || 360;
         const vh = dragWindow.innerHeight || document.documentElement.clientHeight || 640;
         const rect = panel.getBoundingClientRect();
-        const halfW = rect.width / 2;
-        const halfH = rect.height / 2;
-        const minX = halfW + 4;
-        const maxX = Math.max(minX, vw - halfW - 4);
-        const minY = halfH + 4;
-        const maxY = Math.max(minY, vh - halfH - 4);
-        left = Math.min(maxX, Math.max(minX, left));
-        top = Math.min(maxY, Math.max(minY, top));
+        const w = rect.width || 350;
+        const h = rect.height || 325;
+        const minLeft = 4;
+        const maxLeft = Math.max(minLeft, vw - w - 4);
+        const minTop = 4;
+        const maxTop = Math.max(minTop, vh - h - 4);
+        const left = Math.min(maxLeft, Math.max(minLeft, centerX - w / 2));
+        const top = Math.min(maxTop, Math.max(minTop, centerY - h / 2));
+        panel.style.transform = 'none';
         panel.style.left = left + 'px';
         panel.style.top = top + 'px';
         panel.style.right = 'auto';
         panel.style.bottom = 'auto';
     }
 
-    function beginPhoneDrag(e) {
-        if (!e) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
+    function beginPhoneDrag(clientX, clientY, source) {
+        if (!panel.classList.contains('show')) return;
         const rect = panel.getBoundingClientRect();
         phoneDrag = {
-            pointerId: e.pointerId,
-            startX: e.clientX,
-            startY: e.clientY,
-            startCenterX: rect.left + rect.width / 2,
-            startCenterY: rect.top + rect.height / 2
+            startX: clientX,
+            startY: clientY,
+            startLeft: rect.left,
+            startTop: rect.top,
+            source
         };
-        try { phoneNotch.setPointerCapture(e.pointerId); } catch (_) {}
-        e.preventDefault();
-        e.stopPropagation();
+        source.style.cursor = 'grabbing';
     }
 
-    function movePhoneDrag(e) {
-        if (!phoneDrag || !e || e.pointerId !== phoneDrag.pointerId) return;
-        setPhonePosition(
-            phoneDrag.startCenterX + e.clientX - phoneDrag.startX,
-            phoneDrag.startCenterY + e.clientY - phoneDrag.startY
-        );
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    function endPhoneDrag(e) {
+    function movePhoneDrag(clientX, clientY, e) {
         if (!phoneDrag) return;
-        if (e && e.pointerId !== undefined && e.pointerId !== phoneDrag.pointerId) return;
-        try { phoneNotch.releasePointerCapture(phoneDrag.pointerId); } catch (_) {}
+        const dx = clientX - phoneDrag.startX;
+        const dy = clientY - phoneDrag.startY;
+        const rect = panel.getBoundingClientRect();
+        const vw = dragWindow.innerWidth || document.documentElement.clientWidth || 360;
+        const vh = dragWindow.innerHeight || document.documentElement.clientHeight || 640;
+        const w = rect.width;
+        const h = rect.height;
+        const left = Math.min(vw - w - 4, Math.max(4, phoneDrag.startLeft + dx));
+        const top = Math.min(vh - h - 4, Math.max(4, phoneDrag.startTop + dy));
+        panel.style.transform = 'none';
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    function finishPhoneDrag(e) {
+        if (!phoneDrag) return;
+        const source = phoneDrag.source;
         phoneDrag = null;
-        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (source) source.style.cursor = 'grab';
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
     }
 
-    if (phoneNotch) {
-        phoneNotch.style.touchAction = 'none';
-        phoneNotch.addEventListener('pointerdown', beginPhoneDrag, { passive: false });
-        phoneNotch.addEventListener('pointermove', movePhoneDrag, { passive: false });
-        phoneNotch.addEventListener('pointerup', endPhoneDrag, { passive: false });
-        phoneNotch.addEventListener('pointercancel', endPhoneDrag, { passive: false });
+    function bindPhoneDragHandle(handle) {
+        if (!handle) return;
+        handle.style.touchAction = 'none';
+        handle.style.webkitUserSelect = 'none';
+        handle.style.userSelect = 'none';
+        handle.style.cursor = 'grab';
 
-        // Android/WebView 触摸兜底。
-        let notchTouch = null;
-        phoneNotch.addEventListener('touchstart', e => {
+        // 鼠标：直接在 window 上继续接收移动，避免移出手柄后丢失事件。
+        handle.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            beginPhoneDrag(e.clientX, e.clientY, handle);
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+
+        // Android：使用原生 TouchEvent，并在 document 上接管后续移动。
+        handle.addEventListener('touchstart', e => {
             const t = e.touches && e.touches[0];
             if (!t) return;
-            const rect = panel.getBoundingClientRect();
-            notchTouch = { x:t.clientX, y:t.clientY, cx:rect.left + rect.width/2, cy:rect.top + rect.height/2 };
+            beginPhoneDrag(t.clientX, t.clientY, handle);
             e.preventDefault();
             e.stopPropagation();
-        }, { passive:false });
-        phoneNotch.addEventListener('touchmove', e => {
-            if (!notchTouch) return;
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            setPhonePosition(notchTouch.cx + t.clientX - notchTouch.x, notchTouch.cy + t.clientY - notchTouch.y);
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive:false });
-        phoneNotch.addEventListener('touchend', e => {
-            notchTouch = null;
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive:false });
+        }, { passive: false, capture: true });
     }
 
-    // 底部白色区域也作为手机窗口拖动手柄，方便 Android 触摸操作。
-    const phoneFooter = panel.querySelector('.pkmn-footer');
-    if (phoneFooter) {
-        phoneFooter.style.touchAction = 'none';
-        phoneFooter.style.cursor = 'grab';
-        let footerTouch = null;
+    bindPhoneDragHandle(phoneNotch);
+    bindPhoneDragHandle(phoneFooter);
 
-        phoneFooter.addEventListener('pointerdown', e => {
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-            const rect = panel.getBoundingClientRect();
-            phoneDrag = {
-                pointerId: e.pointerId,
-                startX: e.clientX,
-                startY: e.clientY,
-                startCenterX: rect.left + rect.width / 2,
-                startCenterY: rect.top + rect.height / 2,
-                handle: phoneFooter
-            };
-            phoneFooter.style.cursor = 'grabbing';
-            try { phoneFooter.setPointerCapture(e.pointerId); } catch (_) {}
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
+    dragWindow.addEventListener('mousemove', e => {
+        if (!phoneDrag) return;
+        movePhoneDrag(e.clientX, e.clientY, e);
+    }, true);
+    dragWindow.addEventListener('mouseup', e => {
+        if (!phoneDrag) return;
+        finishPhoneDrag(e);
+    }, true);
 
-        phoneFooter.addEventListener('pointermove', e => {
-            if (!phoneDrag || phoneDrag.handle !== phoneFooter || e.pointerId !== phoneDrag.pointerId) return;
-            setPhonePosition(
-                phoneDrag.startCenterX + e.clientX - phoneDrag.startX,
-                phoneDrag.startCenterY + e.clientY - phoneDrag.startY
-            );
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-
-        const finishFooterPointer = e => {
-            if (!phoneDrag || phoneDrag.handle !== phoneFooter) return;
-            if (e && e.pointerId !== undefined && e.pointerId !== phoneDrag.pointerId) return;
-            try { phoneFooter.releasePointerCapture(phoneDrag.pointerId); } catch (_) {}
-            phoneDrag = null;
-            phoneFooter.style.cursor = 'grab';
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-        };
-        phoneFooter.addEventListener('pointerup', finishFooterPointer, { passive: false });
-        phoneFooter.addEventListener('pointercancel', finishFooterPointer, { passive: false });
-
-        phoneFooter.addEventListener('touchstart', e => {
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            const rect = panel.getBoundingClientRect();
-            footerTouch = { x: t.clientX, y: t.clientY, cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
-            phoneFooter.style.cursor = 'grabbing';
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-        phoneFooter.addEventListener('touchmove', e => {
-            if (!footerTouch) return;
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            setPhonePosition(footerTouch.cx + t.clientX - footerTouch.x, footerTouch.cy + t.clientY - footerTouch.y);
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-        phoneFooter.addEventListener('touchend', e => {
-            footerTouch = null;
-            phoneFooter.style.cursor = 'grab';
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-        phoneFooter.addEventListener('touchcancel', e => {
-            footerTouch = null;
-            phoneFooter.style.cursor = 'grab';
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-    }
+    dragWindow.addEventListener('touchmove', e => {
+        if (!phoneDrag) return;
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        movePhoneDrag(t.clientX, t.clientY, e);
+    }, { passive: false, capture: true });
+    dragWindow.addEventListener('touchend', e => {
+        if (!phoneDrag) return;
+        finishPhoneDrag(e);
+    }, { passive: false, capture: true });
+    dragWindow.addEventListener('touchcancel', e => {
+        if (!phoneDrag) return;
+        finishPhoneDrag(e);
+    }, { passive: false, capture: true });
 
     const expandPhoneBtn = $('pkmn-expand-phone');
     if (expandPhoneBtn) {
@@ -4981,6 +4940,15 @@ ${esc(name)}
             if (e.target === closePhoneBtn) return;
             e.stopPropagation();
         }, { passive: false });
+    });
+
+    // 初始化手机窗口位置：居中。之后拖动使用真实 left/top，不再依赖 transform。
+    requestAnimationFrame(() => {
+        const r = panel.getBoundingClientRect();
+        setPhonePosition(
+            (dragWindow.innerWidth || 360) / 2,
+            (dragWindow.innerHeight || 640) / 2
+        );
     });
 
     restoreFloatPosition();
