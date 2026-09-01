@@ -1,12 +1,14 @@
 {
-  "display_name": "宝可梦小手机论坛",
-  "loading_order": 100,
+  "display_name": "宝可梦小手机论坛（原生扩展）",
+  "loading_order": 10,
   "requires": [],
   "optional": [],
+  "dependencies": [],
   "js": "index.js",
   "css": "style.css",
-  "author": "nailaopp",
-  "version": "1.0.3",
+  "author": "OpenAI",
+  "version": "1.0.0",
   "homePage": "https://github.com/nailaopp/pokemon-forum",
-  "auto_update": true
+  "auto_update": true,
+  "minimum_client_version": "1.16.0"
 }

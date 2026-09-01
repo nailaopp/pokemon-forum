@@ -1,15 +1,17 @@
 (function () {
     'use strict';
 
-    const NS = 'pkmn_phone_forum_v9';
+    const NS = 'pkmn_phone_forum_native_v1';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 9;
+    const VERSION = 21;
 
-    // Native SillyTavern extensions run in the main page context.
-    // Do not redirect UI creation to window.top: on Android/WebView this can
-    // put the DOM outside the document that receives the extension CSS/events.
+    const ST = (window.SillyTavern && typeof window.SillyTavern.getContext === 'function')
+        ? window.SillyTavern.getContext()
+        : null;
+    if (!ST) throw new Error('SillyTavern context unavailable');
     const topDoc = document;
+    const getRequestHeaders = () => typeof ST.getRequestHeaders === 'function' ? ST.getRequestHeaders() : { 'Content-Type': 'application/json' };
 
     // ============================================================
     // 清理旧实例
@@ -25,98 +27,63 @@
     });
 
     // ============================================================
-    // SillyTavern 原生 API 适配
+    // SillyTavern 原生 API
     // ============================================================
 
-    function getSTContext() {
-        const st = window.SillyTavern || window.parent?.SillyTavern;
-        if (!st || typeof st.getContext !== 'function') {
-            throw new Error('未找到 SillyTavern 原生上下文');
+    const ST_EVENTS = ST.eventTypes || {};
+
+    async function nativeGetWorldbook(name) {
+        if (!name) return null;
+        try {
+            const response = await fetch('/api/worldinfo/get', {
+                method: 'POST',
+                headers: { ...getRequestHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+                cache: 'no-cache',
+            });
+            if (!response.ok) return null;
+            return await response.json();
+        } catch (_) {
+            return null;
         }
-        return st.getContext();
     }
 
-    const ST = {
-        getChatMessages(start = 0) {
-            const chat = getSTContext().chat;
-            if (!Array.isArray(chat)) return [];
-            if (typeof start === 'string' && /^-\d+$/.test(start)) {
-                return chat.slice(Number(start));
+    async function nativeGetWorldbookNames() {
+        try {
+            const response = await fetch('/api/worldinfo/list', {
+                method: 'POST',
+                headers: { ...getRequestHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
+                cache: 'no-cache',
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data)) return data.map(x => typeof x === 'string' ? x : (x.name || x.file_id)).filter(Boolean);
+                if (Array.isArray(data.world_names)) return data.world_names;
             }
-            return chat.slice(start);
-        },
-
-        getCharacterName() {
-            const ctx = getSTContext();
-            return ctx.name2 || ctx.character?.name || '';
-        },
-
-        getCurrentChatId() {
-            const st = window.SillyTavern || window.parent?.SillyTavern;
-            try {
-                if (typeof st?.getCurrentChatId === 'function') return st.getCurrentChatId();
-            } catch (_) {}
-            return st?.getContext?.()?.chatId ?? '';
-        },
-
-        getWorldbookNames() {
-            const ctx = getSTContext();
-            if (typeof ctx.getWorldbookNames === 'function') return ctx.getWorldbookNames();
-            const fn = window.getWorldbookNames || window.parent?.getWorldbookNames;
-            return typeof fn === 'function' ? fn() : [];
-        },
-
-        getWorldbook(name) {
-            const ctx = getSTContext();
-            if (typeof ctx.getWorldbook === 'function') return ctx.getWorldbook(name);
-            const fn = window.getWorldbook || window.parent?.getWorldbook;
-            return typeof fn === 'function' ? fn(name) : [];
-        },
-
-        updateChatMetadata(values) {
-            const ctx = getSTContext();
-            if (!ctx.chatMetadata) return false;
-            Object.assign(ctx.chatMetadata, values || {});
-            return true;
-        },
-
-        async saveChat() {
-            const ctx = getSTContext();
-            if (typeof ctx.saveMetadata === 'function') return ctx.saveMetadata();
-            if (typeof ctx.saveChat === 'function') return ctx.saveChat();
-        },
-
-        async setExtensionPrompt(id, content, enabled = true) {
-            const ctx = getSTContext();
-            if (typeof ctx.setExtensionPrompt !== 'function') {
-                throw new Error('当前 SillyTavern 没有 setExtensionPrompt 接口');
+        } catch (_) {}
+        try {
+            const response = await fetch('/api/settings/get', {
+                method: 'POST',
+                headers: { ...getRequestHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
+                cache: 'no-cache',
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return Array.isArray(data.world_names) ? data.world_names : [];
             }
-            if (enabled) {
-                return ctx.setExtensionPrompt(id, content, 1, 0, false, 1);
-            }
-            return ctx.setExtensionPrompt(id, '', -1, 0, false, 1);
-        },
+        } catch (_) {}
+        return [];
+    }
 
-        eventOn(eventName, handler) {
-            const ctx = getSTContext();
-            if (ctx.eventSource?.on) {
-                ctx.eventSource.on(eventName, handler);
-                return true;
-            }
-            const fn = window.eventOn || window.parent?.eventOn;
-            if (typeof fn === 'function') {
-                fn(eventName, handler);
-                return true;
-            }
-            return false;
-        },
+    function getNativeChatMessages() {
+        return Array.isArray(ST.chat) ? ST.chat : [];
+    }
 
-        eventTypes() {
-            const ctx = getSTContext();
-            return ctx.eventTypes || window.tavern_events || {};
-        }
-    };
-
+    function getNativeCharacterName() {
+        return ST.name1 || '玩家';
+    }
     // ============================================================
     // 默认论坛
     // ============================================================
@@ -405,16 +372,14 @@
         try {
 
             const char =
-                ST.getCharacterName
-                    ? ST.getCharacterName()
-                    : '';
+                getNativeCharacterName();
 
             let first = '';
 
-            if (ST.getChatMessages) {
+            {
 
                 const a =
-                    ST.getChatMessages(0);
+                    getNativeChatMessages().slice(-1);
 
                 if (a && a[0]) {
 
@@ -577,8 +542,10 @@
         );
 
         try {
-            ST.updateChatMetadata({ [NS]: clone(chatState) });
-            Promise.resolve(ST.saveChat()).catch(() => {});
+
+            ST.updateChatMetadata({ [NS]: clone(chatState) }, false);
+            if (typeof ST.saveMetadata === 'function') ST.saveMetadata();
+
         } catch (_) {}
     }
 
@@ -586,11 +553,12 @@
 
         try {
 
-            const currentMetadata = getSTContext().chatMetadata;
-            if (currentMetadata && currentMetadata[NS]) {
+            if (
+                ST.chatMetadata && ST.chatMetadata[NS]
+            ) {
 
                 const s =
-                    currentMetadata[NS];
+                    ST.chatMetadata[NS];
 
                 if (
                     s &&
@@ -741,15 +709,9 @@
 
         try {
 
-            if (ST.getChatMessages) {
+            {
 
-                const msgs =
-                    ST.getChatMessages(
-                        '-' + depth,
-                        {
-                            include_swipes: false
-                        }
-                    );
+                const msgs = getNativeChatMessages().slice(-depth);
 
                 if (Array.isArray(msgs)) {
 
@@ -914,14 +876,15 @@
     }
 
     async function getSelectedWorldbookEntries(chatText) {
-        if (!config.worldbooks.length || !ST.getWorldbook) return [];
+        if (!config.worldbooks.length) return [];
 
         const keywords = extractContextKeywords(chatText);
         const all = [];
 
         for (const name of config.worldbooks) {
             try {
-                const entries = await ST.getWorldbook(name);
+                const book = await nativeGetWorldbook(name);
+                const entries = book?.entries ? Object.values(book.entries) : (Array.isArray(book) ? book : []);
                 if (!Array.isArray(entries)) continue;
 
                 entries
@@ -1466,8 +1429,740 @@
     // DOM / UI
     // ============================================================
 
-    // 样式由扩展目录中的 style.css 提供。
+    const style =
+        topDoc.createElement(
+            'style'
+        );
 
+    style.id =
+        'pkmn-phone-style';
+
+    style.textContent = `
+*{box-sizing:border-box}
+
+#pkmn-float-btn{
+position:fixed!important;
+right:18px!important;
+bottom:80px!important;
+width:50px!important;
+height:50px!important;
+padding:0!important;
+border-radius:50%!important;
+background:transparent!important;
+color:#fff!important;
+display:flex!important;
+align-items:center!important;
+justify-content:center!important;
+z-index:999999999!important;
+box-shadow:0 3px 10px rgba(0,0,0,.28)!important;
+cursor:grab!important;
+touch-action:none!important;
+user-select:none!important
+}
+#pkmn-float-btn.dragging{cursor:grabbing!important;transform:scale(1.06)!important}
+#pkmn-float-btn svg{width:46px!important;height:46px!important;display:block!important;pointer-events:none!important;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+
+#pkmn-phone-panel{
+position:fixed!important;
+left:50%!important;
+top:50%!important;
+right:auto!important;
+bottom:auto!important;
+width:350px!important;
+height:650px!important;
+background:#f7f7f7!important;
+border:7px solid #202124!important;
+border-radius:38px!important;
+overflow:hidden!important;
+z-index:999999998!important;
+display:none!important;
+box-shadow:0 20px 55px rgba(0,0,0,.4)!important;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important;
+color:#222!important
+}
+#pkmn-phone-panel.show{display:flex!important;flex-direction:column!important}
+
+#pkmn-close-phone{
+position:absolute!important;
+right:8px!important;
+top:5px!important;
+width:34px!important;
+height:34px!important;
+z-index:30!important;
+border:0!important;
+border-radius:50%!important;
+background:rgba(0,0,0,.14)!important;
+color:#fff!important;
+font-size:24px!important;
+line-height:34px!important;
+padding:0!important;
+cursor:pointer!important
+}
+
+/* 手机窗口拖动手柄：顶部黑色刘海区与底部白色Home区域 */
+.pkmn-drag-top{
+position:absolute!important;
+left:50%!important;
+top:0!important;
+transform:translateX(-50%)!important;
+width:150px!important;
+height:28px!important;
+z-index:25!important;
+background:transparent!important;
+touch-action:none!important;
+user-select:none!important;
+-webkit-user-select:none!important;
+-webkit-touch-callout:none!important;
+cursor:grab!important
+}
+.pkmn-drag-top:active{cursor:grabbing!important}
+.pkmn-drag-bottom{
+position:absolute!important;
+left:0!important;
+bottom:0!important;
+width:100%!important;
+height:32px!important;
+z-index:60!important;
+background:transparent!important;
+touch-action:none!important;
+user-select:none!important;
+-webkit-user-select:none!important;
+-webkit-touch-callout:none!important;
+cursor:grab!important
+}
+.pkmn-drag-bottom:active{cursor:grabbing!important}
+#pkmn-phone-scale{
+position:absolute!important;
+right:45px!important;
+top:5px!important;
+width:30px!important;
+height:30px!important;
+z-index:70!important;
+border:0!important;
+border-radius:50%!important;
+background:rgba(0,0,0,.18)!important;
+color:#fff!important;
+font-size:16px!important;
+line-height:30px!important;
+padding:0!important;
+cursor:pointer!important
+}
+.pkmn-status{
+height:28px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:0 18px;
+font-size:11px;
+color:#222;
+background:#fff
+}
+.pkmn-notch{
+position:absolute;
+top:0;
+left:50%;
+transform:translateX(-50%);
+width:110px;
+height:18px;
+background:#111;
+border-radius:0 0 12px 12px;
+z-index:10
+}
+.pkmn-app{
+position:relative;
+flex:1;
+overflow:hidden;
+background:#f7f7f7
+}
+.pkmn-view{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+background:#f7f7f7;
+transition:transform .24s ease
+}
+#pkmn-home{background:linear-gradient(135deg,#ff7043,#7e57c2);transform:translateX(0)}
+#pkmn-forum,#pkmn-settings,#pkmn-thread{transform:translateX(100%)}
+
+.pkmn-head{
+height:48px;
+min-height:48px;
+background:#fff;
+color:#222;
+padding:0 13px;
+border-bottom:1px solid #ededed;
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+font-size:16px;
+font-weight:600
+}
+.pkmn-head button{
+position:absolute;
+left:9px;
+top:0;
+width:34px;
+height:48px;
+border:0;
+background:transparent;
+color:#222;
+font-size:30px;
+font-weight:300;
+line-height:44px;
+padding:0;
+cursor:pointer
+}
+.pkmn-head button:not(:first-child){position:static;width:auto;height:auto;margin-left:auto;font-size:18px;line-height:1}
+
+.pkmn-head #pkmn-refresh,
+.pkmn-head #pkmn-board-settings{
+position:absolute;
+left:auto;
+top:0;
+font-size:18px;
+line-height:48px
+}
+.pkmn-head #pkmn-refresh{right:46px}
+.pkmn-head #pkmn-board-settings{right:9px}
+
+.pkmn-tabs{
+height:39px;
+min-height:39px;
+display:flex;
+background:#fff;
+border-bottom:1px solid #eee;
+overflow-x:auto;
+scrollbar-width:none
+}
+.pkmn-tabs::-webkit-scrollbar{display:none}
+.pkmn-tab{
+min-width:84px;
+height:39px;
+padding:0 10px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:11px;
+color:#999;
+cursor:pointer;
+white-space:nowrap;
+position:relative
+}
+.pkmn-tab.active{
+color:#222;
+font-weight:700
+}
+.pkmn-tab.active:after{
+content:'';
+position:absolute;
+bottom:0;
+left:22px;
+right:22px;
+height:2px;
+border-radius:2px;
+background:#ff8a00
+}
+
+.pkmn-list{
+flex:1;
+overflow:auto;
+padding:0;
+background:#f7f7f7
+}
+.pkmn-thread-card{
+background:#fff;
+border:0;
+border-bottom:1px solid #ededed;
+padding:14px 14px 11px;
+margin:0;
+cursor:pointer;
+position:relative;
+min-height:104px
+}
+.pkmn-thread-card:active{background:#fafafa}
+.pkmn-thread-avatar{
+position:absolute;
+left:14px;
+top:15px;
+width:38px;
+height:38px;
+border-radius:50%;
+background:#f0f0f0;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:16px;
+font-weight:700;
+color:#888
+}
+.pkmn-thread-body{margin-left:50px;padding-right:3px}
+.pkmn-thread-user{
+font-size:11px;
+color:#777;
+line-height:18px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+padding-right:76px
+}
+.pkmn-thread-title{
+font-weight:700;
+font-size:14px;
+color:#222;
+line-height:1.45;
+margin-top:1px;
+padding-right:4px
+}
+.pkmn-thread-snippet{
+font-size:11px;
+line-height:1.55;
+color:#666;
+margin-top:4px;
+display:-webkit-box;
+-webkit-line-clamp:2;
+-webkit-box-orient:vertical;
+overflow:hidden
+}
+.pkmn-thread-footer{
+display:flex;
+align-items:center;
+gap:10px;
+margin-top:7px;
+font-size:9px;
+color:#aaa
+}
+.pkmn-thread-stat{white-space:nowrap}
+.pkmn-thread-time{margin-left:auto}
+.pkmn-inject{
+position:absolute;
+right:37px;
+top:14px;
+border:0;
+background:#fff6ec;
+color:#f28a20;
+border-radius:10px;
+padding:3px 6px;
+font-size:9px;
+font-weight:600;
+cursor:pointer;
+z-index:2
+}
+.pkmn-inject.active{background:#ff8a00;color:#fff}
+.pkmn-del{
+position:absolute;
+right:10px;
+top:15px;
+width:20px;
+height:20px;
+border:0;
+background:transparent;
+color:#bbb;
+font-size:12px;
+padding:0;
+z-index:2
+}
+
+.pkmn-bottom{
+height:49px;
+min-height:49px;
+padding:7px 8px;
+background:#fff;
+border-top:1px solid #e9e9e9;
+display:grid;
+grid-template-columns:1.25fr 1fr 1fr .7fr;
+gap:5px
+}
+.pkmn-btn{
+border:0;
+border-radius:8px;
+padding:0 7px;
+height:34px;
+font-weight:600;
+cursor:pointer;
+font-size:10px;
+white-space:nowrap
+}
+.pkmn-btn:disabled{opacity:.55;cursor:not-allowed}
+.pkmn-primary{background:#ff8a00;color:#fff}
+.pkmn-secondary{background:#f1f1f1;color:#444}
+.pkmn-danger{background:#fff0ef;color:#d65b54}
+
+.pkmn-posts{
+flex:1;
+overflow:auto;
+padding:0 0 12px;
+background:#f7f7f7;
+-webkit-overflow-scrolling:touch
+}
+
+/* Thread injection row */
+.pkmn-inject-bar{
+padding:7px 12px;
+background:#fff;
+border-bottom:1px solid #eee;
+position:sticky;
+top:0;
+z-index:5
+}
+.pkmn-thread-inject-btn{
+width:100%;
+height:30px;
+border:0;
+border-radius:6px;
+background:#fff7ed;
+color:#f28a20;
+font-size:10px;
+font-weight:600;
+cursor:pointer
+}
+.pkmn-thread-inject-btn.active{background:#ff8a00;color:#fff}
+
+/* Main post */
+.pkmn-post{
+background:#fff;
+padding:16px 14px 15px;
+margin:0;
+position:relative;
+border-bottom:8px solid #f7f7f7
+}
+.pkmn-post-head{
+display:flex;
+align-items:center;
+gap:9px;
+padding-right:52px
+}
+.pkmn-post-avatar{
+width:40px;
+height:40px;
+min-width:40px;
+border-radius:50%;
+background:#f0f0f0;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:16px;
+font-weight:700;
+color:#888
+}
+.pkmn-post-user{min-width:0}
+.pkmn-post-author{
+font-size:13px;
+font-weight:600;
+color:#333;
+line-height:18px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis
+}
+.pkmn-post-time{
+font-size:9px;
+color:#aaa;
+margin-top:2px
+}
+.pkmn-post-floor{
+position:absolute;
+right:13px;
+top:17px;
+font-size:9px;
+color:#aaa
+}
+.pkmn-post-title{
+font-size:17px;
+font-weight:700;
+line-height:1.45;
+color:#222;
+margin:13px 0 7px
+}
+.pkmn-post .pkmn-content{
+font-size:14px;
+line-height:1.75;
+white-space:pre-wrap;
+word-break:break-word;
+color:#222
+}
+.pkmn-post-tools{
+display:flex;
+align-items:center;
+gap:16px;
+margin-top:13px;
+font-size:10px;
+color:#999
+}
+.pkmn-post-tool{display:flex;align-items:center;gap:3px}
+.pkmn-post-tool.accent{color:#ff8a00}
+
+.pkmn-replies-title{
+height:42px;
+padding:0 14px;
+display:flex;
+align-items:center;
+background:#fff;
+font-size:13px;
+font-weight:700;
+color:#222;
+border-bottom:1px solid #eee
+}
+.pkmn-thread-divider{display:none}
+
+/* Top-level comments */
+.pkmn-reply-msg{
+display:flex;
+align-items:flex-start;
+gap:8px;
+padding:11px 14px 8px;
+background:#fff;
+border-bottom:1px solid #f0f0f0;
+position:relative
+}
+.pkmn-reply-avatar{
+width:34px;
+height:34px;
+min-width:34px;
+border-radius:50%;
+background:#f0f0f0;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:14px;
+color:#888;
+font-weight:700
+}
+.pkmn-reply-main{
+min-width:0;
+flex:1;
+max-width:none
+}
+.pkmn-reply-name{
+font-size:11px;
+font-weight:600;
+color:#777;
+line-height:16px;
+margin:0 0 3px
+}
+.pkmn-reply-bubble{
+display:block;
+width:fit-content;
+max-width:100%;
+background:#fff;
+border:0;
+padding:0;
+font-size:13px;
+line-height:1.65;
+color:#333;
+white-space:pre-wrap;
+word-break:break-word;
+box-shadow:none
+}
+.pkmn-reply-meta{
+font-size:9px;
+color:#aaa;
+margin-top:4px;
+line-height:14px
+}
+.pkmn-reply-msg.is-user{
+flex-direction:row-reverse
+}
+.pkmn-reply-msg.is-user .pkmn-reply-avatar{
+background:#e5f6df;
+color:#55a348
+}
+.pkmn-reply-msg.is-user .pkmn-reply-name{color:#55a348;text-align:right}
+.pkmn-reply-msg.is-user .pkmn-reply-main{text-align:right}
+.pkmn-reply-msg.is-user .pkmn-reply-bubble{
+background:#d9fdd3;
+border-radius:5px;
+padding:6px 9px;
+text-align:left
+}
+.pkmn-reply-msg.is-user .pkmn-reply-meta{text-align:right}
+
+/* Tiny reply action */
+.pkmn-comment-actions{
+display:flex;
+justify-content:flex-end;
+align-items:center;
+min-height:15px;
+margin-top:2px
+}
+.pkmn-comment-reply-btn{
+border:0;
+background:transparent;
+padding:0 2px;
+font-size:9px;
+line-height:15px;
+color:#aaa;
+cursor:pointer
+}
+.pkmn-comment-reply-btn:active{color:#666}
+
+/* Nested replies */
+.pkmn-nested-replies{
+margin:5px 0 0;
+padding:0;
+border:0
+}
+.pkmn-nested-msg{
+display:block;
+padding:0;
+margin:3px 0
+}
+.pkmn-nested-main{display:block;min-width:0;max-width:100%}
+.pkmn-nested-bubble{
+display:block;
+width:100%;
+box-sizing:border-box;
+background:#f5f5f5;
+border:0;
+border-radius:4px;
+padding:6px 8px;
+font-size:10px;
+line-height:1.5;
+color:#444;
+white-space:pre-wrap;
+word-break:break-word
+}
+.pkmn-nested-name{
+display:inline;
+font-size:10px;
+font-weight:600;
+color:#58708e;
+line-height:1.45
+}
+.pkmn-nested-name::after{content:'：';color:#888;font-weight:400}
+.pkmn-nested-text{display:inline;font-size:10px;line-height:1.5;color:#444;white-space:pre-wrap;word-break:break-word}
+.pkmn-nested-meta{display:none}
+.pkmn-nested-msg.is-user .pkmn-nested-bubble{background:#eef8eb}
+.pkmn-nested-msg.is-user .pkmn-nested-name{color:#4f8b4a}
+
+/* Nested composer */
+.pkmn-nested-composer{
+display:none;
+margin:6px 0 2px;
+gap:5px;
+align-items:center
+}
+.pkmn-nested-composer.show{display:flex}
+.pkmn-nested-input{
+flex:1;
+min-width:0;
+height:28px;
+border:1px solid #e2e2e2;
+border-radius:14px;
+padding:0 10px;
+font-size:10px;
+background:#fff;
+outline:none
+}
+.pkmn-nested-send{
+border:0;
+border-radius:14px;
+height:28px;
+padding:0 10px;
+font-size:10px;
+background:#ff8a00;
+color:#fff;
+cursor:pointer
+}
+
+/* Bottom reply composer */
+.pkmn-reply{
+height:48px;
+min-height:48px;
+display:flex;
+align-items:center;
+gap:7px;
+padding:7px 9px;
+background:#fff;
+border-top:1px solid #e9e9e9
+}
+#pkmn-reply-input{
+flex:1;
+min-width:0;
+height:34px;
+border:1px solid #e1e1e1;
+border-radius:17px;
+background:#f7f7f7;
+padding:0 13px;
+font-size:12px;
+color:#333;
+outline:none
+}
+#pkmn-reply-input:focus{background:#fff;border-color:#ffb45f}
+#pkmn-send{
+width:38px;
+height:34px;
+min-width:38px;
+padding:0;
+border-radius:17px;
+background:#ff8a00;
+font-size:0;
+position:relative
+}
+#pkmn-send:after{
+content:'➤';
+font-size:17px;
+line-height:34px;
+display:block;
+transform:rotate(-12deg)
+}
+
+/* Settings */
+.pkmn-settings{flex:1;overflow:auto;padding:10px;background:#f7f7f7}
+.pkmn-group{background:#fff;border-radius:10px;padding:13px;margin-bottom:9px;border:1px solid #eee}
+.pkmn-label{font-size:12px;font-weight:700;color:#444;margin:7px 0}
+.pkmn-input,.pkmn-select,.pkmn-textarea{width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:8px;background:#fafafa;font-size:12px}
+.pkmn-textarea{min-height:100px;resize:vertical}
+.pkmn-row{display:flex;gap:7px;align-items:center}
+.pkmn-row>*{flex:1;min-width:0}
+.pkmn-status-line{font-size:11px;margin:5px 0;color:#555}
+.pkmn-board-item{border:1px solid #eee;border-radius:9px;padding:9px;margin-bottom:7px}
+.pkmn-small{font-size:10px;color:#888;line-height:1.4}
+
+/* Post composer */
+.pkmn-modal{
+position:absolute;
+inset:0;
+background:rgba(0,0,0,.35);
+display:none;
+align-items:flex-end;
+justify-content:center;
+z-index:50
+}
+.pkmn-modal.show{display:flex}
+.pkmn-modal-box{
+width:100%;
+max-height:88%;
+overflow:auto;
+background:#fff;
+border-radius:18px 18px 0 0;
+padding:16px 14px 14px;
+box-shadow:0 -8px 25px rgba(0,0,0,.15)
+}
+.pkmn-modal-box .pkmn-textarea{min-height:145px}
+
+/* World book */
+.pkmn-worldbook-group{padding:0;overflow:hidden}
+.pkmn-worldbook-summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:13px;font-size:12px;font-weight:800;color:#444}
+.pkmn-worldbook-summary::-webkit-details-marker{display:none}
+.pkmn-worldbook-summary:after{content:'⌄';font-size:16px;color:#999;transition:transform .2s}
+#pkmn-worldbook-details[open] .pkmn-worldbook-summary:after{transform:rotate(180deg)}
+.pkmn-worldbook-count{font-size:10px;color:#777;font-weight:600;margin-left:auto;margin-right:8px}
+.pkmn-worldbook-panel{padding:0 13px 13px;border-top:1px solid #f0f0f0;max-height:220px;overflow:auto}
+.pkmn-worldbook-panel .pkmn-check{background:#fafafa;border-radius:8px;padding:8px 9px;margin:4px 0}
+.pkmn-check{display:flex;align-items:center;gap:7px;padding:6px 0;font-size:12px}
+
+.pkmn-home-apps{display:flex;gap:22px;flex-wrap:wrap;padding:48px 22px}
+.pkmn-app-icon{width:68px;text-align:center;color:white;font-size:12px;cursor:pointer}
+.pkmn-app-icon div:first-child{width:58px;height:58px;background:rgba(255,255,255,.92);border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:auto auto 7px}
+.pkmn-footer{height:24px;display:flex;align-items:center;justify-content:center;background:#fafafa}
+.pkmn-homebar{width:100px;height:4px;background:#aaa;border-radius:5px;cursor:pointer}
+`;
+
+    topDoc.head.appendChild(
+        style
+    );
 
     // ============================================================
     // 手机按钮
@@ -1533,13 +2228,11 @@
     panel.id =
         'pkmn-phone-panel';
 
-    // 默认使用半高手机窗口；点击右上角按钮可在半高/原始高度之间切换。
-    panel.dataset.compact = '1';
-
     panel.innerHTML = `
 
-<button id="pkmn-expand-phone" type="button" aria-label="放大/缩小">↕</button>
 <button id="pkmn-close-phone" type="button" aria-label="关闭">×</button>
+<button id="pkmn-phone-scale" type="button" aria-label="切换手机大小">↕</button>
+<div class="pkmn-drag-top" id="pkmn-drag-top" aria-label="拖动手机"></div>
 
 <div class="pkmn-status">
     <span id="pkmn-time">00:00</span>
@@ -1733,6 +2426,7 @@
         id="pkmn-homebar"
     ></div>
 </div>
+<div class="pkmn-drag-bottom" id="pkmn-drag-bottom" aria-label="拖动手机"></div>
 
 `;
 
@@ -1769,6 +2463,223 @@
 
     const tabs =
         $('pkmn-tabs');
+
+    // ============================================================
+    // 手机窗口：Android 触摸拖动 + 桌面鼠标拖动 + 半高/原高切换
+    // ============================================================
+
+    const dragTop = $('pkmn-drag-top');
+    const dragBottom = $('pkmn-drag-bottom');
+    const scaleBtn = $('pkmn-phone-scale');
+
+    const phoneDragState = {
+        active: false,
+        moved: false,
+        startX: 0,
+        startY: 0,
+        startLeft: 0,
+        startTop: 0,
+        pointerId: null,
+        touchId: null
+    };
+
+    const PHONE_FULL_HEIGHT = 650;
+    const PHONE_HALF_HEIGHT = Math.round(PHONE_FULL_HEIGHT / 2);
+    let phoneExpanded = false;
+
+    function phoneViewport() {
+        const win = topDoc.defaultView || window;
+        return {
+            width: Math.max(1, win.innerWidth || topDoc.documentElement.clientWidth || 360),
+            height: Math.max(1, win.innerHeight || topDoc.documentElement.clientHeight || 640)
+        };
+    }
+
+    function phoneSize() {
+        const vp = phoneViewport();
+        const width = Math.min(350, Math.max(260, vp.width - 24));
+        const maxH = Math.max(260, vp.height - 24);
+        const full = Math.min(PHONE_FULL_HEIGHT, maxH);
+        const half = Math.min(PHONE_HALF_HEIGHT, Math.max(220, Math.floor(full / 2)));
+        return { width, full, half };
+    }
+
+    function clampPhonePosition(left, top) {
+        const vp = phoneViewport();
+        const rect = panel.getBoundingClientRect();
+        const w = rect.width || phoneSize().width;
+        const h = rect.height || (phoneExpanded ? phoneSize().full : phoneSize().half);
+        const margin = 8;
+        const maxLeft = Math.max(margin, vp.width - w - margin);
+        const maxTop = Math.max(margin, vp.height - h - margin);
+        return {
+            left: Math.min(Math.max(margin, left), maxLeft),
+            top: Math.min(Math.max(margin, top), maxTop)
+        };
+    }
+
+    function setPhonePosition(left, top) {
+        const p = clampPhonePosition(left, top);
+        panel.style.setProperty('left', p.left + 'px', 'important');
+        panel.style.setProperty('top', p.top + 'px', 'important');
+        panel.style.setProperty('right', 'auto', 'important');
+        panel.style.setProperty('bottom', 'auto', 'important');
+    }
+
+    function centerPhoneInitial() {
+        const vp = phoneViewport();
+        const sz = phoneSize();
+        const h = phoneExpanded ? sz.full : sz.half;
+        panel.style.setProperty('width', sz.width + 'px', 'important');
+        panel.style.setProperty('height', h + 'px', 'important');
+        setPhonePosition((vp.width - sz.width) / 2, (vp.height - h) / 2);
+    }
+
+    function resizePhonePreservePosition() {
+        const old = panel.getBoundingClientRect();
+        const sz = phoneSize();
+        const newH = phoneExpanded ? sz.full : sz.half;
+        panel.style.setProperty('width', sz.width + 'px', 'important');
+        panel.style.setProperty('height', newH + 'px', 'important');
+        const left = old.left;
+        const top = old.top;
+        setPhonePosition(left, top);
+    }
+
+    function togglePhoneSize(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        }
+        const old = panel.getBoundingClientRect();
+        phoneExpanded = !phoneExpanded;
+        const sz = phoneSize();
+        const newH = phoneExpanded ? sz.full : sz.half;
+        panel.style.setProperty('width', sz.width + 'px', 'important');
+        panel.style.setProperty('height', newH + 'px', 'important');
+        // 尽量保持顶部位置，避免放大/缩小时跳屏。
+        setPhonePosition(old.left, old.top);
+        if (scaleBtn) scaleBtn.textContent = phoneExpanded ? '↕' : '↕';
+    }
+
+    function beginPhoneDrag(x, y, pointerId = null, touchId = null) {
+        const rect = panel.getBoundingClientRect();
+        phoneDragState.active = true;
+        phoneDragState.moved = false;
+        phoneDragState.startX = x;
+        phoneDragState.startY = y;
+        phoneDragState.startLeft = rect.left;
+        phoneDragState.startTop = rect.top;
+        phoneDragState.pointerId = pointerId;
+        phoneDragState.touchId = touchId;
+        panel.classList.add('pkmn-phone-dragging');
+    }
+
+    function movePhoneDrag(x, y, e) {
+        if (!phoneDragState.active) return;
+        const dx = x - phoneDragState.startX;
+        const dy = y - phoneDragState.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) phoneDragState.moved = true;
+        if (!phoneDragState.moved) return;
+        if (e && e.cancelable) e.preventDefault();
+        if (e) e.stopPropagation();
+        setPhonePosition(phoneDragState.startLeft + dx, phoneDragState.startTop + dy);
+    }
+
+    function endPhoneDrag(e) {
+        if (!phoneDragState.active) return;
+        if (e && e.cancelable) e.preventDefault();
+        if (e) e.stopPropagation();
+        phoneDragState.active = false;
+        phoneDragState.pointerId = null;
+        phoneDragState.touchId = null;
+        panel.classList.remove('pkmn-phone-dragging');
+    }
+
+    function bindPhoneDragHandle(handle) {
+        if (!handle) return;
+        handle.style.touchAction = 'none';
+        handle.addEventListener('touchstart', e => {
+            if (!e.touches || !e.touches.length) return;
+            const t = e.touches[0];
+            beginPhoneDrag(t.clientX, t.clientY, null, t.identifier);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false, capture: true });
+        handle.addEventListener('touchmove', e => {
+            if (!phoneDragState.active || !e.touches) return;
+            let t = null;
+            for (const item of e.touches) {
+                if (item.identifier === phoneDragState.touchId) { t = item; break; }
+            }
+            if (!t) t = e.touches[0];
+            movePhoneDrag(t.clientX, t.clientY, e);
+        }, { passive: false, capture: true });
+        handle.addEventListener('touchend', endPhoneDrag, { passive: false, capture: true });
+        handle.addEventListener('touchcancel', endPhoneDrag, { passive: false, capture: true });
+        handle.addEventListener('pointerdown', e => {
+            if (e.pointerType === 'touch') return;
+            if (e.button !== undefined && e.button !== 0) return;
+            beginPhoneDrag(e.clientX, e.clientY, e.pointerId, null);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false, capture: true });
+        handle.addEventListener('pointermove', e => {
+            if (!phoneDragState.active || e.pointerType === 'touch') return;
+            movePhoneDrag(e.clientX, e.clientY, e);
+        }, { passive: false, capture: true });
+        handle.addEventListener('pointerup', endPhoneDrag, { passive: false, capture: true });
+        handle.addEventListener('pointercancel', endPhoneDrag, { passive: false, capture: true });
+        handle.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            beginPhoneDrag(e.clientX, e.clientY, null, null);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false, capture: true });
+        handle.addEventListener('mousemove', e => {
+            if (!phoneDragState.active) return;
+            movePhoneDrag(e.clientX, e.clientY, e);
+        }, { passive: false, capture: true });
+        handle.addEventListener('mouseup', endPhoneDrag, { passive: false, capture: true });
+    }
+
+    bindPhoneDragHandle(dragTop);
+    bindPhoneDragHandle(dragBottom);
+
+    // 手指离开手柄后仍继续接收移动：直接监听顶层 window/document。
+    const phoneDragWin = topDoc.defaultView || window;
+    phoneDragWin.addEventListener('touchmove', e => {
+        if (!phoneDragState.active || !e.touches) return;
+        let t = null;
+        for (const item of e.touches) {
+            if (item.identifier === phoneDragState.touchId) { t = item; break; }
+        }
+        if (t) movePhoneDrag(t.clientX, t.clientY, e);
+    }, { passive: false, capture: true });
+    phoneDragWin.addEventListener('touchend', endPhoneDrag, { passive: false, capture: true });
+    phoneDragWin.addEventListener('touchcancel', endPhoneDrag, { passive: false, capture: true });
+    phoneDragWin.addEventListener('pointermove', e => {
+        if (!phoneDragState.active || e.pointerType === 'touch') return;
+        movePhoneDrag(e.clientX, e.clientY, e);
+    }, { passive: false, capture: true });
+    phoneDragWin.addEventListener('pointerup', endPhoneDrag, { passive: false, capture: true });
+    phoneDragWin.addEventListener('pointercancel', endPhoneDrag, { passive: false, capture: true });
+    phoneDragWin.addEventListener('mousemove', e => {
+        if (phoneDragState.active) movePhoneDrag(e.clientX, e.clientY, e);
+    }, { passive: false, capture: true });
+    phoneDragWin.addEventListener('mouseup', endPhoneDrag, { passive: false, capture: true });
+
+    if (scaleBtn) {
+        // 只绑定 click。Android WebView 会把一次触摸同时转换成
+        // touch/pointer/mouse/click；同时绑定多个事件会连续切换数次，
+        // 表现为“点击没有变化”。
+        scaleBtn.addEventListener('click', togglePhoneSize, { passive: false });
+    }
+
+    // 打开/初始化后强制保证手机在当前可视区内。
+    centerPhoneInitial();
+    phoneDragWin.addEventListener('resize', resizePhonePreservePosition, { passive: true });
 
     // ============================================================
     // Toast
@@ -1839,8 +2750,6 @@
     let currentThreadId =
         null;
 
-    // 当前注入到酒馆正文的论坛帖子。只作用于后续AI生成，不修改聊天原文。
-    let injectedThreadId = null;
 
     let generating =
         false;
@@ -2007,7 +2916,6 @@
 
     function getThreadInjectionText(t) {
         if (!t) return '';
-
         const profile = currentUserProfile();
         const forumNick = profile.nickname || '匿名用户';
         const lines = [
@@ -2019,42 +2927,41 @@
             `当前聊天主角的论坛简介：${profile.bio || '未设置'}`,
             '',
             '【非常重要的身份规则】',
-            '1. 标记为【主角本人】的帖子、评论、楼中回复，全部视为当前聊天主角自己发送的内容。',
-            '2. 标记为【论坛网友】的内容才是其他网友。',
-            '3. 主角知道自己的论坛昵称、帖子和评论，不要把自己的内容误认为陌生网友。',
-            '4. 论坛内容只是当前剧情的参考资料，不得凭空把论坛讨论当成现实中已经发生的剧情事实。',
-            '',
-            `【帖子】${t.title || '无标题'}`,
-            `楼主：${t.author || '匿名用户'}`
+            '1. 当前聊天中的主角/玩家，就是下面标记为【主角本人】的论坛用户。',
+            '2. 【主角本人】发布的帖子或评论，是主角自己亲手发出的内容；主角知道这些内容是自己说过/发过的。',
+            '3. 不要把【主角本人】的帖子或评论误认为其他网友，也不要让主角像第一次看到自己的发言一样陌生。',
+            '4. 论坛昵称是主角在该论坛使用的网名，与角色名字可以不同，但这是主角自己的账号。',
+            '5. 【论坛网友】均为其他用户，他们不知道主角的内在想法，除非论坛内容明确透露。',
+            '', `帖子标题：${t.title || ''}`,
+            `本帖楼主是否为主角本人：${t.isUserThread ? '是' : '否'}`, ''
         ];
-
         (Array.isArray(t.posts) ? t.posts : []).forEach((p, i) => {
             const isMainCharacter = Boolean(p.isUser || (i === 0 && t.isUserThread));
             const tag = isMainCharacter ? '【主角本人】' : '【论坛网友】';
             const bio = p.authorBio ? `（简介：${p.authorBio}）` : '';
             lines.push(`${i + 1}楼 ${tag} ${p.author || '匿名用户'}${bio}：${p.content || ''}`);
-            const nested = Array.isArray(p.replies) ? p.replies : [];
-            nested.forEach((r, ri) => {
+            (Array.isArray(p.replies) ? p.replies : []).forEach((r, ri) => {
                 const rTag = r.isUser ? '【主角本人】' : '【论坛网友】';
                 const rBio = r.authorBio ? `（简介：${r.authorBio}）` : '';
                 lines.push(`  └ 回复${ri + 1} ${rTag} ${r.author || '匿名用户'}${rBio}：${r.content || ''}`);
             });
         });
-
         lines.push('', '请把上述身份标记视为事实。主角能够认出自己的论坛昵称、自己的帖子以及自己发出的评论。', '【论坛帖子注入结束】');
         return lines.join('\n');
     }
 
-    async function setForumThreadInjection(t) {
+    let injectedThreadId = null;
+
+    function setForumThreadInjection(t) {
         try {
             if (!t) {
-                await ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, '', false);
+                ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, '', 1, 0, false, 0);
                 injectedThreadId = null;
                 return true;
             }
-
             const content = getThreadInjectionText(t);
-            await ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, content, true);
+            // SillyTavern 原生扩展提示词：IN_CHAT=1，深度0；不修改聊天原文。
+            ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, content, 1, 0, false, 0);
             injectedThreadId = t.id;
             return true;
         } catch (e) {
@@ -2066,16 +2973,14 @@
     async function toggleForumThreadInjection(t) {
         if (!t) return;
         if (injectedThreadId === t.id) {
-            const ok = await setForumThreadInjection(null);
-            if (ok) {
+            if (setForumThreadInjection(null)) {
                 renderForumList();
                 if (currentThreadId === t.id) openThread(t.id);
                 showToast('已取消注入');
             }
             return;
         }
-        const ok = await setForumThreadInjection(t);
-        if (ok) {
+        if (setForumThreadInjection(t)) {
             renderForumList();
             if (currentThreadId === t.id) openThread(t.id);
             showToast('已将本帖注入正文');
@@ -2083,7 +2988,7 @@
     }
 
     function clearForumThreadInjection() {
-        ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, '', false).catch?.(() => {});
+        try { ST.setExtensionPrompt(FORUM_INJECT_PROMPT_ID, '', 1, 0, false, 0); } catch (_) {}
         injectedThreadId = null;
     }
 
@@ -4143,20 +5048,7 @@ ${esc(b.prompt)}
             return;
         }
 
-        let names = [];
-
-        try {
-
-            if (
-                ST.getWorldbookNames
-            ) {
-
-                names =
-                    ST.getWorldbookNames() ||
-                    [];
-            }
-
-        } catch (_) {}
+        const names = await nativeGetWorldbookNames();
 
         if (!names.length) {
 
@@ -4639,9 +5531,14 @@ ${esc(name)}
     }
 
     function openPhone() {
-        switchChat();
-        openView('home');
-        panel.classList.add('show');
+        // Android/Termux: 先显示窗口，任何数据同步异常都不能阻止论坛出现。
+        try { panel.classList.add('show'); } catch (_) {}
+        try { openView('home'); } catch (_) {}
+        try {
+            switchChat();
+        } catch (_) {
+            // 手机端切换聊天失败时，论坛仍保持打开。
+        }
     }
 
     function closePhone() {
@@ -4665,9 +5562,17 @@ ${esc(name)}
         }
     }
 
+    // ============================================================
+    // 洛托姆按钮：Android 触摸与桌面鼠标分开处理
+    // ============================================================
+    // Android WebView 会把一次触摸同时派发为 touch 与 pointer 事件。
+    // 如果两套逻辑同时处理，容易出现“打开后又被第二个事件关闭/覆盖”。
+    // 因此：手指只走 touch*；鼠标只走 pointer*。
+
     function beginFloatDrag(e) {
-        if (!e) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (!e || e.pointerType !== 'mouse') return;
+        if (e.button !== 0) return;
+
         const rect = floatBtn.getBoundingClientRect();
         floatMoved = false;
         suppressNextOpen = false;
@@ -4678,95 +5583,151 @@ ${esc(name)}
             startLeft: rect.left,
             startTop: rect.top
         };
+
         floatBtn.classList.add('dragging');
         try { floatBtn.setPointerCapture(e.pointerId); } catch (_) {}
         e.preventDefault();
+        e.stopPropagation();
     }
 
     function moveFloatDrag(e) {
-        if (!dragState || !e || e.pointerId !== dragState.pointerId) return;
+        if (!dragState || !e || e.pointerType !== 'mouse' || e.pointerId !== dragState.pointerId) return;
+
         const dx = e.clientX - dragState.startX;
         const dy = e.clientY - dragState.startY;
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
             floatMoved = true;
             suppressNextOpen = true;
         }
-        applyFloatPosition(
-            dragState.startLeft + dx,
-            dragState.startTop + dy
-        );
+
+        if (floatMoved) {
+            applyFloatPosition(
+                dragState.startLeft + dx,
+                dragState.startTop + dy
+            );
+        }
+
         e.preventDefault();
+        e.stopPropagation();
     }
 
     function finishFloatDrag(e) {
-        if (!dragState) return;
-        if (e && e.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
+        if (!dragState || !e || e.pointerType !== 'mouse') return;
+        if (e.pointerId !== dragState.pointerId) return;
+
         const moved = floatMoved;
         const pointerId = dragState.pointerId;
+
         try { floatBtn.releasePointerCapture(pointerId); } catch (_) {}
         floatBtn.classList.remove('dragging');
         saveFloatPosition();
+
         dragState = null;
         floatMoved = false;
-        // 只在真正的轻触时切换开关；拖动结束绝不打开/关闭。
-        if (!moved && !suppressNextOpen) togglePhone(e);
+
+        if (!moved && !suppressNextOpen) {
+            openPhone();
+        }
+
         suppressNextOpen = false;
+        e.preventDefault();
+        e.stopPropagation();
     }
 
-    // Android/WebView 兼容：优先使用 Pointer Events，同时保留 Touch Events
-    // 兜底。旧版本只监听 pointerdown，部分手机酒馆环境中会因此完全没有
-    // 触发打开动作。
-    let touchStart = null;
-    let pointerGestureActive = false;
-
-    ['click','touchstart','touchend'].forEach(type => {
-        floatBtn.addEventListener(type, e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-        }, { passive: false, capture: true });
-    });
-
-    floatBtn.addEventListener('pointerdown', e => {
-        pointerGestureActive = true;
-        beginFloatDrag(e);
-    }, { passive: false, capture: true });
-
-    dragWindow.addEventListener('pointermove', moveFloatDrag, { passive: false });
-    dragWindow.addEventListener('pointerup', e => {
-        finishFloatDrag(e);
-        setTimeout(() => { pointerGestureActive = false; }, 0);
-    }, { passive: false });
-    dragWindow.addEventListener('pointercancel', e => {
-        finishFloatDrag(e);
-        setTimeout(() => { pointerGestureActive = false; }, 0);
-    }, { passive: false });
-
-    floatBtn.addEventListener('lostpointercapture', e => {
-        if (dragState && e.pointerId === dragState.pointerId) finishFloatDrag(e);
-    });
+    // Android 手指专用路径：不使用 pointer capture。
+    let touchActive = false;
+    let touchMoved = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartLeft = 0;
+    let touchStartTop = 0;
 
     floatBtn.addEventListener('touchstart', e => {
-        if (pointerGestureActive) return;
         const t = e.touches && e.touches[0];
         if (!t) return;
-        touchStart = { x: t.clientX, y: t.clientY, time: Date.now() };
-        e.preventDefault();
-    }, { passive: false, capture: true });
+
+        const r = floatBtn.getBoundingClientRect();
+
+        touchActive = true;
+        touchMoved = false;
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchStartLeft = r.left;
+        touchStartTop = r.top;
+
+        floatBtn.classList.add('dragging');
+        e.stopPropagation();
+    }, { passive: true });
+
+    floatBtn.addEventListener('touchmove', e => {
+        if (!touchActive) return;
+
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+            touchMoved = true;
+        }
+
+        if (touchMoved) {
+            e.preventDefault();
+            applyFloatPosition(
+                touchStartLeft + dx,
+                touchStartTop + dy
+            );
+        }
+
+        e.stopPropagation();
+    }, { passive: false });
 
     floatBtn.addEventListener('touchend', e => {
-        if (pointerGestureActive) return;
-        if (!touchStart) return;
-        const t = e.changedTouches && e.changedTouches[0];
-        const dx = t ? t.clientX - touchStart.x : 0;
-        const dy = t ? t.clientY - touchStart.y : 0;
-        const elapsed = Date.now() - touchStart.time;
-        touchStart = null;
-        if (Math.hypot(dx, dy) <= 10 && elapsed < 700) {
-            togglePhone(e);
-        }
+        if (!touchActive) return;
+
+        const moved = touchMoved;
+
+        touchActive = false;
+        touchMoved = false;
+        floatBtn.classList.remove('dragging');
+
         e.preventDefault();
-    }, { passive: false, capture: true });
+        e.stopPropagation();
+
+        if (!moved) {
+            // 直接打开，不经过 click，也不依赖 pointer 事件。
+            openPhone();
+        } else {
+            saveFloatPosition();
+        }
+    }, { passive: false });
+
+    floatBtn.addEventListener('touchcancel', e => {
+        touchActive = false;
+        touchMoved = false;
+        floatBtn.classList.remove('dragging');
+        e.stopPropagation();
+    }, { passive: false });
+
+    // 桌面鼠标路径。
+    floatBtn.addEventListener('pointerdown', beginFloatDrag, { passive: false });
+    floatBtn.addEventListener('pointermove', moveFloatDrag, { passive: false });
+    floatBtn.addEventListener('pointerup', finishFloatDrag, { passive: false });
+    floatBtn.addEventListener('pointercancel', finishFloatDrag, { passive: false });
+
+    dragWindow.addEventListener('pointermove', moveFloatDrag, { passive: false });
+    dragWindow.addEventListener('pointerup', finishFloatDrag, { passive: false });
+    dragWindow.addEventListener('pointercancel', finishFloatDrag, { passive: false });
+
+    // 鼠标点击兜底；触摸事件会 stopPropagation，不会走到这里。
+    floatBtn.addEventListener('click', e => {
+        if (e.detail === 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openPhone();
+    }, { passive: false });
 
     dragWindow.addEventListener('resize', () => {
         const rect = floatBtn.getBoundingClientRect();
@@ -4774,316 +5735,47 @@ ${esc(name)}
         saveFloatPosition();
     });
 
-    // ============================================================
-    // 手机窗口拖动 + 高度切换
-    // ============================================================
-
-    // Android/WebView 专用：使用真实 left/top 坐标，不使用 transform 定位。
-    // 顶部黑色刘海和底部白色 Home 区都是独立拖动手柄。
-    const phoneNotch = panel.querySelector('.pkmn-notch');
-    const phoneFooter = panel.querySelector('.pkmn-footer');
-    let phoneDrag = null;
-
-    function getViewport() {
-        return {
-            w: Math.max(1, dragWindow.innerWidth || document.documentElement.clientWidth || 360),
-            h: Math.max(1, dragWindow.innerHeight || document.documentElement.clientHeight || 640)
-        };
-    }
-
-    function clampPhonePosition(left, top) {
-        const r = panel.getBoundingClientRect();
-        const vw = getViewport().w;
-        const vh = getViewport().h;
-        const w = Math.max(1, r.width);
-        const h = Math.max(1, r.height);
-        const maxLeft = Math.max(4, vw - w - 4);
-        const maxTop = Math.max(4, vh - h - 4);
-        return {
-            left: Math.min(maxLeft, Math.max(4, left)),
-            top: Math.min(maxTop, Math.max(4, top))
-        };
-    }
-
-    function applyPhonePosition(left, top) {
-        const pos = clampPhonePosition(left, top);
-        panel.style.transform = 'none';
-        panel.style.left = Math.round(pos.left) + 'px';
-        panel.style.top = Math.round(pos.top) + 'px';
-        panel.style.right = 'auto';
-        panel.style.bottom = 'auto';
-    }
-
-    function centerPhone() {
-        const r = panel.getBoundingClientRect();
-        const vp = getViewport();
-        applyPhonePosition((vp.w - r.width) / 2, Math.max(8, (vp.h - r.height) / 2));
-    }
-
-    function beginPhoneDrag(clientX, clientY, source, pointerId = null) {
-        if (!panel.classList.contains('show')) return;
-        const r = panel.getBoundingClientRect();
-        phoneDrag = {
-            startX: clientX,
-            startY: clientY,
-            startLeft: r.left,
-            startTop: r.top,
-            source,
-            pointerId,
-            moved: false
-        };
-        if (source) source.classList.add('pkmn-dragging');
-    }
-
-    function movePhoneDrag(clientX, clientY, e) {
-        if (!phoneDrag) return;
-        const dx = clientX - phoneDrag.startX;
-        const dy = clientY - phoneDrag.startY;
-        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) phoneDrag.moved = true;
-        applyPhonePosition(phoneDrag.startLeft + dx, phoneDrag.startTop + dy);
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-
-    function finishPhoneDrag(e) {
-        if (!phoneDrag) return;
-        const source = phoneDrag.source;
-        phoneDrag = null;
-        if (source) source.classList.remove('pkmn-dragging');
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-
-    function bindPhoneDragHandle(handle) {
-        if (!handle) return;
-        handle.style.touchAction = 'none';
-        handle.style.webkitTouchCallout = 'none';
-        handle.style.webkitUserSelect = 'none';
-        handle.style.userSelect = 'none';
-        handle.style.cursor = 'grab';
-
-        handle.addEventListener('pointerdown', e => {
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-            beginPhoneDrag(e.clientX, e.clientY, handle, e.pointerId);
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false, capture: true });
-
-        handle.addEventListener('touchstart', e => {
-            if (phoneDrag) return;
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            beginPhoneDrag(t.clientX, t.clientY, handle, null);
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false, capture: true });
-
-        handle.addEventListener('mousedown', e => {
-            if (e.button !== 0) return;
-            beginPhoneDrag(e.clientX, e.clientY, handle, null);
-            e.preventDefault();
-            e.stopPropagation();
-        }, true);
-    }
-
-    bindPhoneDragHandle(phoneNotch);
-    bindPhoneDragHandle(phoneFooter);
-
-    // 统一在 document 上接管后续事件；Android 手指移出手柄后仍能继续拖动。
-    topDoc.addEventListener('pointermove', e => {
-        if (!phoneDrag || phoneDrag.pointerId === null || e.pointerId !== phoneDrag.pointerId) return;
-        movePhoneDrag(e.clientX, e.clientY, e);
-    }, { passive: false, capture: true });
-    topDoc.addEventListener('pointerup', e => {
-        if (!phoneDrag || phoneDrag.pointerId === null || e.pointerId !== phoneDrag.pointerId) return;
-        finishPhoneDrag(e);
-    }, { passive: false, capture: true });
-    topDoc.addEventListener('pointercancel', e => {
-        if (!phoneDrag || phoneDrag.pointerId === null || e.pointerId !== phoneDrag.pointerId) return;
-        finishPhoneDrag(e);
-    }, { passive: false, capture: true });
-
-    topDoc.addEventListener('mousemove', e => {
-        if (!phoneDrag || phoneDrag.pointerId !== null) return;
-        movePhoneDrag(e.clientX, e.clientY, e);
-    }, { passive: false, capture: true });
-    topDoc.addEventListener('mouseup', e => {
-        if (!phoneDrag || phoneDrag.pointerId !== null) return;
-        finishPhoneDrag(e);
-    }, { passive: false, capture: true });
-
-    topDoc.addEventListener('touchmove', e => {
-        if (!phoneDrag) return;
-        const t = e.touches && e.touches[0];
-        if (!t) return;
-        movePhoneDrag(t.clientX, t.clientY, e);
-    }, { passive: false, capture: true });
-    topDoc.addEventListener('touchend', e => {
-        if (!phoneDrag) return;
-        finishPhoneDrag(e);
-    }, { passive: false, capture: true });
-    topDoc.addEventListener('touchcancel', e => {
-        if (!phoneDrag) return;
-        finishPhoneDrag(e);
-    }, { passive: false, capture: true });
-
-    const expandPhoneBtn = $('pkmn-expand-phone');
-    if (expandPhoneBtn) {
-        expandPhoneBtn.addEventListener('pointerdown', e => {
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-        expandPhoneBtn.addEventListener('click', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            const wasCompact = panel.classList.contains('compact');
-            panel.classList.toggle('compact', !wasCompact);
-            panel.dataset.compact = wasCompact ? '0' : '1';
-            expandPhoneBtn.title = wasCompact ? '缩小手机' : '恢复原大小';
-            const r = panel.getBoundingClientRect();
-            applyPhonePosition(r.left, r.top);
-        }, true);
-    }
-
     const closePhoneBtn = $('pkmn-close-phone');
     if (closePhoneBtn) {
-        ['pointerdown','touchstart','click'].forEach(type => {
-            closePhoneBtn.addEventListener(type, e => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-                if (type === 'click' || type === 'pointerdown') closePhone();
-            }, { passive: false, capture: true });
-        });
+        // 关闭按钮同样只使用 click，避免一次 Android 触摸触发多次 close/open。
+        closePhoneBtn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+            closePhone();
+        }, { passive: false });
     }
 
     ['pointerdown','pointerup','click'].forEach(type => {
         panel.addEventListener(type, e => {
-            if (e.target === closePhoneBtn || e.target === expandPhoneBtn) return;
+            if (e.target === closePhoneBtn) return;
             e.stopPropagation();
         }, { passive: false });
     });
 
-    // 首次显示时始终完整位于屏幕内；不再使用 top:50% 造成下半部分出屏。
-    requestAnimationFrame(() => {
-        if (panel.classList.contains('show')) centerPhone();
-        else {
-            // 即使尚未显示，也预先建立安全的左上坐标。
-            panel.style.transform = 'none';
-            panel.style.left = '8px';
-            panel.style.top = '8px';
-            panel.style.right = 'auto';
-            panel.style.bottom = 'auto';
-        }
-    });
+    restoreFloatPosition();
 
-    dragWindow.addEventListener('resize', () => {
-        if (!panel.classList.contains('show')) return;
-        const r = panel.getBoundingClientRect();
-        applyPhonePosition(r.left, r.top);
-    });
 
     // ============================================================
     // 自动聊天切换 / 新建聊天
     // ============================================================
 
-    if (ST.eventOn) {
-
-        try {
-
-            const events = ST.eventTypes();
-            const changedEv = events.CHAT_CHANGED || 'CHAT_CHANGED';
-            const createdEv = events.CHAT_CREATED || 'CHAT_CREATED';
-
-            // 切换到已有聊天：
-            // 读取该 chatId 对应的论坛存档。
-            ST.eventOn(
-                changedEv,
-                newChatId => {
-
-                    setTimeout(
-                        () => {
-
-                            const key =
-                                newChatId !== undefined &&
-                                newChatId !== null
-                                    ? 'chat:' + String(newChatId)
-                                    : getChatKey();
-
-                            switchChat(
-                                key
-                            );
-
-                        },
-                        300
-                    );
-
-                }
-            );
-
-            // 创建新聊天：
-            // 无论之前论坛是什么内容，新聊天都从空论坛开始。
-            ST.eventOn(
-                createdEv,
-                newChatId => {
-
-                    setTimeout(
-                        () => {
-
-                            resetForumForNewChat(
-                                newChatId
-                            );
-
-                        },
-                        300
-                    );
-
-                }
-            );
-
-        } catch (_) {}
-    }
-
-
-    // ============================================================
-    // 定时兜底检测
-    // ============================================================
-    // 某些酒馆版本/切换方式可能没有正常触发事件。
-    // 这里每 1.5 秒比较一次真正的 chatId。
-    // 注意：这里绝不在切换时 saveChatState()，避免写错聊天。
-
-    let lastChatKey =
-        getChatKey();
-
-    setInterval(
-        () => {
-
-            const k =
-                getChatKey();
-
-            if (
-                k &&
-                k !==
-                lastChatKey
-            ) {
-
-                lastChatKey =
-                    k;
-
-                switchChat(
-                    k,
-                    true
-                );
-            }
-
-        },
-        1500
-    );
-
+    try {
+        const on = ST.eventSource?.on?.bind(ST.eventSource);
+        if (on) {
+            const changedEv = ST_EVENTS.CHAT_CHANGED || 'CHAT_CHANGED';
+            const createdEv = ST_EVENTS.CHAT_CREATED || 'CHAT_CREATED';
+            on(changedEv, newChatId => {
+                setTimeout(() => {
+                    const key = newChatId !== undefined && newChatId !== null ? 'chat:' + String(newChatId) : getChatKey();
+                    switchChat(key);
+                }, 150);
+            });
+            on(createdEv, newChatId => {
+                setTimeout(() => resetForumForNewChat(newChatId), 150);
+            });
+        }
+    } catch (_) {}
 
     // ============================================================
     // 时间
@@ -5150,7 +5842,6 @@ ${esc(name)}
             700
         );
     }
-
 
     console.log(
         '[宝可梦小手机论坛] 已启动。聊天独立存档：',
