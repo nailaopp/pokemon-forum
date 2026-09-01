@@ -37,3 +37,9 @@ README.md
 ## 注意
 
 本扩展直接使用 SillyTavern 原生上下文 API，因此不需要安装酒馆助手。
+
+
+## 1.0.1
+- 修复 Android/WebView 下 UI DOM 与扩展 CSS 文档不一致导致的不可见/不可点击问题。
+- 增加 Touch Events 兜底，解决部分手机酒馆无法通过 Pointer Events 打开论坛的问题。
+- 手机面板改为按视口自适应居中，避免小屏幕下整个面板位于可视区域之外。

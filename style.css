@@ -25,16 +25,20 @@ user-select:none!important
 
 #pkmn-phone-panel{
 position:fixed!important;
-right:18px!important;
-bottom:140px!important;
-width:350px!important;
-height:650px!important;
+left:50%!important;
+top:50%!important;
+right:auto!important;
+bottom:auto!important;
+transform:translate(-50%,-50%)!important;
+width:min(350px,calc(100vw - 12px))!important;
+height:min(650px,calc(100dvh - 12px))!important;
 background:#f7f7f7!important;
 border:7px solid #202124!important;
 border-radius:38px!important;
 overflow:hidden!important;
 z-index:999999998!important;
 display:none!important;
+pointer-events:auto!important;
 box-shadow:0 20px 55px rgba(0,0,0,.4)!important;
 font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important;
 color:#222!important
@@ -726,3 +730,20 @@ box-shadow:0 -8px 25px rgba(0,0,0,.15)
   <!-- 底部Home键 -->
   <circle cx="48" cy="77" r="3.5" fill="#ffd72e" stroke="#20242b" stroke-width="2"/>
 </svg>
+
+/* Android/WebView safe area and compact viewport */
+@media (max-width: 520px), (max-height: 760px){
+  #pkmn-phone-panel{
+    width:calc(100vw - 12px)!important;
+    height:calc(100dvh - 12px)!important;
+    max-width:350px!important;
+    max-height:650px!important;
+    border-width:4px!important;
+    border-radius:28px!important;
+  }
+}
+@supports not (height: 100dvh){
+  @media (max-width: 520px), (max-height: 760px){
+    #pkmn-phone-panel{height:calc(100vh - 12px)!important;}
+  }
+}

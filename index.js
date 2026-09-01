@@ -6,13 +6,10 @@
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
     const VERSION = 9;
 
-    let topDoc = document;
-
-    try {
-        if (window.top && window.top.document) {
-            topDoc = window.top.document;
-        }
-    } catch (_) {}
+    // Native SillyTavern extensions run in the main page context.
+    // Do not redirect UI creation to window.top: on Android/WebView this can
+    // put the DOM outside the document that receives the extension CSS/events.
+    const topDoc = document;
 
     // ============================================================
     // 清理旧实例
@@ -4712,9 +4709,12 @@ ${esc(name)}
         suppressNextOpen = false;
     }
 
-    // 不把 pointermove/up 绑定在按钮自身上，避免 Android/WebView 在
-    // 手指离开按钮瞬间丢事件导致“拖不动/卡住/松手仍打开”的问题。
-    // 同时在悬浮按钮上阻断 click/touch 冒泡，避免酒馆底层导航收到同一次触摸。
+    // Android/WebView 兼容：优先使用 Pointer Events，同时保留 Touch Events
+    // 兜底。旧版本只监听 pointerdown，部分手机酒馆环境中会因此完全没有
+    // 触发打开动作。
+    let touchStart = null;
+    let pointerGestureActive = false;
+
     ['click','touchstart','touchend'].forEach(type => {
         floatBtn.addEventListener(type, e => {
             e.preventDefault();
@@ -4723,13 +4723,46 @@ ${esc(name)}
         }, { passive: false, capture: true });
     });
 
-    floatBtn.addEventListener('pointerdown', beginFloatDrag, { passive: false, capture: true });
+    floatBtn.addEventListener('pointerdown', e => {
+        pointerGestureActive = true;
+        beginFloatDrag(e);
+    }, { passive: false, capture: true });
+
     dragWindow.addEventListener('pointermove', moveFloatDrag, { passive: false });
-    dragWindow.addEventListener('pointerup', finishFloatDrag, { passive: false });
-    dragWindow.addEventListener('pointercancel', finishFloatDrag, { passive: false });
+    dragWindow.addEventListener('pointerup', e => {
+        finishFloatDrag(e);
+        setTimeout(() => { pointerGestureActive = false; }, 0);
+    }, { passive: false });
+    dragWindow.addEventListener('pointercancel', e => {
+        finishFloatDrag(e);
+        setTimeout(() => { pointerGestureActive = false; }, 0);
+    }, { passive: false });
+
     floatBtn.addEventListener('lostpointercapture', e => {
         if (dragState && e.pointerId === dragState.pointerId) finishFloatDrag(e);
     });
+
+    floatBtn.addEventListener('touchstart', e => {
+        if (pointerGestureActive) return;
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        touchStart = { x: t.clientX, y: t.clientY, time: Date.now() };
+        e.preventDefault();
+    }, { passive: false, capture: true });
+
+    floatBtn.addEventListener('touchend', e => {
+        if (pointerGestureActive) return;
+        if (!touchStart) return;
+        const t = e.changedTouches && e.changedTouches[0];
+        const dx = t ? t.clientX - touchStart.x : 0;
+        const dy = t ? t.clientY - touchStart.y : 0;
+        const elapsed = Date.now() - touchStart.time;
+        touchStart = null;
+        if (Math.hypot(dx, dy) <= 10 && elapsed < 700) {
+            togglePhone(e);
+        }
+        e.preventDefault();
+    }, { passive: false, capture: true });
 
     dragWindow.addEventListener('resize', () => {
         const rect = floatBtn.getBoundingClientRect();
