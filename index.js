@@ -4778,60 +4778,69 @@ ${esc(name)}
     // 手机窗口拖动 + 高度切换
     // ============================================================
 
-    // Android/WebView 兼容版：不依赖 Pointer Capture。
-    // 顶部黑色刘海和底部白色区域都是拖动手柄。
+    // Android/WebView 专用：使用真实 left/top 坐标，不使用 transform 定位。
+    // 顶部黑色刘海和底部白色 Home 区都是独立拖动手柄。
     const phoneNotch = panel.querySelector('.pkmn-notch');
     const phoneFooter = panel.querySelector('.pkmn-footer');
     let phoneDrag = null;
 
-    function setPhonePosition(centerX, centerY) {
-        const vw = dragWindow.innerWidth || document.documentElement.clientWidth || 360;
-        const vh = dragWindow.innerHeight || document.documentElement.clientHeight || 640;
-        const rect = panel.getBoundingClientRect();
-        const w = rect.width || 350;
-        const h = rect.height || 325;
-        const minLeft = 4;
-        const maxLeft = Math.max(minLeft, vw - w - 4);
-        const minTop = 4;
-        const maxTop = Math.max(minTop, vh - h - 4);
-        const left = Math.min(maxLeft, Math.max(minLeft, centerX - w / 2));
-        const top = Math.min(maxTop, Math.max(minTop, centerY - h / 2));
+    function getViewport() {
+        return {
+            w: Math.max(1, dragWindow.innerWidth || document.documentElement.clientWidth || 360),
+            h: Math.max(1, dragWindow.innerHeight || document.documentElement.clientHeight || 640)
+        };
+    }
+
+    function clampPhonePosition(left, top) {
+        const r = panel.getBoundingClientRect();
+        const vw = getViewport().w;
+        const vh = getViewport().h;
+        const w = Math.max(1, r.width);
+        const h = Math.max(1, r.height);
+        const maxLeft = Math.max(4, vw - w - 4);
+        const maxTop = Math.max(4, vh - h - 4);
+        return {
+            left: Math.min(maxLeft, Math.max(4, left)),
+            top: Math.min(maxTop, Math.max(4, top))
+        };
+    }
+
+    function applyPhonePosition(left, top) {
+        const pos = clampPhonePosition(left, top);
         panel.style.transform = 'none';
-        panel.style.left = left + 'px';
-        panel.style.top = top + 'px';
+        panel.style.left = Math.round(pos.left) + 'px';
+        panel.style.top = Math.round(pos.top) + 'px';
         panel.style.right = 'auto';
         panel.style.bottom = 'auto';
     }
 
-    function beginPhoneDrag(clientX, clientY, source) {
+    function centerPhone() {
+        const r = panel.getBoundingClientRect();
+        const vp = getViewport();
+        applyPhonePosition((vp.w - r.width) / 2, Math.max(8, (vp.h - r.height) / 2));
+    }
+
+    function beginPhoneDrag(clientX, clientY, source, pointerId = null) {
         if (!panel.classList.contains('show')) return;
-        const rect = panel.getBoundingClientRect();
+        const r = panel.getBoundingClientRect();
         phoneDrag = {
             startX: clientX,
             startY: clientY,
-            startLeft: rect.left,
-            startTop: rect.top,
-            source
+            startLeft: r.left,
+            startTop: r.top,
+            source,
+            pointerId,
+            moved: false
         };
-        source.style.cursor = 'grabbing';
+        if (source) source.classList.add('pkmn-dragging');
     }
 
     function movePhoneDrag(clientX, clientY, e) {
         if (!phoneDrag) return;
         const dx = clientX - phoneDrag.startX;
         const dy = clientY - phoneDrag.startY;
-        const rect = panel.getBoundingClientRect();
-        const vw = dragWindow.innerWidth || document.documentElement.clientWidth || 360;
-        const vh = dragWindow.innerHeight || document.documentElement.clientHeight || 640;
-        const w = rect.width;
-        const h = rect.height;
-        const left = Math.min(vw - w - 4, Math.max(4, phoneDrag.startLeft + dx));
-        const top = Math.min(vh - h - 4, Math.max(4, phoneDrag.startTop + dy));
-        panel.style.transform = 'none';
-        panel.style.left = left + 'px';
-        panel.style.top = top + 'px';
-        panel.style.right = 'auto';
-        panel.style.bottom = 'auto';
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) phoneDrag.moved = true;
+        applyPhonePosition(phoneDrag.startLeft + dx, phoneDrag.startTop + dy);
         if (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -4842,7 +4851,7 @@ ${esc(name)}
         if (!phoneDrag) return;
         const source = phoneDrag.source;
         phoneDrag = null;
-        if (source) source.style.cursor = 'grab';
+        if (source) source.classList.remove('pkmn-dragging');
         if (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -4852,51 +4861,72 @@ ${esc(name)}
     function bindPhoneDragHandle(handle) {
         if (!handle) return;
         handle.style.touchAction = 'none';
+        handle.style.webkitTouchCallout = 'none';
         handle.style.webkitUserSelect = 'none';
         handle.style.userSelect = 'none';
         handle.style.cursor = 'grab';
 
-        // 鼠标：直接在 window 上继续接收移动，避免移出手柄后丢失事件。
-        handle.addEventListener('mousedown', e => {
-            if (e.button !== 0) return;
-            beginPhoneDrag(e.clientX, e.clientY, handle);
-            e.preventDefault();
-            e.stopPropagation();
-        }, true);
-
-        // Android：使用原生 TouchEvent，并在 document 上接管后续移动。
-        handle.addEventListener('touchstart', e => {
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            beginPhoneDrag(t.clientX, t.clientY, handle);
+        handle.addEventListener('pointerdown', e => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            beginPhoneDrag(e.clientX, e.clientY, handle, e.pointerId);
             e.preventDefault();
             e.stopPropagation();
         }, { passive: false, capture: true });
+
+        handle.addEventListener('touchstart', e => {
+            if (phoneDrag) return;
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            beginPhoneDrag(t.clientX, t.clientY, handle, null);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false, capture: true });
+
+        handle.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            beginPhoneDrag(e.clientX, e.clientY, handle, null);
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
     }
 
     bindPhoneDragHandle(phoneNotch);
     bindPhoneDragHandle(phoneFooter);
 
-    dragWindow.addEventListener('mousemove', e => {
-        if (!phoneDrag) return;
+    // 统一在 document 上接管后续事件；Android 手指移出手柄后仍能继续拖动。
+    topDoc.addEventListener('pointermove', e => {
+        if (!phoneDrag || phoneDrag.pointerId === null || e.pointerId !== phoneDrag.pointerId) return;
         movePhoneDrag(e.clientX, e.clientY, e);
-    }, true);
-    dragWindow.addEventListener('mouseup', e => {
-        if (!phoneDrag) return;
+    }, { passive: false, capture: true });
+    topDoc.addEventListener('pointerup', e => {
+        if (!phoneDrag || phoneDrag.pointerId === null || e.pointerId !== phoneDrag.pointerId) return;
         finishPhoneDrag(e);
-    }, true);
+    }, { passive: false, capture: true });
+    topDoc.addEventListener('pointercancel', e => {
+        if (!phoneDrag || phoneDrag.pointerId === null || e.pointerId !== phoneDrag.pointerId) return;
+        finishPhoneDrag(e);
+    }, { passive: false, capture: true });
 
-    dragWindow.addEventListener('touchmove', e => {
+    topDoc.addEventListener('mousemove', e => {
+        if (!phoneDrag || phoneDrag.pointerId !== null) return;
+        movePhoneDrag(e.clientX, e.clientY, e);
+    }, { passive: false, capture: true });
+    topDoc.addEventListener('mouseup', e => {
+        if (!phoneDrag || phoneDrag.pointerId !== null) return;
+        finishPhoneDrag(e);
+    }, { passive: false, capture: true });
+
+    topDoc.addEventListener('touchmove', e => {
         if (!phoneDrag) return;
         const t = e.touches && e.touches[0];
         if (!t) return;
         movePhoneDrag(t.clientX, t.clientY, e);
     }, { passive: false, capture: true });
-    dragWindow.addEventListener('touchend', e => {
+    topDoc.addEventListener('touchend', e => {
         if (!phoneDrag) return;
         finishPhoneDrag(e);
     }, { passive: false, capture: true });
-    dragWindow.addEventListener('touchcancel', e => {
+    topDoc.addEventListener('touchcancel', e => {
         if (!phoneDrag) return;
         finishPhoneDrag(e);
     }, { passive: false, capture: true });
@@ -4906,22 +4936,19 @@ ${esc(name)}
         expandPhoneBtn.addEventListener('pointerdown', e => {
             e.preventDefault();
             e.stopPropagation();
-        }, { passive:false });
+        }, { passive: false });
         expandPhoneBtn.addEventListener('click', e => {
             e.preventDefault();
             e.stopPropagation();
-            const compact = panel.dataset.compact !== '0';
-            panel.dataset.compact = compact ? '0' : '1';
-            panel.classList.toggle('compact', !compact);
-            expandPhoneBtn.textContent = compact ? '↕' : '↕';
-            expandPhoneBtn.title = compact ? '缩小手机' : '恢复原大小';
-            // 尺寸变化后保持窗口中心不漂移。
+            const wasCompact = panel.classList.contains('compact');
+            panel.classList.toggle('compact', !wasCompact);
+            panel.dataset.compact = wasCompact ? '0' : '1';
+            expandPhoneBtn.title = wasCompact ? '缩小手机' : '恢复原大小';
             const r = panel.getBoundingClientRect();
-            setPhonePosition(r.left + r.width/2, r.top + r.height/2);
-        });
+            applyPhonePosition(r.left, r.top);
+        }, true);
     }
 
-    // 手机右上角独立关闭按钮：不依赖返回键，不触发 openView。
     const closePhoneBtn = $('pkmn-close-phone');
     if (closePhoneBtn) {
         ['pointerdown','touchstart','click'].forEach(type => {
@@ -4934,25 +4961,31 @@ ${esc(name)}
         });
     }
 
-    // 面板自身也是事件隔离区，防止点击/滑动穿透到底层酒馆。
     ['pointerdown','pointerup','click'].forEach(type => {
         panel.addEventListener(type, e => {
-            if (e.target === closePhoneBtn) return;
+            if (e.target === closePhoneBtn || e.target === expandPhoneBtn) return;
             e.stopPropagation();
         }, { passive: false });
     });
 
-    // 初始化手机窗口位置：居中。之后拖动使用真实 left/top，不再依赖 transform。
+    // 首次显示时始终完整位于屏幕内；不再使用 top:50% 造成下半部分出屏。
     requestAnimationFrame(() => {
-        const r = panel.getBoundingClientRect();
-        setPhonePosition(
-            (dragWindow.innerWidth || 360) / 2,
-            (dragWindow.innerHeight || 640) / 2
-        );
+        if (panel.classList.contains('show')) centerPhone();
+        else {
+            // 即使尚未显示，也预先建立安全的左上坐标。
+            panel.style.transform = 'none';
+            panel.style.left = '8px';
+            panel.style.top = '8px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+        }
     });
 
-    restoreFloatPosition();
-
+    dragWindow.addEventListener('resize', () => {
+        if (!panel.classList.contains('show')) return;
+        const r = panel.getBoundingClientRect();
+        applyPhonePosition(r.left, r.top);
+    });
 
     // ============================================================
     // 自动聊天切换 / 新建聊天

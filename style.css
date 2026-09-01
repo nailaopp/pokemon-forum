@@ -25,8 +25,8 @@ user-select:none!important
 
 #pkmn-phone-panel{
 position:fixed!important;
-left:50%!important;
-top:50%!important;
+left:8px!important;
+top:8px!important;
 right:auto!important;
 bottom:auto!important;
 transform:none!important;
@@ -99,12 +99,28 @@ position:absolute;
 top:0;
 left:50%;
 transform:translateX(-50%);
-width:110px;
+width:170px;
+height:28px;
+background:transparent;
+border-radius:0 0 14px 14px;
+z-index:50;
+touch-action:none!important;
+user-select:none!important;
+-webkit-user-select:none!important;
+cursor:grab!important
+}
+.pkmn-notch::before{
+content:"";
+position:absolute;
+left:30px;
+right:30px;
+top:0;
 height:18px;
 background:#111;
 border-radius:0 0 12px 12px;
-z-index:10
+pointer-events:none
 }
+.pkmn-notch.pkmn-dragging,.pkmn-footer.pkmn-dragging{cursor:grabbing!important}
 .pkmn-app{
 position:relative;
 flex:1;
@@ -693,8 +709,8 @@ box-shadow:0 -8px 25px rgba(0,0,0,.15)
 .pkmn-home-apps{display:flex;gap:22px;flex-wrap:wrap;padding:48px 22px}
 .pkmn-app-icon{width:68px;text-align:center;color:white;font-size:12px;cursor:pointer}
 .pkmn-app-icon div:first-child{width:58px;height:58px;background:rgba(255,255,255,.92);border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:auto auto 7px}
-.pkmn-footer{height:24px;display:flex;align-items:center;justify-content:center;background:#fafafa}
-.pkmn-homebar{width:100px;height:4px;background:#aaa;border-radius:5px;cursor:pointer}
+.pkmn-footer{height:28px;min-height:28px;display:flex;align-items:center;justify-content:center;background:#fafafa;position:relative;z-index:50;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;cursor:grab!important}
+.pkmn-homebar{width:100px;height:4px;background:#aaa;border-radius:5px;cursor:grab;pointer-events:none}
 `;
 
     topDoc.head.appendChild(
