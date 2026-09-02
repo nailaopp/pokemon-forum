@@ -2782,6 +2782,20 @@
         return `<div class="pkmn-thread-tags ${cls}">${tags.map(tag => `<span class="pkmn-tag">#${esc(tag)}</span>`).join('')}</div>`;
     }
 
+    // 地区修复：旧帖子没有地区时补全宝可梦地区，避免一直显示空地区
+    function ensureThreadRegion(t) {
+        if (!t || currentForum === 'mature') return '未知地区';
+        const first = Array.isArray(t.posts) ? t.posts[0] : null;
+        if (!first) return '未知地区';
+        let region = first.ipLocation || first.location || '';
+        if (!region) {
+            const regions = ['关都地区', '城都地区', '丰缘地区', '神奥地区', '合众地区', '卡洛斯地区', '阿罗拉地区', '伽勒尔地区', '帕底亚地区'];
+            region = regions[Math.floor(Math.random() * regions.length)];
+            first.ipLocation = region;
+        }
+        return region;
+    }
+
     // ============================================================
     // 论坛列表
     // ============================================================
@@ -2820,7 +2834,7 @@
                     const firstPost = Array.isArray(t.posts) && t.posts[0] ? t.posts[0] : null;
                     const avatarName = String(t.author || '匿名用户').trim().slice(0, 1) || '匿';
                     const snippet = firstPost?.content || '';
-                    const listLocation = currentForum === 'mature' ? '未知地区' : (firstPost?.ipLocation || firstPost?.location || '未知地区');
+                    const listLocation = ensureThreadRegion(t);
                     const commentCount = Math.max(0, (t.posts?.length || 1) - 1);
                     const nestedCount = (t.posts || []).slice(1).reduce(
                         (sum, p) => sum + ensureNestedReplies(p).length,
@@ -3106,7 +3120,7 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
             d.className = 'pkmn-post';
             const mainAvatar = String(first.author || '匿名用户').trim().slice(0, 1) || '匿';
             const mainForum = currentForum === 'mature' ? '里论坛' : '表论坛';
-            const mainLocation = currentForum === 'mature' ? '未知' : (first.ipLocation || first.location || '未知地区');
+            const mainLocation = ensureThreadRegion(t);
             const mainComments = Math.max(0, (t.posts?.length || 1) - 1);
             const mainNested = (t.posts || []).slice(1).reduce(
                 (sum, p) => sum + ensureNestedReplies(p).length,
