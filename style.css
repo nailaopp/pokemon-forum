@@ -1102,7 +1102,3 @@
   font-size:13px!important;
   font-weight:700!important;
 }
-
-
-/* 0.12: 表论坛显示宝可梦地区，详情页隐藏 */
-#pkmn-phone-panel .pkmn-region-badge{font-size:11px!important;color:#8a8f98!important;background:#f4f6f8!important;border-radius:999px!important;padding:2px 8px!important;margin-left:6px!important;white-space:nowrap!important;}
