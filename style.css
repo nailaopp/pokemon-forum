@@ -348,7 +348,7 @@
   -webkit-box-orient:vertical!important;
   -webkit-line-clamp:2!important;
 }
-#pkmn-phone-panel .pkmn-thread-tags{display:none!important}
+#pkmn-phone-panel .pkmn-thread-tags{display:flex!important}
 #pkmn-phone-panel .pkmn-thread-footer{
   display:flex!important;
   align-items:center!important;
@@ -834,7 +834,7 @@
   line-height:1.62!important;
   -webkit-line-clamp:2!important;
 }
-#pkmn-phone-panel .pkmn-thread-tags{display:none!important}
+#pkmn-phone-panel .pkmn-thread-tags{display:flex!important}
 #pkmn-phone-panel .pkmn-thread-footer{
   height:25px!important;
   margin-top:7px!important;
