@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 47; // fix undeclared chatState startup crash
+    const VERSION = 51; // fix undeclared chatState startup crash
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -2076,6 +2076,8 @@
 
     const PHONE_FULL_HEIGHT = 1360;
     const PHONE_HALF_HEIGHT = 680;
+    // v0.51：手机窗口始终以可视视口为基准，避免酒馆滚动容器/浏览器地址栏造成跑位。
+    const PHONE_VIEW_MARGIN = 8;
     let phoneExpanded = false;
 
     function phoneViewport() {
@@ -2089,7 +2091,7 @@
     function phoneSize() {
         const vp = phoneViewport();
         const width = Math.min(620, Math.max(320, vp.width - 24));
-        const maxH = Math.max(260, vp.height - 24);
+        const maxH = Math.max(260, vp.height - PHONE_VIEW_MARGIN * 2);
         const full = Math.min(PHONE_FULL_HEIGHT, maxH);
         const half = Math.min(PHONE_HALF_HEIGHT, Math.max(220, Math.floor(full / 2)));
         return { width, full, half };
@@ -2100,7 +2102,7 @@
         const rect = panel.getBoundingClientRect();
         const w = rect.width || phoneSize().width;
         const h = rect.height || (phoneExpanded ? phoneSize().full : phoneSize().half);
-        const margin = 8;
+        const margin = PHONE_VIEW_MARGIN;
         const maxLeft = Math.max(margin, vp.width - w - margin);
         const maxTop = Math.max(margin, vp.height - h - margin);
         return {
@@ -5523,6 +5525,14 @@ ${esc(name)}
     }, 2000);
 
     restoreFloatPosition();
+    // 某些 Android WebView 首帧 innerHeight 仍未稳定；下一帧再校正一次，
+    // 防止手机窗口初次打开时出现在屏幕外。
+    try {
+        (topDoc.defaultView || window).requestAnimationFrame(() => {
+            if (!panel.classList.contains('show')) centerPhoneInitial();
+            else resizePhonePreservePosition();
+        });
+    } catch (_) {}
 
     const closePhoneBtn = $('pkmn-close-phone');
     if (closePhoneBtn) {

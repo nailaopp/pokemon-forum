@@ -745,3 +745,257 @@
   #pkmn-phone-panel #pkmn-reply-input{font-size:14px!important}
   #pkmn-phone-panel .pkmn-btn{padding:0 9px!important;font-size:11px!important}
 }
+
+/* ============================================================
+   v0.51 · 微博式城际论坛重构
+   视觉参考：用户提供的手机论坛截图。
+   重点：连续信息流、轻分隔、头像+作者+时间、互动栏。
+   ============================================================ */
+#pkmn-phone-panel .pkmn-head{
+  height:58px!important;
+  min-height:58px!important;
+  padding:6px 58px 0!important;
+  background:#fff!important;
+  border-bottom:1px solid #edf0f2!important;
+  font-size:20px!important;
+  font-weight:700!important;
+}
+#pkmn-phone-panel .pkmn-head button{
+  top:5px!important;
+  left:8px!important;
+  width:46px!important;
+  height:48px!important;
+  font-size:34px!important;
+  line-height:44px!important;
+}
+#pkmn-phone-panel .pkmn-head #pkmn-board-settings{
+  right:7px!important;
+  width:44px!important;
+  font-size:22px!important;
+}
+#pkmn-phone-panel #pkmn-forum-title{font-size:20px!important;font-weight:700!important}
+
+#pkmn-phone-panel .pkmn-tabs{
+  height:48px!important;
+  min-height:48px!important;
+  background:#fff!important;
+  border-bottom:1px solid #eef1f3!important;
+}
+#pkmn-phone-panel .pkmn-tab{
+  flex:1 0 104px!important;
+  height:48px!important;
+  font-size:14px!important;
+  color:#737b84!important;
+  font-weight:400!important;
+}
+#pkmn-phone-panel .pkmn-tab.active{
+  color:#d79a39!important;
+  font-weight:700!important;
+}
+#pkmn-phone-panel .pkmn-tab.active:after{
+  left:36%!important;
+  right:36%!important;
+  height:3px!important;
+  background:#d79a39!important;
+}
+
+/* 微博式信息流 */
+#pkmn-phone-panel .pkmn-list{
+  padding:0 0 82px!important;
+  background:#f3f5f7!important;
+  scrollbar-width:none!important;
+}
+#pkmn-phone-panel .pkmn-list::-webkit-scrollbar{display:none!important}
+#pkmn-phone-panel .pkmn-thread-card{
+  min-height:0!important;
+  margin:0 0 7px!important;
+  padding:16px 15px 11px 67px!important;
+  background:#fff!important;
+  border:0!important;
+  border-bottom:1px solid #eef0f2!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  cursor:pointer!important;
+}
+#pkmn-phone-panel .pkmn-thread-card:active{background:#fafafa!important}
+#pkmn-phone-panel .pkmn-thread-avatar{
+  left:15px!important;
+  top:17px!important;
+  width:42px!important;
+  height:42px!important;
+  border-radius:50%!important;
+  background:#f0f2f4!important;
+  color:#858e97!important;
+  font-size:18px!important;
+  font-weight:600!important;
+}
+#pkmn-phone-panel .pkmn-thread-user{
+  min-height:20px!important;
+  padding-right:74px!important;
+  gap:6px!important;
+  color:#303943!important;
+  font-size:14px!important;
+  font-weight:700!important;
+}
+#pkmn-phone-panel .pkmn-user-badge,
+#pkmn-phone-panel .pkmn-topic-badge{
+  height:18px!important;
+  padding:0 5px!important;
+  border-radius:3px!important;
+  font-size:10px!important;
+  font-weight:600!important;
+}
+#pkmn-phone-panel .pkmn-topic-badge{background:#fff4df!important;color:#c58a2c!important}
+#pkmn-phone-panel .pkmn-user-badge{background:#eef7f0!important;color:#6e9474!important}
+#pkmn-phone-panel .pkmn-thread-title{
+  margin-top:5px!important;
+  color:#1f2730!important;
+  font-size:16px!important;
+  line-height:1.48!important;
+  font-weight:700!important;
+  -webkit-line-clamp:2!important;
+}
+#pkmn-phone-panel .pkmn-thread-snippet{
+  margin-top:5px!important;
+  color:#656e77!important;
+  font-size:13px!important;
+  line-height:1.62!important;
+  -webkit-line-clamp:2!important;
+}
+#pkmn-phone-panel .pkmn-thread-tags{display:none!important}
+#pkmn-phone-panel .pkmn-thread-footer{
+  height:25px!important;
+  margin-top:7px!important;
+  padding-top:2px!important;
+  gap:0!important;
+  color:#9aa1a8!important;
+  font-size:11px!important;
+}
+#pkmn-phone-panel .pkmn-thread-stat:before{content:'💬 '!important;font-size:11px!important}
+#pkmn-phone-panel .pkmn-thread-time{margin-left:auto!important}
+
+/* 操作按钮轻量化：不抢正文视觉 */
+#pkmn-phone-panel .pkmn-inject,
+#pkmn-phone-panel .pkmn-del{
+  top:13px!important;
+  height:29px!important;
+  border:1px solid #e7eaed!important;
+  background:#fff!important;
+  color:#8a929a!important;
+  border-radius:15px!important;
+}
+#pkmn-phone-panel .pkmn-inject{
+  right:48px!important;
+  padding:0 8px!important;
+  font-size:10px!important;
+}
+#pkmn-phone-panel .pkmn-del{
+  right:10px!important;
+  width:29px!important;
+  font-size:12px!important;
+}
+
+/* 微博式底部工具栏 */
+#pkmn-phone-panel .pkmn-bottom{
+  min-height:64px!important;
+  height:64px!important;
+  gap:7px!important;
+  padding:8px 10px!important;
+  background:rgba(255,255,255,.98)!important;
+  border-top:1px solid #e9ecef!important;
+}
+#pkmn-phone-panel .pkmn-btn{
+  flex:0 1 auto!important;
+  height:43px!important;
+  padding:0 12px!important;
+  border:1px solid #e0e4e7!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#68727b!important;
+  font-size:12px!important;
+}
+#pkmn-phone-panel .pkmn-btn.pkmn-primary{
+  color:#c98d30!important;
+  border-color:#eadfc9!important;
+  background:#fffdf8!important;
+}
+#pkmn-phone-panel .pkmn-btn.pkmn-danger{color:#a98282!important}
+
+/* 帖子详情同样统一成微博信息流，而不是传统论坛楼层 */
+#pkmn-phone-panel #pkmn-thread{background:#f3f5f7!important}
+#pkmn-phone-panel .pkmn-posts{
+  padding:0 0 70px!important;
+  background:#f3f5f7!important;
+  scrollbar-width:none!important;
+}
+#pkmn-phone-panel .pkmn-posts::-webkit-scrollbar{display:none!important}
+#pkmn-phone-panel .pkmn-post{
+  margin:0 0 7px!important;
+  padding:16px 15px 8px!important;
+  background:#fff!important;
+  border:0!important;
+  border-radius:0!important;
+}
+#pkmn-phone-panel .pkmn-post-head{padding:0!important}
+#pkmn-phone-panel .pkmn-post-avatar{
+  width:43px!important;
+  height:43px!important;
+  border-radius:50%!important;
+  background:#f0f2f4!important;
+  font-size:18px!important;
+}
+#pkmn-phone-panel .pkmn-post-user{margin-left:10px!important}
+#pkmn-phone-panel .pkmn-post-author{font-size:14px!important}
+#pkmn-phone-panel .pkmn-post-time{margin-top:2px!important;font-size:11px!important;color:#9aa1a8!important}
+#pkmn-phone-panel .pkmn-post-floor{top:19px!important;right:15px!important;font-size:11px!important;color:#a1a8ae!important}
+#pkmn-phone-panel .pkmn-post-title{
+  margin:12px 0 0!important;
+  font-size:19px!important;
+  line-height:1.5!important;
+  color:#202830!important;
+}
+#pkmn-phone-panel .pkmn-content{
+  margin-top:8px!important;
+  font-size:14px!important;
+  line-height:1.75!important;
+  color:#3f4852!important;
+}
+#pkmn-phone-panel .pkmn-post-tools{
+  margin-top:13px!important;
+  padding-top:9px!important;
+  border-top:1px solid #f0f1f2!important;
+  justify-content:space-around!important;
+  color:#8c949c!important;
+  font-size:12px!important;
+}
+#pkmn-phone-panel .pkmn-replies-title{
+  height:48px!important;
+  margin:0 0 1px!important;
+  padding:0 15px!important;
+  background:#fff!important;
+  border:0!important;
+  border-bottom:1px solid #eef0f2!important;
+}
+#pkmn-phone-panel .pkmn-replies-title>span{font-size:15px!important;font-weight:700!important}
+#pkmn-phone-panel .pkmn-thread-refresh-btn{font-size:11px!important}
+#pkmn-phone-panel .pkmn-reply-msg{
+  margin:0!important;
+  padding:13px 15px!important;
+  background:#fff!important;
+  border-bottom:1px solid #f0f1f2!important;
+}
+#pkmn-phone-panel .pkmn-reply-msg.is-user{background:#fff!important}
+#pkmn-phone-panel .pkmn-reply-avatar{width:38px!important;height:38px!important;border-radius:50%!important;font-size:16px!important}
+#pkmn-phone-panel .pkmn-reply-name{font-size:13px!important}
+#pkmn-phone-panel .pkmn-reply-bubble{font-size:13px!important;line-height:1.65!important}
+#pkmn-phone-panel .pkmn-reply-meta{margin-top:7px!important;font-size:10px!important}
+#pkmn-phone-panel #pkmn-reply-input{font-size:13px!important}
+
+/* 手机窄屏：继续保持微博式密度 */
+@media (max-width:520px){
+  #pkmn-phone-panel .pkmn-thread-card{padding-left:63px!important;padding-right:12px!important}
+  #pkmn-phone-panel .pkmn-thread-avatar{left:13px!important;width:40px!important;height:40px!important}
+  #pkmn-phone-panel .pkmn-thread-title{font-size:15px!important}
+  #pkmn-phone-panel .pkmn-thread-snippet{font-size:12px!important}
+  #pkmn-phone-panel .pkmn-btn{padding:0 9px!important;font-size:11px!important}
+}
