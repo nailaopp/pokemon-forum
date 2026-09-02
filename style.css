@@ -35,7 +35,11 @@
   user-select:none!important;
   -webkit-user-select:none!important;
   -webkit-tap-highlight-color:transparent!important;
+  -webkit-touch-callout:none!important;
+  -webkit-user-drag:none!important;
 }
+#pkmn-float-btn *{pointer-events:none!important}
+#pkmn-float-btn.dragging{touch-action:none!important}
 #pkmn-float-btn.dragging{cursor:grabbing!important}
 #pkmn-float-btn svg{
   width:50px!important;
@@ -699,7 +703,44 @@
 #pkmn-phone-panel .pkmn-textarea{min-height:130px!important;padding:10px 11px!important;resize:vertical!important}
 #pkmn-phone-panel .pkmn-select{height:40px!important;padding:0 9px!important}
 #pkmn-phone-panel .pkmn-row{display:flex!important;align-items:center!important;gap:9px!important}
-#pkmn-phone-panel .pkmn-check{accent-color:var(--forum-orange)!important}
+#pkmn-phone-panel .pkmn-check{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  width:100%!important;
+  min-height:32px!important;
+  margin:0!important;
+  padding:5px 2px!important;
+  color:var(--forum-text)!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+  text-align:left!important;
+  accent-color:var(--forum-orange)!important;
+}
+#pkmn-phone-panel .pkmn-check input[type="checkbox"]{
+  display:block!important;
+  position:static!important;
+  flex:0 0 16px!important;
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  min-height:16px!important;
+  margin:0!important;
+  padding:0!important;
+  vertical-align:middle!important;
+}
+#pkmn-phone-panel .pkmn-check-text{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1.35!important;
+  text-align:left!important;
+}
 #pkmn-phone-panel .pkmn-modal{position:absolute!important;inset:0!important;z-index:70!important;display:none!important;align-items:center!important;justify-content:center!important;padding:20px!important;background:rgba(26,34,43,.25)!important}
 #pkmn-phone-panel .pkmn-modal.show{display:flex!important}
 #pkmn-phone-panel .pkmn-modal-box{width:100%!important;max-height:88%!important;overflow:auto!important;padding:19px!important;border:1px solid var(--forum-line-2)!important;border-radius:10px!important;background:#fff!important;box-shadow:0 14px 35px rgba(35,47,60,.16)!important}

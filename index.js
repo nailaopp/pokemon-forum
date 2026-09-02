@@ -4893,7 +4893,14 @@ ${esc(b.prompt)}
         box.innerHTML =
             '';
 
-        names.forEach(
+        names
+            .map(name => String(name ?? '').trim())
+            // 世界书列表里有些版本会混入索引键/纯数字条目（0、1、2……），
+            // 这些不是用户真正需要选择的世界书名称，直接隐藏。
+            .filter(name => name && !/^\d+$/.test(name))
+            // 防止酒馆返回重复名称导致界面重复显示。
+            .filter((name, i, arr) => arr.indexOf(name) === i)
+            .forEach(
             name => {
 
                 const label =
@@ -4910,23 +4917,23 @@ ${esc(b.prompt)}
                             name
                         );
 
-                label.innerHTML =
-                    `
-<input
-    type="checkbox"
-    value="${esc(name)}"
-    ${
-        checked
-            ? 'checked'
-            : ''
-    }
->
-${esc(name)}
-`;
+                const input =
+                    topDoc.createElement('input');
+                input.type = 'checkbox';
+                input.value = name;
+                input.checked = checked;
+                input.setAttribute('aria-label', name);
 
-                label.querySelector(
-                    'input'
-                ).onchange =
+                const text =
+                    topDoc.createElement('span');
+                text.className = 'pkmn-check-text';
+                text.textContent = name;
+
+                // 明确使用 DOM 节点而不是 innerHTML，避免特殊世界书名称破坏结构。
+                label.appendChild(input);
+                label.appendChild(text);
+
+                input.onchange =
                     e => {
 
                         if (
@@ -5452,7 +5459,11 @@ ${esc(name)}
         onFloatButtonActivate();
     }, true);
 
-    // ---- 手机触摸 ----
+    // ---- 手机触摸：Android WebView 强制全局捕获 ----
+    // 不依赖 touchmove 是否仍然发生在按钮本身，也不依赖 Pointer Capture。
+    // 这样手指离开洛托姆后仍能继续拖动，且不会被酒馆滚动层抢走。
+    const floatDragWindow = (topDoc && topDoc.defaultView) || window;
+
     floatBtn.addEventListener('touchstart', function (e) {
         const t = e.touches && e.touches[0];
         if (!t) return;
@@ -5467,39 +5478,51 @@ ${esc(name)}
             touchId: t.identifier
         };
         floatBtn.classList.add('dragging');
+        if (e.cancelable) e.preventDefault();
         e.stopPropagation();
-    }, { passive: true, capture: true });
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }, { passive: false, capture: true });
 
-    floatBtn.addEventListener('touchmove', function (e) {
+    function handleFloatTouchMove(e) {
         if (!floatDrag || floatDrag.kind !== 'touch') return;
         let t = null;
-        for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === floatDrag.touchId) { t = e.touches[i]; break; }
+        const touches = e.touches || [];
+        for (let i = 0; i < touches.length; i++) {
+            if (touches[i].identifier === floatDrag.touchId) {
+                t = touches[i];
+                break;
+            }
         }
-        if (!t) t = e.touches[0];
+        if (!t) t = touches[0];
         if (!t) return;
+
         const dx = t.clientX - floatDrag.x0;
         const dy = t.clientY - floatDrag.y0;
-        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             floatDrag.moved = true;
             applyFloatPosition(floatDrag.left0 + dx, floatDrag.top0 + dy);
         }
-        if (floatDrag.moved && e.cancelable) e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         e.stopPropagation();
-    }, { passive: false, capture: true });
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }
 
-    floatBtn.addEventListener('touchend', function (e) {
+    function handleFloatTouchEnd(e) {
         if (!floatDrag || floatDrag.kind !== 'touch') return;
         if (e.cancelable) e.preventDefault();
         e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         endFloatDrag(true);
-    }, { passive: false, capture: true });
+    }
 
-    floatBtn.addEventListener('touchcancel', function () {
+    floatDragWindow.addEventListener('touchmove', handleFloatTouchMove, { passive: false, capture: true });
+    floatDragWindow.addEventListener('touchend', handleFloatTouchEnd, { passive: false, capture: true });
+    floatDragWindow.addEventListener('touchcancel', function (e) {
         if (!floatDrag || floatDrag.kind !== 'touch') return;
-        floatDrag.moved = true; // 取消时不打开
+        floatDrag.moved = true;
+        if (e.cancelable) e.preventDefault();
         endFloatDrag(false);
-    }, { passive: true, capture: true });
+    }, { passive: false, capture: true });
 
     // 窗口尺寸变化时把按钮拉回可见区
     window.addEventListener('resize', function () {
