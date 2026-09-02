@@ -48,3 +48,10 @@
 
 
 v0.55：彻底移除上一版洛托姆悬浮按钮拖动实现，重写为独立 drag session；Pointer Events + Android Touch Events 双路径，document/window 双兜底；超过6px才判定拖动，单击仍负责打开/关闭。
+
+
+### v0.57 本次修改
+- 首页两个论坛 App 名称改为「表论坛」「里论坛」，均保持单行。
+- 手机界面整体字体进一步缩小，提升小屏信息密度。
+- 重构洛托姆悬浮按钮拖动：Pointer Events 为主、Touch Events 兜底，并在 document 捕获阶段持续跟踪。
+- 顶部手机拖动层恢复为可接收触摸事件，缩放键保持独立可点击。
