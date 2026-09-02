@@ -3104,7 +3104,7 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
             d.className = 'pkmn-post';
             const mainAvatar = String(first.author || '匿名用户').trim().slice(0, 1) || '匿';
             const mainForum = currentForum === 'mature' ? '里论坛' : '表论坛';
-            const mainLocation = currentForum === 'mature' ? '未知' : (first.ipLocation || first.location || '未知');
+            const mainLocation = currentForum === 'mature' ? '未知' : (first.ipLocation || first.location || 'AI未生成地区');
             const mainComments = Math.max(0, (t.posts?.length || 1) - 1);
             const mainNested = (t.posts || []).slice(1).reduce(
                 (sum, p) => sum + ensureNestedReplies(p).length,
@@ -3411,10 +3411,12 @@ ${matureRule}
 每条包含：
 title
 author
+ipLocation
 content
 tags
 
 tags必须是 3～6 个与帖子内容高度相关的短标签，不要带 #，不要重复。
+ipLocation必须为表论坛网友生成地区，例如“日本东京”“中国广东”“美国加州”；里论坛不要生成，前端固定显示未知。
 author必须是与{{user}}无关的匿名网络昵称。
 
 只返回JSON数组，不要解释。
