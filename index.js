@@ -1825,13 +1825,14 @@
 
     panel.innerHTML = `
 
-<button id="pkmn-close-phone" type="button" aria-label="关闭">×</button>
-<button id="pkmn-phone-scale" type="button" aria-label="切换手机大小">↕</button>
 <div class="pkmn-drag-top" id="pkmn-drag-top" aria-label="拖动手机"></div>
 
 <div class="pkmn-status">
     <span id="pkmn-time">00:00</span>
-    <span>📶 🔋</span>
+    <div class="pkmn-status-right">
+        <span class="pkmn-status-icons" aria-hidden="true">📶 🔋</span>
+        <button id="pkmn-phone-scale" type="button" aria-label="切换手机大小">↕</button>
+    </div>
     <div class="pkmn-notch"></div>
 </div>
 
@@ -2208,6 +2209,7 @@
         if (!handle) return;
         handle.style.touchAction = 'none';
         handle.addEventListener('touchstart', e => {
+            if (scaleBtn && scaleBtn.contains(e.target)) return;
             if (!e.touches || !e.touches.length) return;
             const t = e.touches[0];
             beginPhoneDrag(t.clientX, t.clientY, null, t.identifier);
@@ -2226,6 +2228,7 @@
         handle.addEventListener('touchend', endPhoneDrag, { passive: false, capture: true });
         handle.addEventListener('touchcancel', endPhoneDrag, { passive: false, capture: true });
         handle.addEventListener('pointerdown', e => {
+            if (scaleBtn && scaleBtn.contains(e.target)) return;
             if (e.pointerType === 'touch') return;
             if (e.button !== undefined && e.button !== 0) return;
             beginPhoneDrag(e.clientX, e.clientY, e.pointerId, null);
@@ -2239,6 +2242,7 @@
         handle.addEventListener('pointerup', endPhoneDrag, { passive: false, capture: true });
         handle.addEventListener('pointercancel', endPhoneDrag, { passive: false, capture: true });
         handle.addEventListener('mousedown', e => {
+            if (scaleBtn && scaleBtn.contains(e.target)) return;
             if (e.button !== 0) return;
             beginPhoneDrag(e.clientX, e.clientY, null, null);
             e.preventDefault();
@@ -5313,21 +5317,15 @@ ${esc(b.prompt)}
         } catch (_) {}
     }
 
-    // 短时间连点悬浮按钮 3 次 → 手机窗口复位到屏幕中央（电脑鼠标 + 手机触摸）
-    let floatTapTimes = [];
-    const FLOAT_TRIPLE_WINDOW_MS = 600;
-
+    // 洛托姆悬浮窗作为唯一关闭/打开按键：单击打开，再单击关闭。
     function onFloatButtonActivate() {
         const now = Date.now();
         try { floatBtn._pkmnLastActivate = now; } catch (_) {}
-        floatTapTimes = floatTapTimes.filter(t => now - t < FLOAT_TRIPLE_WINDOW_MS);
-        floatTapTimes.push(now);
-        if (floatTapTimes.length >= 3) {
-            floatTapTimes = [];
-            resetPhoneToCenter();
-            return;
+        if (panel.classList.contains('show')) {
+            closePhone();
+        } else {
+            openPhone();
         }
-        openPhone();
     }
 
     function openPhone() {
@@ -5561,20 +5559,9 @@ ${esc(b.prompt)}
         });
     } catch (_) {}
 
-    const closePhoneBtn = $('pkmn-close-phone');
-    if (closePhoneBtn) {
-        // 关闭按钮同样只使用 click，避免一次 Android 触摸触发多次 close/open。
-        closePhoneBtn.addEventListener('click', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-            closePhone();
-        }, { passive: false });
-    }
-
+    // 手机内部不再显示独立 X；关闭功能统一交给洛托姆悬浮窗。
     ['pointerdown','pointerup','click'].forEach(type => {
         panel.addEventListener(type, e => {
-            if (e.target === closePhoneBtn) return;
             e.stopPropagation();
         }, { passive: false });
     });

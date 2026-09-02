@@ -6,8 +6,8 @@
     "dependencies": [],
     "js": "index.js",
     "css": "style.css",
-    "author": "Converted from 测试论坛0.331 · Weibo layout",
-    "version": "0.53.0",
+    "author": "Converted from v0.53 · Weibo forum layout · Rotom toggle/status-bar fix",
+    "version": "0.54.0",
     "homePage": "",
     "auto_update": false,
     "minimum_client_version": "1.12.0"
