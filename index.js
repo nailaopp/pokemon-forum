@@ -3103,6 +3103,8 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
             const d = topDoc.createElement('div');
             d.className = 'pkmn-post';
             const mainAvatar = String(first.author || '匿名用户').trim().slice(0, 1) || '匿';
+            const mainForum = currentForum === 'mature' ? '里论坛' : '表论坛';
+            const mainLocation = currentForum === 'mature' ? '未知' : (first.ipLocation || first.location || '未知');
             const mainComments = Math.max(0, (t.posts?.length || 1) - 1);
             const mainNested = (t.posts || []).slice(1).reduce(
                 (sum, p) => sum + ensureNestedReplies(p).length,
@@ -3113,10 +3115,10 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
     <div class="pkmn-post-avatar">${esc(mainAvatar)}</div>
     <div class="pkmn-post-user">
         <div class="pkmn-post-author">${esc(first.author || '匿名用户')}</div>
-        <div class="pkmn-post-time">${esc(t.time || '刚刚')} · ${t.isUserThread ? '我的帖子' : '论坛网友'}</div>
+        <div class="pkmn-post-time">${esc(t.time || '刚刚')} · ${esc(mainLocation)}</div>
     </div>
 </div>
-<div class="pkmn-post-floor">1楼</div>
+<div class="pkmn-post-floor">${esc(mainForum)} · 主题详情　1楼</div>
 <div class="pkmn-post-title">${esc(t.title || '无标题')}</div>
 ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
 <div class="pkmn-content">${esc(first.content || '')}</div>
@@ -3372,7 +3374,7 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
                 );
 
             const forumName =
-                '城际论坛';
+                currentForum === 'mature' ? '里论坛' : '表论坛';
 
             const matureRule =
                 currentForum === 'mature'
