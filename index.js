@@ -2074,8 +2074,8 @@
         touchId: null
     };
 
-    const PHONE_FULL_HEIGHT = 650;
-    const PHONE_HALF_HEIGHT = Math.round(PHONE_FULL_HEIGHT / 2);
+    const PHONE_FULL_HEIGHT = 1360;
+    const PHONE_HALF_HEIGHT = 680;
     let phoneExpanded = false;
 
     function phoneViewport() {
@@ -2088,7 +2088,7 @@
 
     function phoneSize() {
         const vp = phoneViewport();
-        const width = Math.min(350, Math.max(260, vp.width - 24));
+        const width = Math.min(620, Math.max(320, vp.width - 24));
         const maxH = Math.max(260, vp.height - 24);
         const full = Math.min(PHONE_FULL_HEIGHT, maxH);
         const half = Math.min(PHONE_HALF_HEIGHT, Math.max(220, Math.floor(full / 2)));
@@ -2488,9 +2488,7 @@
 
         $('pkmn-forum-title')
             .textContent =
-                currentForum === 'safe'
-                    ? '宝宝宝可萌大师'
-                    : '91宝可梦论坛';
+                '城际论坛';
     }
 
     // ============================================================
@@ -3364,9 +3362,7 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
                 );
 
             const forumName =
-                currentForum === 'safe'
-                    ? '宝宝宝可萌大师'
-                    : '91宝可梦论坛';
+                '城际论坛';
 
             const matureRule =
                 currentForum === 'mature'
