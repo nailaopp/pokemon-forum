@@ -8,6 +8,43 @@
 #pkmn-phone-panel,
 #pkmn-phone-panel *{box-sizing:border-box!important}
 
+#pkmn-float-btn{
+  position:fixed!important;
+  left:auto!important;
+  top:auto!important;
+  right:18px!important;
+  bottom:80px!important;
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  min-height:54px!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  z-index:2147483646!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+  opacity:1!important;
+  cursor:grab!important;
+  touch-action:none!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#pkmn-float-btn.dragging{cursor:grabbing!important}
+#pkmn-float-btn svg{
+  width:50px!important;
+  height:50px!important;
+  display:block!important;
+  pointer-events:none!important;
+  flex:0 0 auto!important;
+}
+
 #pkmn-phone-panel{
   --forum-bg:#f4f6f8;
   --forum-paper:#ffffff;
@@ -28,7 +65,7 @@
   top:50%!important;
   right:auto!important;
   bottom:auto!important;
-  transform:translate(-50%,-50%)!important;
+  transform:none!important;
   padding:0!important;
   border:7px solid var(--forum-phone)!important;
   border-radius:42px!important;
