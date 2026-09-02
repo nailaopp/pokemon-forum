@@ -1047,3 +1047,40 @@
 #pkmn-phone-panel #pkmn-phone-scale:after{content:none!important}
 #pkmn-phone-panel .pkmn-status-icons{font-size:12px!important;letter-spacing:1px!important;color:#68737f!important;line-height:29px!important;white-space:nowrap!important}
 #pkmn-phone-panel .pkmn-notch{display:none!important}
+
+
+/* v0.56.1 微调：微博布局密度优化 */
+#pkmn-phone-panel .pkmn-app-icon{
+  font-size:12px!important;
+  min-height:92px!important;
+  gap:5px!important;
+  line-height:16px!important;
+}
+#pkmn-phone-panel .pkmn-app-icon:not(#pkmn-open-settings){
+  white-space:nowrap!important;
+}
+#pkmn-phone-panel .pkmn-home-apps{
+  gap:12px!important;
+  padding:24px!important;
+}
+#pkmn-phone-panel .pkmn-thread-title{
+  font-size:16px!important;
+  line-height:24px!important;
+}
+#pkmn-phone-panel .pkmn-thread-summary{
+  font-size:13px!important;
+  line-height:21px!important;
+}
+#pkmn-phone-panel .pkmn-head{
+  font-size:19px!important;
+}
+#pkmn-phone-panel .pkmn-bottom{
+  gap:12px!important;
+  padding:12px 16px!important;
+}
+#pkmn-phone-panel .pkmn-btn{
+  flex:1 1 0!important;
+  padding:0 8px!important;
+  font-size:12px!important;
+  height:42px!important;
+}
