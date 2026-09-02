@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 51; // fix undeclared chatState startup crash
+    const VERSION = 55; // fix undeclared chatState startup crash
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -5390,137 +5390,253 @@ ${esc(b.prompt)}
 
 
     // ============================================================
-    // 悬浮按钮交互（电脑 + 手机统一重写）
-    // 电脑：mousedown/mousemove/mouseup + click
-    // 手机：touchstart/move/end（不依赖 Pointer Capture）
+    // v0.55：洛托姆悬浮按钮拖动引擎（彻底重写）
+    // ============================================================
+    // 旧版同时混用 mouse / pointer / touch，并在不同 window 上监听。
+    // Android WebView 下很容易出现“能点但拖不动”。
+    // 本版只把一次手势视为一个 drag session：
+    //   1. Pointer Events 优先，并尝试 setPointerCapture
+    //   2. Android Touch Events 作为独立兜底
+    //   3. document + window 双层监听，手指离开按钮后仍能移动
+    //   4. 拖动超过 6px 才算移动；未移动才执行打开/关闭
     // ============================================================
 
-    let floatDrag = null; // {x0,y0,left0,top0,moved,pointerId}
+    let floatDrag = null;
 
-    function floatHitTest(clientX, clientY) {
-        const r = floatBtn.getBoundingClientRect();
-        return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+    // 强制把按钮变成真正的“fixed + 可触摸拖动”元素。
+    // 不依赖外部 CSS 是否成功加载。
+    try {
+        floatBtn.style.setProperty('position', 'fixed', 'important');
+        floatBtn.style.setProperty('touch-action', 'none', 'important');
+        floatBtn.style.setProperty('user-select', 'none', 'important');
+        floatBtn.style.setProperty('-webkit-user-select', 'none', 'important');
+        floatBtn.style.setProperty('-webkit-user-drag', 'none', 'important');
+        floatBtn.style.setProperty('pointer-events', 'auto', 'important');
+        floatBtn.style.setProperty('z-index', '2147483647', 'important');
+    } catch (_) {}
+
+    function floatPointFromEvent(e) {
+        if (e && e.touches && e.touches.length) {
+            const t = e.touches[0];
+            return { x: t.clientX, y: t.clientY, id: t.identifier };
+        }
+        if (e && e.changedTouches && e.changedTouches.length) {
+            const t = e.changedTouches[0];
+            return { x: t.clientX, y: t.clientY, id: t.identifier };
+        }
+        return {
+            x: Number(e?.clientX) || 0,
+            y: Number(e?.clientY) || 0,
+            id: e?.pointerId ?? null
+        };
     }
 
-    function endFloatDrag(openIfNotMoved) {
-        if (!floatDrag) return;
-        const moved = !!floatDrag.moved;
-        floatDrag = null;
-        floatBtn.classList.remove('dragging');
-        try { saveFloatPosition(); } catch (_) {}
-        if (openIfNotMoved && !moved) {
-            onFloatButtonActivate();
-        }
-    }
+    function beginFloatDrag(e, kind) {
+        if (!e) return;
+        if (kind === 'mouse' && e.button !== 0) return;
+        if (kind === 'pointer' && e.isPrimary === false) return;
 
-    // ---- 电脑鼠标 ----
-    floatBtn.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        e.preventDefault();
-        e.stopPropagation();
+        const p = floatPointFromEvent(e);
         const r = floatBtn.getBoundingClientRect();
+
         floatDrag = {
-            x0: e.clientX,
-            y0: e.clientY,
+            kind,
+            id: p.id,
+            x0: p.x,
+            y0: p.y,
             left0: r.left,
             top0: r.top,
-            moved: false,
-            kind: 'mouse'
+            moved: false
         };
-        floatBtn.classList.add('dragging');
-    }, true);
 
-    window.addEventListener('mousemove', function (e) {
-        if (!floatDrag || floatDrag.kind !== 'mouse') return;
-        const dx = e.clientX - floatDrag.x0;
-        const dy = e.clientY - floatDrag.y0;
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            floatDrag.moved = true;
-            applyFloatPosition(floatDrag.left0 + dx, floatDrag.top0 + dy);
+        floatBtn.classList.add('dragging');
+
+        // Pointer Capture 是第一层保险；失败也不影响下面的 document/window 兜底。
+        if (kind === 'pointer' && typeof floatBtn.setPointerCapture === 'function') {
+            try { floatBtn.setPointerCapture(e.pointerId); } catch (_) {}
         }
-        e.preventDefault();
-    }, true);
 
-    window.addEventListener('mouseup', function (e) {
-        if (!floatDrag || floatDrag.kind !== 'mouse') return;
-        e.preventDefault();
-        e.stopPropagation();
-        endFloatDrag(true);
-    }, true);
-
-    // click 兜底（仅当没有拖动逻辑触发时）
-    floatBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        // mouseup 已处理则跳过
-        if (floatBtn._pkmnLastActivate && Date.now() - floatBtn._pkmnLastActivate < 350) return;
-        onFloatButtonActivate();
-    }, true);
-
-    // ---- 手机触摸：Android WebView 强制全局捕获 ----
-    // 不依赖 touchmove 是否仍然发生在按钮本身，也不依赖 Pointer Capture。
-    // 这样手指离开洛托姆后仍能继续拖动，且不会被酒馆滚动层抢走。
-    const floatDragWindow = (topDoc && topDoc.defaultView) || window;
-
-    floatBtn.addEventListener('touchstart', function (e) {
-        const t = e.touches && e.touches[0];
-        if (!t) return;
-        const r = floatBtn.getBoundingClientRect();
-        floatDrag = {
-            x0: t.clientX,
-            y0: t.clientY,
-            left0: r.left,
-            top0: r.top,
-            moved: false,
-            kind: 'touch',
-            touchId: t.identifier
-        };
-        floatBtn.classList.add('dragging');
         if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-    }, { passive: false, capture: true });
+        if (e.stopPropagation) e.stopPropagation();
+    }
 
-    function handleFloatTouchMove(e) {
-        if (!floatDrag || floatDrag.kind !== 'touch') return;
-        let t = null;
-        const touches = e.touches || [];
-        for (let i = 0; i < touches.length; i++) {
-            if (touches[i].identifier === floatDrag.touchId) {
-                t = touches[i];
-                break;
+    function updateFloatDrag(e, kind) {
+        if (!floatDrag || floatDrag.kind !== kind) return;
+
+        if (kind === 'pointer' &&
+            floatDrag.id !== null &&
+            e.pointerId !== undefined &&
+            e.pointerId !== floatDrag.id) return;
+
+        if (kind === 'touch') {
+            const touches = e.touches || [];
+            let found = null;
+            for (let i = 0; i < touches.length; i++) {
+                if (touches[i].identifier === floatDrag.id) {
+                    found = touches[i];
+                    break;
+                }
+            }
+            if (!found) return;
+
+            const dx = found.clientX - floatDrag.x0;
+            const dy = found.clientY - floatDrag.y0;
+
+            if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+                floatDrag.moved = true;
+                applyFloatPosition(
+                    floatDrag.left0 + dx,
+                    floatDrag.top0 + dy
+                );
+            }
+        } else {
+            const p = floatPointFromEvent(e);
+            const dx = p.x - floatDrag.x0;
+            const dy = p.y - floatDrag.y0;
+
+            if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+                floatDrag.moved = true;
+                applyFloatPosition(
+                    floatDrag.left0 + dx,
+                    floatDrag.top0 + dy
+                );
             }
         }
-        if (!t) t = touches[0];
-        if (!t) return;
 
-        const dx = t.clientX - floatDrag.x0;
-        const dy = t.clientY - floatDrag.y0;
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            floatDrag.moved = true;
-            applyFloatPosition(floatDrag.left0 + dx, floatDrag.top0 + dy);
+        if (e.cancelable) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+    }
+
+    function finishFloatDrag(e, kind, allowActivate) {
+        if (!floatDrag || floatDrag.kind !== kind) return;
+
+        if (kind === 'pointer' &&
+            floatDrag.id !== null &&
+            e?.pointerId !== undefined &&
+            e.pointerId !== floatDrag.id) return;
+
+        const moved = floatDrag.moved;
+        const pointerId = floatDrag.id;
+
+        if (kind === 'pointer' &&
+            typeof floatBtn.releasePointerCapture === 'function' &&
+            pointerId !== null) {
+            try { floatBtn.releasePointerCapture(pointerId); } catch (_) {}
         }
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+        floatDrag = null;
+        floatBtn.classList.remove('dragging');
+
+        try { saveFloatPosition(); } catch (_) {}
+
+        if (e?.cancelable) e.preventDefault();
+        if (e?.stopPropagation) e.stopPropagation();
+
+        if (allowActivate && !moved) {
+            // 延迟到当前手势事件结束，避免 Android 把 touchend 产生的 click
+            // 再执行一次，导致“打开后立即关闭”。
+            setTimeout(() => {
+                try { onFloatButtonActivate(); } catch (_) {}
+            }, 0);
+        }
     }
 
-    function handleFloatTouchEnd(e) {
-        if (!floatDrag || floatDrag.kind !== 'touch') return;
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-        endFloatDrag(true);
+    const floatEventWin =
+        (topDoc && topDoc.defaultView) || window;
+
+    // ---------- Pointer Events ----------
+    floatBtn.addEventListener('pointerdown', function(e) {
+        if (e.pointerType === 'touch') {
+            // Android 的 touch 事件兜底会负责这一类，避免两套同时启动。
+            return;
+        }
+        beginFloatDrag(e, 'pointer');
+    }, { capture: true, passive: false });
+
+    floatBtn.addEventListener('pointermove', function(e) {
+        updateFloatDrag(e, 'pointer');
+    }, { capture: true, passive: false });
+
+    floatBtn.addEventListener('pointerup', function(e) {
+        finishFloatDrag(e, 'pointer', true);
+    }, { capture: true, passive: false });
+
+    floatBtn.addEventListener('pointercancel', function(e) {
+        finishFloatDrag(e, 'pointer', false);
+    }, { capture: true, passive: false });
+
+    // ---------- Mouse Events（老 WebView / 桌面兜底） ----------
+    floatBtn.addEventListener('mousedown', function(e) {
+        beginFloatDrag(e, 'mouse');
+    }, { capture: true, passive: false });
+
+    function onFloatMouseMove(e) {
+        updateFloatDrag(e, 'mouse');
+    }
+    function onFloatMouseUp(e) {
+        finishFloatDrag(e, 'mouse', true);
     }
 
-    floatDragWindow.addEventListener('touchmove', handleFloatTouchMove, { passive: false, capture: true });
-    floatDragWindow.addEventListener('touchend', handleFloatTouchEnd, { passive: false, capture: true });
-    floatDragWindow.addEventListener('touchcancel', function (e) {
-        if (!floatDrag || floatDrag.kind !== 'touch') return;
-        floatDrag.moved = true;
-        if (e.cancelable) e.preventDefault();
-        endFloatDrag(false);
-    }, { passive: false, capture: true });
+    floatEventWin.addEventListener('mousemove', onFloatMouseMove, {
+        capture: true,
+        passive: false
+    });
+    floatEventWin.addEventListener('mouseup', onFloatMouseUp, {
+        capture: true,
+        passive: false
+    });
+
+    // ---------- Touch Events（Android WebView 主路径） ----------
+    function onFloatTouchStart(e) {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        beginFloatDrag(e, 'touch');
+    }
+
+    function onFloatTouchMove(e) {
+        updateFloatDrag(e, 'touch');
+    }
+
+    function onFloatTouchEnd(e) {
+        finishFloatDrag(e, 'touch', true);
+    }
+
+    function onFloatTouchCancel(e) {
+        finishFloatDrag(e, 'touch', false);
+    }
+
+    // 按钮自身先捕获一次。
+    floatBtn.addEventListener('touchstart', onFloatTouchStart, {
+        capture: true,
+        passive: false
+    });
+
+    // document + window 双兜底。
+    // 这样即使酒馆的滚动层把手指从按钮上“移走”，仍能收到 move/end。
+    [topDoc, floatEventWin].forEach(root => {
+        try {
+            root.addEventListener('touchmove', onFloatTouchMove, {
+                capture: true,
+                passive: false
+            });
+            root.addEventListener('touchend', onFloatTouchEnd, {
+                capture: true,
+                passive: false
+            });
+            root.addEventListener('touchcancel', onFloatTouchCancel, {
+                capture: true,
+                passive: false
+            });
+        } catch (_) {}
+    });
+
+    // 某些 Android WebView 会在 touchend 后额外产生 click。
+    // 这里统一阻止原生 click，只由 drag engine 决定是否激活。
+    floatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }, { capture: true, passive: false });
 
     // 窗口尺寸变化时把按钮拉回可见区
     window.addEventListener('resize', function () {

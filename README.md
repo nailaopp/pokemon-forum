@@ -45,3 +45,6 @@
 - 修复手机窗口初始定位：JS 使用 left/top 视口坐标时不再叠加 translate(-50%, -50%)。
 - 恢复并固定洛托姆悬浮按钮的 fixed 定位、尺寸、层级与触摸拖动区域。
 - 版本号更新为 0.50.0。
+
+
+v0.55：彻底移除上一版洛托姆悬浮按钮拖动实现，重写为独立 drag session；Pointer Events + Android Touch Events 双路径，document/window 双兜底；超过6px才判定拖动，单击仍负责打开/关闭。
