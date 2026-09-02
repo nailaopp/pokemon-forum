@@ -2061,6 +2061,7 @@
 
     const dragTop = $('pkmn-drag-top');
     const dragBottom = $('pkmn-drag-bottom');
+    const statusBar = panel.querySelector('.pkmn-status');
     const scaleBtn = $('pkmn-phone-scale');
 
     const phoneDragState = {
@@ -2250,7 +2251,10 @@
         handle.addEventListener('mouseup', endPhoneDrag, { passive: false, capture: true });
     }
 
+    // 顶部整块状态栏都作为拖动区域，避免透明拖动层在 Android WebView 中
+    // 被状态栏/刘海层吞掉触摸事件。关闭按钮与缩放按钮自身仍会拦截点击。
     bindPhoneDragHandle(dragTop);
+    bindPhoneDragHandle(statusBar);
     bindPhoneDragHandle(dragBottom);
 
     // 手指离开手柄后仍继续接收移动：直接监听顶层 window/document。
