@@ -3118,10 +3118,10 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
         <div class="pkmn-post-time">${esc(t.time || '刚刚')} · ${esc(mainLocation)}</div>
     </div>
 </div>
-<div class="pkmn-post-floor">${esc(mainForum)} · 主题详情　1楼</div>
+<div class="pkmn-post-floor">${esc(mainForum)} · 主题详情</div>
 <div class="pkmn-post-title">${esc(t.title || '无标题')}</div>
-${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
 <div class="pkmn-content">${esc(first.content || '')}</div>
+${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
 <div class="pkmn-post-tools">
     <span class="pkmn-post-tool">↗ 转发</span>
     <span class="pkmn-post-tool">💬 ${mainComments + mainNested}</span>

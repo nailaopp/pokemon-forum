@@ -450,7 +450,7 @@
   border-radius:0!important;
 }
 #pkmn-phone-panel .pkmn-post:before{
-  content:"城际论坛  ›  主题详情"!important;
+  content:""!important;
   display:block!important;
   margin:0 0 12px!important;
   color:#66727e!important;
@@ -1083,4 +1083,22 @@
   padding:0 8px!important;
   font-size:12px!important;
   height:42px!important;
+}
+
+/* v0.58 微博标签强化 */
+#pkmn-phone-panel .pkmn-post-tags{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  margin:18px 0 8px!important;
+}
+#pkmn-phone-panel .pkmn-post-tags span{
+  display:inline-flex!important;
+  align-items:center!important;
+  padding:5px 12px!important;
+  border-radius:999px!important;
+  background:#fff1f0!important;
+  color:#e85d5d!important;
+  font-size:13px!important;
+  font-weight:700!important;
 }
