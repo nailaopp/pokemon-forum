@@ -5284,10 +5284,13 @@ ${esc(b.prompt)}
 
     function applyFloatPosition(left, top) {
         const pos = clampFloatPosition(left, top);
-        floatBtn.style.left = pos.left + 'px';
-        floatBtn.style.top = pos.top + 'px';
-        floatBtn.style.right = 'auto';
-        floatBtn.style.bottom = 'auto';
+        // CSS 中默认定位使用了 !important；这里必须用同等级的 inline
+        // !important，否则拖动后坐标会再次被 right/bottom 规则覆盖。
+        floatBtn.style.setProperty('left', pos.left + 'px', 'important');
+        floatBtn.style.setProperty('top', pos.top + 'px', 'important');
+        floatBtn.style.setProperty('right', 'auto', 'important');
+        floatBtn.style.setProperty('bottom', 'auto', 'important');
+        floatBtn.style.setProperty('position', 'fixed', 'important');
     }
 
     function saveFloatPosition() {
@@ -5401,242 +5404,177 @@ ${esc(b.prompt)}
     //   4. 拖动超过 6px 才算移动；未移动才执行打开/关闭
     // ============================================================
 
+    // ============================================================
+    // v0.56：洛托姆悬浮按钮拖动引擎（重新设计）
+    // 不再依赖“按钮自身一定能收到 move”这一假设。
+    // 触摸开始/移动/结束统一在 document 捕获阶段接管，
+    // 同时使用 Pointer Events 与 Touch Events 兜底。
+    // ============================================================
     let floatDrag = null;
+    let floatTouchHandled = false;
 
-    // 强制把按钮变成真正的“fixed + 可触摸拖动”元素。
-    // 不依赖外部 CSS 是否成功加载。
-    try {
-        floatBtn.style.setProperty('position', 'fixed', 'important');
-        floatBtn.style.setProperty('touch-action', 'none', 'important');
-        floatBtn.style.setProperty('user-select', 'none', 'important');
-        floatBtn.style.setProperty('-webkit-user-select', 'none', 'important');
-        floatBtn.style.setProperty('-webkit-user-drag', 'none', 'important');
-        floatBtn.style.setProperty('pointer-events', 'auto', 'important');
-        floatBtn.style.setProperty('z-index', '2147483647', 'important');
-    } catch (_) {}
-
-    function floatPointFromEvent(e) {
+    function floatEventPoint(e) {
         if (e && e.touches && e.touches.length) {
             const t = e.touches[0];
-            return { x: t.clientX, y: t.clientY, id: t.identifier };
+            return { x:t.clientX, y:t.clientY, id:t.identifier };
         }
         if (e && e.changedTouches && e.changedTouches.length) {
             const t = e.changedTouches[0];
-            return { x: t.clientX, y: t.clientY, id: t.identifier };
+            return { x:t.clientX, y:t.clientY, id:t.identifier };
         }
         return {
-            x: Number(e?.clientX) || 0,
-            y: Number(e?.clientY) || 0,
-            id: e?.pointerId ?? null
+            x:Number(e && e.clientX) || 0,
+            y:Number(e && e.clientY) || 0,
+            id:e && e.pointerId != null ? e.pointerId : null
         };
     }
 
-    function beginFloatDrag(e, kind) {
-        if (!e) return;
-        if (kind === 'mouse' && e.button !== 0) return;
-        if (kind === 'pointer' && e.isPrimary === false) return;
+    function isFloatTarget(e) {
+        const t = e && e.target;
+        if (!t) return false;
+        if (t === floatBtn) return true;
+        try {
+            return !!(t.closest && t.closest('#pkmn-float-btn') === floatBtn);
+        } catch (_) {
+            return false;
+        }
+    }
 
-        const p = floatPointFromEvent(e);
+    function beginFloatSession(e, kind) {
+        if (!isFloatTarget(e)) return false;
+        if (kind === 'pointer' && e.isPrimary === false) return false;
+        if (kind === 'mouse' && e.button !== 0) return false;
+        if (floatDrag) return true;
+
+        const p = floatEventPoint(e);
         const r = floatBtn.getBoundingClientRect();
-
         floatDrag = {
             kind,
-            id: p.id,
-            x0: p.x,
-            y0: p.y,
-            left0: r.left,
-            top0: r.top,
-            moved: false
+            id:p.id,
+            x0:p.x,
+            y0:p.y,
+            left0:r.left,
+            top0:r.top,
+            moved:false
         };
-
         floatBtn.classList.add('dragging');
-
-        // Pointer Capture 是第一层保险；失败也不影响下面的 document/window 兜底。
-        if (kind === 'pointer' && typeof floatBtn.setPointerCapture === 'function') {
-            try { floatBtn.setPointerCapture(e.pointerId); } catch (_) {}
-        }
-
+        try {
+            if (kind === 'pointer' && floatBtn.setPointerCapture) {
+                floatBtn.setPointerCapture(e.pointerId);
+            }
+        } catch (_) {}
         if (e.cancelable) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        else if (e.stopPropagation) e.stopPropagation();
+        return true;
     }
 
-    function updateFloatDrag(e, kind) {
-        if (!floatDrag || floatDrag.kind !== kind) return;
+    function moveFloatSession(e, kind) {
+        if (!floatDrag || floatDrag.kind !== kind) return false;
+        if (kind === 'pointer' && floatDrag.id !== null && e.pointerId !== floatDrag.id) return false;
 
-        if (kind === 'pointer' &&
-            floatDrag.id !== null &&
-            e.pointerId !== undefined &&
-            e.pointerId !== floatDrag.id) return;
-
+        const p = floatEventPoint(e);
         if (kind === 'touch') {
-            const touches = e.touches || [];
             let found = null;
-            for (let i = 0; i < touches.length; i++) {
-                if (touches[i].identifier === floatDrag.id) {
-                    found = touches[i];
-                    break;
-                }
+            const list = e.touches || [];
+            for (let i=0;i<list.length;i++) {
+                if (list[i].identifier === floatDrag.id) { found=list[i]; break; }
             }
-            if (!found) return;
-
-            const dx = found.clientX - floatDrag.x0;
-            const dy = found.clientY - floatDrag.y0;
-
-            if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
-                floatDrag.moved = true;
-                applyFloatPosition(
-                    floatDrag.left0 + dx,
-                    floatDrag.top0 + dy
-                );
-            }
-        } else {
-            const p = floatPointFromEvent(e);
-            const dx = p.x - floatDrag.x0;
-            const dy = p.y - floatDrag.y0;
-
-            if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
-                floatDrag.moved = true;
-                applyFloatPosition(
-                    floatDrag.left0 + dx,
-                    floatDrag.top0 + dy
-                );
-            }
+            if (!found) return false;
+            p.x = found.clientX; p.y = found.clientY;
         }
 
+        const dx = p.x - floatDrag.x0;
+        const dy = p.y - floatDrag.y0;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) floatDrag.moved = true;
+
+        if (floatDrag.moved) {
+            applyFloatPosition(floatDrag.left0 + dx, floatDrag.top0 + dy);
+        }
         if (e.cancelable) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        else if (e.stopPropagation) e.stopPropagation();
+        return true;
     }
 
-    function finishFloatDrag(e, kind, allowActivate) {
-        if (!floatDrag || floatDrag.kind !== kind) return;
-
-        if (kind === 'pointer' &&
-            floatDrag.id !== null &&
-            e?.pointerId !== undefined &&
-            e.pointerId !== floatDrag.id) return;
+    function endFloatSession(e, kind, activate) {
+        if (!floatDrag || floatDrag.kind !== kind) return false;
+        if (kind === 'pointer' && floatDrag.id !== null && e.pointerId !== floatDrag.id) return false;
 
         const moved = floatDrag.moved;
-        const pointerId = floatDrag.id;
-
-        if (kind === 'pointer' &&
-            typeof floatBtn.releasePointerCapture === 'function' &&
-            pointerId !== null) {
-            try { floatBtn.releasePointerCapture(pointerId); } catch (_) {}
-        }
-
+        const pid = floatDrag.id;
         floatDrag = null;
         floatBtn.classList.remove('dragging');
-
+        try {
+            if (kind === 'pointer' && floatBtn.releasePointerCapture && pid != null) {
+                floatBtn.releasePointerCapture(pid);
+            }
+        } catch (_) {}
         try { saveFloatPosition(); } catch (_) {}
 
-        if (e?.cancelable) e.preventDefault();
-        if (e?.stopPropagation) e.stopPropagation();
+        if (e && e.cancelable) e.preventDefault();
+        if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+        else if (e && e.stopPropagation) e.stopPropagation();
 
-        if (allowActivate && !moved) {
-            // 延迟到当前手势事件结束，避免 Android 把 touchend 产生的 click
-            // 再执行一次，导致“打开后立即关闭”。
+        if (activate && !moved) {
             setTimeout(() => {
                 try { onFloatButtonActivate(); } catch (_) {}
             }, 0);
         }
+        return true;
     }
 
-    const floatEventWin =
-        (topDoc && topDoc.defaultView) || window;
+    const floatEventWin = (topDoc && topDoc.defaultView) || window;
 
-    // ---------- Pointer Events ----------
-    floatBtn.addEventListener('pointerdown', function(e) {
-        if (e.pointerType === 'touch') {
-            // Android 的 touch 事件兜底会负责这一类，避免两套同时启动。
-            return;
-        }
-        beginFloatDrag(e, 'pointer');
-    }, { capture: true, passive: false });
+    // Pointer Events：鼠标和支持 Pointer Events 的触摸设备优先走这里。
+    floatBtn.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'touch') floatTouchHandled = true;
+        beginFloatSession(e, 'pointer');
+    }, {capture:true, passive:false});
+    floatEventWin.addEventListener('pointermove', e => {
+        if (floatDrag && floatDrag.kind === 'pointer') moveFloatSession(e, 'pointer');
+    }, {capture:true, passive:false});
+    floatEventWin.addEventListener('pointerup', e => {
+        if (floatDrag && floatDrag.kind === 'pointer') endFloatSession(e, 'pointer', true);
+    }, {capture:true, passive:false});
+    floatEventWin.addEventListener('pointercancel', e => {
+        if (floatDrag && floatDrag.kind === 'pointer') endFloatSession(e, 'pointer', false);
+    }, {capture:true, passive:false});
 
-    floatBtn.addEventListener('pointermove', function(e) {
-        updateFloatDrag(e, 'pointer');
-    }, { capture: true, passive: false });
+    // Touch Events：Android WebView 兜底。直接在 document 捕获阶段判断触摸目标，
+    // 即使按钮内部 SVG/酒馆滚动层改变了事件 target，也能接管整个手势。
+    topDoc.addEventListener('touchstart', e => {
+        if (!isFloatTarget(e)) return;
+        floatTouchHandled = true;
+        beginFloatSession(e, 'touch');
+    }, {capture:true, passive:false});
+    topDoc.addEventListener('touchmove', e => {
+        if (floatDrag && floatDrag.kind === 'touch') moveFloatSession(e, 'touch');
+    }, {capture:true, passive:false});
+    topDoc.addEventListener('touchend', e => {
+        if (floatDrag && floatDrag.kind === 'touch') endFloatSession(e, 'touch', true);
+        floatTouchHandled = false;
+    }, {capture:true, passive:false});
+    topDoc.addEventListener('touchcancel', e => {
+        if (floatDrag && floatDrag.kind === 'touch') endFloatSession(e, 'touch', false);
+        floatTouchHandled = false;
+    }, {capture:true, passive:false});
 
-    floatBtn.addEventListener('pointerup', function(e) {
-        finishFloatDrag(e, 'pointer', true);
-    }, { capture: true, passive: false });
+    // Mouse：不支持 Pointer Events 的桌面 WebView。
+    floatBtn.addEventListener('mousedown', e => beginFloatSession(e, 'mouse'), {capture:true, passive:false});
+    floatEventWin.addEventListener('mousemove', e => {
+        if (floatDrag && floatDrag.kind === 'mouse') moveFloatSession(e, 'mouse');
+    }, {capture:true, passive:false});
+    floatEventWin.addEventListener('mouseup', e => {
+        if (floatDrag && floatDrag.kind === 'mouse') endFloatSession(e, 'mouse', true);
+    }, {capture:true, passive:false});
 
-    floatBtn.addEventListener('pointercancel', function(e) {
-        finishFloatDrag(e, 'pointer', false);
-    }, { capture: true, passive: false });
-
-    // ---------- Mouse Events（老 WebView / 桌面兜底） ----------
-    floatBtn.addEventListener('mousedown', function(e) {
-        beginFloatDrag(e, 'mouse');
-    }, { capture: true, passive: false });
-
-    function onFloatMouseMove(e) {
-        updateFloatDrag(e, 'mouse');
-    }
-    function onFloatMouseUp(e) {
-        finishFloatDrag(e, 'mouse', true);
-    }
-
-    floatEventWin.addEventListener('mousemove', onFloatMouseMove, {
-        capture: true,
-        passive: false
-    });
-    floatEventWin.addEventListener('mouseup', onFloatMouseUp, {
-        capture: true,
-        passive: false
-    });
-
-    // ---------- Touch Events（Android WebView 主路径） ----------
-    function onFloatTouchStart(e) {
-        const t = e.touches && e.touches[0];
-        if (!t) return;
-        beginFloatDrag(e, 'touch');
-    }
-
-    function onFloatTouchMove(e) {
-        updateFloatDrag(e, 'touch');
-    }
-
-    function onFloatTouchEnd(e) {
-        finishFloatDrag(e, 'touch', true);
-    }
-
-    function onFloatTouchCancel(e) {
-        finishFloatDrag(e, 'touch', false);
-    }
-
-    // 按钮自身先捕获一次。
-    floatBtn.addEventListener('touchstart', onFloatTouchStart, {
-        capture: true,
-        passive: false
-    });
-
-    // document + window 双兜底。
-    // 这样即使酒馆的滚动层把手指从按钮上“移走”，仍能收到 move/end。
-    [topDoc, floatEventWin].forEach(root => {
-        try {
-            root.addEventListener('touchmove', onFloatTouchMove, {
-                capture: true,
-                passive: false
-            });
-            root.addEventListener('touchend', onFloatTouchEnd, {
-                capture: true,
-                passive: false
-            });
-            root.addEventListener('touchcancel', onFloatTouchCancel, {
-                capture: true,
-                passive: false
-            });
-        } catch (_) {}
-    });
-
-    // 某些 Android WebView 会在 touchend 后额外产生 click。
-    // 这里统一阻止原生 click，只由 drag engine 决定是否激活。
-    floatBtn.addEventListener('click', function(e) {
+    // 阻止浏览器生成第二次 click；真正的打开/关闭只由 endFloatSession 决定。
+    floatBtn.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-    }, { capture: true, passive: false });
+    }, {capture:true, passive:false});
 
     // 窗口尺寸变化时把按钮拉回可见区
     window.addEventListener('resize', function () {
