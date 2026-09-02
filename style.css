@@ -1,5 +1,5 @@
 /*
- * 宝可梦小手机 · 城际论坛 v0.57
+ * 宝可梦小手机 · 城际论坛 v0.49
  * Rebuilt from the supplied forum screenshots.
  * Important: every visual rule is scoped to #pkmn-phone-panel so that
  * Tavern/global CSS cannot leak into the phone or vice versa.
@@ -1001,7 +1001,7 @@
   left:0!important;
   transform:none!important;
   z-index:81!important;
-  pointer-events:auto!important;
+  pointer-events:none!important;
 }
 #pkmn-phone-panel #pkmn-close-phone,
 #pkmn-phone-panel #pkmn-phone-scale{
@@ -1047,46 +1047,3 @@
 #pkmn-phone-panel #pkmn-phone-scale:after{content:none!important}
 #pkmn-phone-panel .pkmn-status-icons{font-size:12px!important;letter-spacing:1px!important;color:#68737f!important;line-height:29px!important;white-space:nowrap!important}
 #pkmn-phone-panel .pkmn-notch{display:none!important}
-
-
-/* ============================================================
-   v0.57 · 首页名称与整体字体精简
-   - 两个论坛 App 名称改为单行短名：表论坛 / 里论坛
-   - 手机内文字整体缩小一级，避免小屏拥挤
-   ============================================================ */
-#pkmn-phone-panel .pkmn-home-apps{
-  gap:14px!important;
-  padding:24px 20px!important;
-}
-#pkmn-phone-panel .pkmn-app-icon{
-  min-height:78px!important;
-  gap:6px!important;
-  font-size:12px!important;
-  line-height:1.25!important;
-  white-space:nowrap!important;
-}
-#pkmn-phone-panel .pkmn-app-image,
-#pkmn-phone-panel .pkmn-app-icon>div:first-child{
-  width:54px!important;height:54px!important;
-  min-width:54px!important;min-height:54px!important;
-  max-width:54px!important;max-height:54px!important;
-  border-radius:14px!important;
-}
-#pkmn-phone-panel .pkmn-head{font-size:18px!important}
-#pkmn-phone-panel #pkmn-forum-title{font-size:18px!important}
-#pkmn-phone-panel .pkmn-tab{font-size:13px!important}
-#pkmn-phone-panel .pkmn-thread-user{font-size:13px!important}
-#pkmn-phone-panel .pkmn-thread-title{font-size:15px!important;line-height:1.45!important}
-#pkmn-phone-panel .pkmn-thread-snippet{font-size:12px!important;line-height:1.55!important}
-#pkmn-phone-panel .pkmn-thread-footer{font-size:10px!important}
-#pkmn-phone-panel .pkmn-post-author{font-size:13px!important}
-#pkmn-phone-panel .pkmn-post-title{font-size:18px!important;line-height:1.45!important}
-#pkmn-phone-panel .pkmn-content{font-size:13px!important;line-height:1.7!important}
-#pkmn-phone-panel .pkmn-reply-name{font-size:12px!important}
-#pkmn-phone-panel .pkmn-reply-bubble{font-size:12px!important}
-#pkmn-phone-panel .pkmn-status > span:first-child{font-size:15px!important}
-
-/* 顶部拖动层真正接收触摸；右侧缩放键位于更高层，互不抢事件。 */
-#pkmn-phone-panel .pkmn-drag-top{pointer-events:auto!important;z-index:81!important;touch-action:none!important}
-#pkmn-phone-panel .pkmn-status{touch-action:none!important}
-#pkmn-phone-panel #pkmn-phone-scale{z-index:120!important;pointer-events:auto!important}
