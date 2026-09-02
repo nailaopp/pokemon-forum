@@ -5,7 +5,7 @@
 - 缩放键移入状态栏右侧。
 - 强化 Android WebView 触摸拖动。
 
-# 宝可梦小手机论坛（SillyTavern 扩展版 v0.41）
+# 宝可梦论坛纯白怪力（SillyTavern 扩展版 v0.41）
 
 基于酒馆助手脚本 **测试论坛 0.331** 完整转换，**不依赖 Tavern Helper**。
 
@@ -15,7 +15,7 @@
    - `data/<用户名>/extensions/pkmn-phone-forum/`
    - 或 `public/scripts/extensions/third-party/pkmn-phone-forum/`
 2. 确认目录内直接有 `manifest.json`、`index.js`、`style.css`
-3. 刷新 SillyTavern，在扩展面板启用「宝可梦小手机论坛」
+3. 刷新 SillyTavern，在扩展面板启用「宝可梦论坛纯白怪力」
 4. 右下角出现洛托姆手机按钮
 
 ## 功能
