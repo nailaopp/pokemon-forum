@@ -1,152 +1,873 @@
-/* v0.47 — Plain / No-Beautification Build
-   Only layout, sizing, positioning and interaction-related CSS are retained.
-   No decorative colors, gradients, shadows, custom borders, rounded cards or visual themes.
-*/
+/*
+ * 宝可梦小手机论坛 v0.48
+ * Forum UI rebuild — no legacy visual patches.
+ * 目标：参考用户提供的“城际论坛 / 主题详情”截图，重新建立统一的论坛视觉语言。
+ */
+
 *{box-sizing:border-box}
 
+:root{
+  --pf-bg:#eef2f6;
+  --pf-panel:#ffffff;
+  --pf-panel-soft:#f7f9fb;
+  --pf-line:#e4e8ed;
+  --pf-line-strong:#d8dee6;
+  --pf-text:#202936;
+  --pf-text-2:#596573;
+  --pf-text-3:#8b949e;
+  --pf-blue:#6d8eaf;
+  --pf-blue-dark:#496a8b;
+  --pf-orange:#d99a34;
+  --pf-orange-soft:#fff5df;
+  --pf-danger:#b75c5c;
+  --pf-phone:#202833;
+}
+
+/* ---------- 外部浮动入口 ---------- */
 #pkmn-float-btn{
- position:fixed!important;right:18px!important;bottom:80px!important;
- width:50px!important;height:50px!important;padding:0!important;
- display:flex!important;align-items:center!important;justify-content:center!important;
- z-index:2147483646!important;pointer-events:auto!important;
- cursor:grab!important;touch-action:none!important;user-select:none!important;
+  position:fixed!important;
+  right:18px!important;
+  bottom:80px!important;
+  width:50px!important;
+  height:50px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  z-index:2147483646!important;
+  pointer-events:auto!important;
+  cursor:grab!important;
+  touch-action:none!important;
+  user-select:none!important;
 }
 #pkmn-float-btn.dragging{cursor:grabbing!important}
 #pkmn-float-btn svg{width:46px!important;height:46px!important;display:block!important;pointer-events:none!important}
 
+/* ---------- 手机本体 ---------- */
 #pkmn-phone-panel{
- position:fixed!important;left:50%!important;top:50%!important;
- right:auto!important;bottom:auto!important;
- width:350px!important;height:650px!important;
- overflow:hidden!important;z-index:2147483645!important;
- display:none!important;pointer-events:none!important;
- font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  position:fixed!important;
+  left:50%!important;
+  top:50%!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:350px!important;
+  height:650px!important;
+  transform:translate(-50%,-50%);
+  padding:0!important;
+  border:7px solid var(--pf-phone)!important;
+  border-radius:39px!important;
+  overflow:hidden!important;
+  background:var(--pf-bg)!important;
+  color:var(--pf-text)!important;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif!important;
+  -webkit-font-smoothing:antialiased!important;
+  text-rendering:optimizeLegibility!important;
+  z-index:2147483645!important;
+  display:none!important;
+  pointer-events:none!important;
 }
-#pkmn-phone-panel.show{display:flex!important;flex-direction:column!important;pointer-events:auto!important}
+#pkmn-phone-panel.show{
+  display:flex!important;
+  flex-direction:column!important;
+  pointer-events:auto!important;
+}
 
-#pkmn-close-phone{
- position:absolute!important;right:8px!important;top:5px!important;
- width:34px!important;height:34px!important;z-index:30!important;
- padding:0!important;cursor:pointer!important;
-}
+/* 手机顶部控制只承担功能，不参与页面视觉 */
+#pkmn-close-phone,
 #pkmn-phone-scale{
- position:absolute!important;right:45px!important;top:5px!important;
- width:30px!important;height:30px!important;z-index:70!important;
- padding:0!important;cursor:pointer!important;
+  position:absolute!important;
+  z-index:90!important;
+  width:30px!important;
+  height:30px!important;
+  border:0!important;
+  border-radius:50%!important;
+  padding:0!important;
+  background:transparent!important;
+  color:transparent!important;
+  font-size:0!important;
+  cursor:pointer!important;
 }
+#pkmn-close-phone{
+  right:7px!important;
+  top:4px!important;
+  width:27px!important;
+  height:27px!important;
+  border:1px solid #d9dee4!important;
+  background:#f4f6f8!important;
+  color:#7a8590!important;
+  font-size:19px!important;
+  line-height:25px!important;
+}
+#pkmn-phone-scale{right:39px!important;top:2px!important}
 
 .pkmn-drag-top{
- position:absolute!important;left:50%!important;top:0!important;
- transform:translateX(-50%)!important;width:150px!important;height:28px!important;
- z-index:25!important;touch-action:none!important;user-select:none!important;
- -webkit-user-select:none!important;-webkit-touch-callout:none!important;cursor:grab!important;
+  position:absolute!important;
+  left:50%!important;
+  top:0!important;
+  width:145px!important;
+  height:30px!important;
+  transform:translateX(-50%)!important;
+  z-index:85!important;
+  background:transparent!important;
+  touch-action:none!important;
+  user-select:none!important;
+  cursor:grab!important;
 }
 .pkmn-drag-top:active,.pkmn-drag-bottom:active{cursor:grabbing!important}
 .pkmn-drag-bottom{
- position:absolute!important;left:0!important;bottom:0!important;width:100%!important;height:32px!important;
- z-index:60!important;background:transparent!important;touch-action:none!important;
- user-select:none!important;-webkit-user-select:none!important;
- -webkit-touch-callout:none!important;cursor:grab!important;
+  position:absolute!important;
+  left:0!important;
+  bottom:0!important;
+  width:100%!important;
+  height:34px!important;
+  z-index:85!important;
+  background:transparent!important;
+  touch-action:none!important;
+  user-select:none!important;
+  cursor:grab!important;
 }
 
-.pkmn-status{height:28px;min-height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px}
-.pkmn-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:110px;height:18px;z-index:10}
-.pkmn-app{position:relative;flex:1;overflow:hidden}
-.pkmn-view{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;transition:transform .24s ease}
+/* ---------- iPhone 状态栏 ---------- */
+.pkmn-status{
+  position:relative;
+  height:32px;
+  min-height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 13px 0 17px;
+  background:#f8f9fb;
+  color:#1e2733;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.1px;
+}
+.pkmn-status > span:last-of-type{font-size:10px;letter-spacing:1px}
+.pkmn-notch{
+  position:absolute;
+  left:50%;
+  top:4px;
+  width:118px;
+  height:22px;
+  transform:translateX(-50%);
+  border-radius:14px;
+  background:#050607;
+  box-shadow:inset 0 0 0 1px #15171a;
+  z-index:2;
+}
+
+/* ---------- App 容器 ---------- */
+.pkmn-app{
+  position:relative;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+  background:var(--pf-bg);
+}
+.pkmn-view{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  background:var(--pf-bg);
+  transition:transform .22s ease;
+}
 #pkmn-home{transform:translateX(0)}
 #pkmn-forum,#pkmn-settings,#pkmn-thread{transform:translateX(100%)}
 
+/* ---------- 首页：保持克制，重点让论坛进入后的页面成为主角 ---------- */
+#pkmn-home{background:#eef2f6}
+.pkmn-home-apps{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  padding:30px 24px;
+  overflow:auto;
+}
+.pkmn-app-icon{
+  min-height:86px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  color:var(--pf-text);
+  font-size:12px;
+  cursor:pointer;
+}
+.pkmn-app-image,.pkmn-app-icon>div:first-child{
+  width:52px;
+  height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:15px;
+  background:#fff;
+  border:1px solid var(--pf-line);
+  overflow:hidden;
+  font-size:25px;
+}
+.pkmn-app-image img{width:100%;height:100%;object-fit:cover}
+
+/* ---------- 通用顶部栏 ---------- */
 .pkmn-head{
- height:48px;min-height:48px;padding:0 13px;
- display:flex;align-items:center;justify-content:center;position:relative;
- font-size:16px;font-weight:600;
+  position:relative;
+  height:58px;
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 50px;
+  background:#f8f9fb;
+  border-bottom:1px solid var(--pf-line);
+  color:var(--pf-text);
+  font-size:16px;
+  font-weight:650;
+  z-index:5;
 }
 .pkmn-head button{
- position:absolute;left:9px;top:0;width:34px;height:48px;
- padding:0;cursor:pointer;
+  position:absolute;
+  top:0;
+  left:8px;
+  width:38px;
+  height:58px;
+  border:0;
+  padding:0;
+  background:transparent;
+  color:var(--pf-text);
+  font-size:31px;
+  font-weight:300;
+  line-height:54px;
+  cursor:pointer;
 }
-.pkmn-head button:not(:first-child){position:static;width:auto;height:auto;margin-left:auto;font-size:inherit;line-height:1}
-.pkmn-head #pkmn-board-settings{position:absolute;left:auto;top:0;right:9px}
+.pkmn-head #pkmn-board-settings{
+  left:auto;
+  right:8px;
+  width:38px;
+  font-size:18px;
+  line-height:58px;
+}
 
-.pkmn-tabs{height:39px;min-height:39px;display:flex;overflow-x:auto;scrollbar-width:none}
+/* ---------- 论坛首页 ---------- */
+#pkmn-forum{background:var(--pf-bg)}
+#pkmn-forum .pkmn-head{
+  background:#f9fafb;
+}
+#pkmn-forum-title{font-size:17px;letter-spacing:.2px}
+
+.pkmn-tabs{
+  height:44px;
+  min-height:44px;
+  display:flex;
+  align-items:stretch;
+  padding:0 4px;
+  background:#fff;
+  border-bottom:1px solid var(--pf-line);
+  overflow-x:auto;
+  scrollbar-width:none;
+}
 .pkmn-tabs::-webkit-scrollbar{display:none}
-.pkmn-tab{min-width:84px;height:39px;padding:0 10px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;white-space:nowrap;position:relative}
-
-.pkmn-content,.pkmn-posts,.pkmn-list{overflow:auto;min-height:0}
-.pkmn-content{flex:1}
-.pkmn-posts{flex:1}
-
-.pkmn-board-item,.pkmn-thread-card,.pkmn-post,.pkmn-reply,.pkmn-setting-card,.pkmn-settings-card,.pkmn-settings-section,.pkmn-worldbook-group{
- display:block;position:relative;
+.pkmn-tab{
+  position:relative;
+  flex:1 0 86px;
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 10px;
+  color:var(--pf-text-3);
+  font-size:12px;
+  white-space:nowrap;
+  cursor:pointer;
 }
-.pkmn-board-item{cursor:pointer}
-.pkmn-thread-card{padding:10px}
+.pkmn-tab.active{
+  color:var(--pf-orange);
+  font-weight:700;
+}
+.pkmn-tab.active:after{
+  content:"";
+  position:absolute;
+  left:27%;
+  right:27%;
+  bottom:0;
+  height:2px;
+  border-radius:2px;
+  background:var(--pf-orange);
+}
+
+.pkmn-list{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:9px 9px 88px;
+  background:var(--pf-bg);
+  scrollbar-width:thin;
+  scrollbar-color:#aab3bd transparent;
+}
+.pkmn-list::-webkit-scrollbar,.pkmn-posts::-webkit-scrollbar{width:5px}
+.pkmn-list::-webkit-scrollbar-track,.pkmn-posts::-webkit-scrollbar-track{background:transparent}
+.pkmn-list::-webkit-scrollbar-thumb,.pkmn-posts::-webkit-scrollbar-thumb{background:#aab3bd;border-radius:5px}
+
+/* 列表卡片：白底、细边、浅蓝作者块，严格保持论坛而非微博视觉 */
+.pkmn-thread-card{
+  position:relative;
+  min-height:122px;
+  margin:0 0 8px;
+  padding:15px 14px 13px 65px;
+  background:#fff;
+  border:1px solid var(--pf-line);
+  border-radius:8px;
+  cursor:pointer;
+  overflow:hidden;
+}
+.pkmn-thread-card:active{background:#fbfcfd}
+.pkmn-thread-avatar{
+  position:absolute;
+  left:14px;
+  top:15px;
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:11px;
+  background:var(--pf-blue);
+  color:#fff;
+  font-size:18px;
+  font-weight:700;
+}
 .pkmn-thread-body{min-width:0}
-.pkmn-thread-user,.pkmn-thread-footer,.pkmn-thread-tags,.pkmn-thread-time,.pkmn-thread-stat{display:flex;align-items:center}
-.pkmn-thread-user{gap:6px}
-.pkmn-thread-title{display:block}
-.pkmn-thread-snippet{display:block}
-.pkmn-thread-tags{gap:4px;flex-wrap:wrap}
-.pkmn-thread-footer{justify-content:space-between;gap:8px}
-.pkmn-thread-avatar{width:36px;height:36px;flex:none}
+.pkmn-thread-user{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-height:19px;
+  padding-right:66px;
+  color:var(--pf-text);
+  font-size:12px;
+  font-weight:650;
+}
+.pkmn-user-badge,.pkmn-topic-badge{
+  display:inline-flex;
+  align-items:center;
+  height:18px;
+  padding:0 5px;
+  border-radius:4px;
+  font-size:9px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.pkmn-user-badge{background:#edf5ef;color:#5c8b67}
+.pkmn-topic-badge{background:var(--pf-orange-soft);color:var(--pf-orange)}
+.pkmn-thread-title{
+  margin-top:6px;
+  color:var(--pf-text);
+  font-size:14px;
+  line-height:1.42;
+  font-weight:700;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.pkmn-thread-snippet{
+  margin-top:5px;
+  color:#4e5864;
+  font-size:11px;
+  line-height:1.58;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.pkmn-thread-tags{
+  display:flex;
+  gap:4px;
+  margin-top:7px;
+  overflow:hidden;
+}
+.pkmn-tag{
+  display:inline-flex;
+  align-items:center;
+  flex:none;
+  height:18px;
+  padding:0 6px;
+  border:1px solid #e4e8ed;
+  border-radius:4px;
+  background:#f7f9fb;
+  color:#77828d;
+  font-size:9px;
+}
+.pkmn-thread-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:9px;
+  color:var(--pf-text-3);
+  font-size:10px;
+}
+.pkmn-thread-stat{color:#6e7882}
+.pkmn-thread-time{margin-left:auto}
 
-.pkmn-post{padding:10px}
-.pkmn-post-head{display:flex;align-items:center;gap:8px;position:relative}
-.pkmn-post-avatar,.pkmn-reply-avatar{width:40px;height:40px;flex:none}
-.pkmn-post-user{min-width:0;flex:1}
-.pkmn-post-author,.pkmn-post-title,.pkmn-post-time,.pkmn-post-floor,.pkmn-post-tool{display:block}
-.pkmn-post-title{font-weight:600}
-.pkmn-post-tags{display:flex;gap:4px;flex-wrap:wrap}
-.pkmn-post-tools{display:flex;gap:6px;align-items:center}
-.pkmn-post .pkmn-content{overflow:visible}
+.pkmn-inject,.pkmn-del{
+  position:absolute;
+  z-index:2;
+  border:1px solid var(--pf-line-strong);
+  background:#fff;
+  color:#6d7781;
+  cursor:pointer;
+}
+.pkmn-inject{
+  right:35px;
+  top:12px;
+  height:23px;
+  padding:0 7px;
+  border-radius:5px;
+  font-size:9px;
+}
+.pkmn-del{
+  right:8px;
+  top:12px;
+  width:22px;
+  height:23px;
+  border-radius:5px;
+  font-size:11px;
+  line-height:20px;
+}
+.pkmn-inject:hover{border-color:#c8d2dc;color:var(--pf-blue-dark)}
+.pkmn-del:hover{border-color:#d8bcbc;color:var(--pf-danger)}
 
-.pkmn-reply{display:flex;gap:8px;padding:8px 10px}
-.pkmn-reply-main{min-width:0;flex:1}
-.pkmn-reply-meta{display:flex;align-items:center;gap:6px}
-.pkmn-reply-name{font-weight:600}
-.pkmn-reply-bubble,.pkmn-nested-bubble{display:block}
-.pkmn-comment-actions{display:flex;gap:6px}
-.pkmn-comment-reply-btn,.pkmn-nested-reply-btn,.pkmn-nested-send{cursor:pointer}
+/* ---------- 论坛底部操作栏 ---------- */
+.pkmn-bottom{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:12;
+  min-height:60px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:9px 10px;
+  background:rgba(249,250,251,.97);
+  border-top:1px solid var(--pf-line);
+}
+.pkmn-btn{
+  height:40px;
+  min-width:0;
+  padding:0 11px;
+  border:1px solid var(--pf-line-strong);
+  border-radius:6px;
+  background:#fff;
+  color:var(--pf-text-2);
+  font:inherit;
+  font-size:11px;
+  cursor:pointer;
+}
+.pkmn-btn:active{transform:translateY(1px)}
+.pkmn-btn.pkmn-primary{background:var(--pf-orange);border-color:var(--pf-orange);color:#fff;font-weight:650}
+.pkmn-btn.pkmn-danger{color:var(--pf-danger)}
 
-.pkmn-bottom,.pkmn-footer{display:flex;align-items:center;gap:8px;padding:8px}
+/* ---------- 主题详情页：核心参考图布局 ---------- */
+#pkmn-thread{background:var(--pf-bg)}
+#pkmn-thread>.pkmn-head{
+  height:48px;
+  min-height:48px;
+  background:#f7f9fc;
+  border-bottom:1px solid var(--pf-line);
+}
+#pkmn-thread>.pkmn-head button{
+  height:48px;
+  line-height:45px;
+}
+#pkmn-thread-title{
+  max-width:calc(100% - 90px);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:14px;
+  font-weight:650;
+}
+
+/* 内容滚动区 */
+.pkmn-posts{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:0 10px 76px;
+  background:var(--pf-bg);
+  scrollbar-width:thin;
+  scrollbar-color:#aab3bd transparent;
+}
+
+/* 楼主正文白色大卡片 */
+.pkmn-post{
+  position:relative;
+  margin:9px 0 8px;
+  padding:18px 15px 14px;
+  background:#fff;
+  border:1px solid var(--pf-line);
+  border-radius:0;
+}
+.pkmn-post:before{
+  content:"城际论坛  ›  主题详情";
+  display:block;
+  margin-bottom:11px;
+  color:#66727e;
+  font-size:10px;
+  line-height:1.4;
+}
+.pkmn-post:after{
+  content:"";
+  position:absolute;
+  left:15px;
+  right:15px;
+  top:50px;
+  height:1px;
+  background:#edf0f3;
+}
+.pkmn-post-head{
+  position:relative;
+  display:flex;
+  align-items:center;
+  min-height:46px;
+  padding-right:45px;
+}
+.pkmn-post-avatar,.pkmn-reply-avatar{
+  flex:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--pf-blue);
+  color:#fff;
+  font-weight:700;
+  box-shadow:0 3px 9px rgba(58,76,95,.16);
+}
+.pkmn-post-avatar{
+  width:44px;
+  height:44px;
+  border-radius:11px;
+  font-size:19px;
+}
+.pkmn-post-user{
+  min-width:0;
+  margin-left:10px;
+}
+.pkmn-post-author{
+  color:var(--pf-text);
+  font-size:13px;
+  line-height:1.25;
+  font-weight:750;
+}
+.pkmn-post-time{
+  margin-top:3px;
+  color:var(--pf-text-3);
+  font-size:10px;
+  line-height:1.3;
+}
+.pkmn-post-floor{
+  position:absolute;
+  right:15px;
+  top:22px;
+  color:var(--pf-text-3);
+  font-size:10px;
+}
+.pkmn-post-title{
+  margin:16px 0 13px;
+  color:#1f2936;
+  font-size:21px;
+  line-height:1.36;
+  font-weight:780;
+  letter-spacing:.05px;
+}
+.pkmn-post-tags{margin-top:-5px;margin-bottom:10px}
+.pkmn-content{
+  color:#343e4b;
+  font-size:14px;
+  line-height:1.95;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.pkmn-post-tools{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:32px;
+  margin-top:16px;
+  padding-top:13px;
+  border-top:1px solid var(--pf-line);
+  color:#78838e;
+  font-size:11px;
+}
+.pkmn-post-tool{white-space:nowrap}
+
+/* 评论标题 / 分割带 */
+.pkmn-replies-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:55px;
+  margin:0;
+  padding:0 12px;
+  background:#f9fafb;
+  border-top:7px solid #eef2f6;
+  border-bottom:1px solid var(--pf-line);
+  color:var(--pf-text);
+  font-size:14px;
+  font-weight:750;
+}
+.pkmn-replies-title>span{font-size:14px}
+.pkmn-replies-title>span:before{content:"全部"}
+.pkmn-thread-refresh-btn{
+  border:0;
+  padding:5px 0;
+  background:transparent;
+  color:var(--pf-orange);
+  font:inherit;
+  font-size:10px;
+  cursor:pointer;
+}
+.pkmn-thread-divider{height:0}
+
+/* 顶层评论：截图中的大块评论行 */
+.pkmn-reply-msg{
+  position:relative;
+  display:flex;
+  gap:10px;
+  padding:17px 9px 18px;
+  background:#fff;
+  border-bottom:1px solid var(--pf-line);
+}
+.pkmn-reply-msg.is-user{background:#fffaf4}
+.pkmn-reply-avatar{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  font-size:17px;
+}
+.pkmn-reply-main{
+  flex:1;
+  min-width:0;
+}
+.pkmn-reply-name{
+  color:var(--pf-text);
+  font-size:12px;
+  font-weight:700;
+  line-height:1.35;
+}
+.pkmn-reply-name span{font-size:10px!important;color:#6f9a78!important}
+.pkmn-reply-bubble{
+  margin-top:10px;
+  color:#39434f;
+  font-size:13px;
+  line-height:1.78;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.pkmn-reply-meta{
+  margin-top:12px;
+  color:var(--pf-text-3);
+  font-size:10px;
+}
+.pkmn-comment-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:-18px;
+}
+.pkmn-comment-reply-btn{
+  border:0;
+  padding:4px 0 0;
+  background:transparent;
+  color:#9a6335;
+  font-size:10px;
+  cursor:pointer;
+}
+
+/* 楼中楼：轻量引用块 */
+.pkmn-nested-replies{
+  margin-top:10px;
+  padding:8px 10px;
+  background:#f7f8fa;
+  border-radius:5px;
+}
+.pkmn-nested-msg{padding:3px 0}
+.pkmn-nested-main{display:block}
+.pkmn-nested-bubble{
+  color:#59636e;
+  font-size:10px;
+  line-height:1.7;
+}
+.pkmn-nested-name{color:#5c7690;font-weight:700}
+.pkmn-nested-target{color:#a87935;margin-left:4px}
+.pkmn-nested-text{color:#59636e;margin-left:4px}
+.pkmn-nested-reply-btn{margin-left:5px;font-size:9px}
+
+.pkmn-nested-composer{
+  display:none;
+  gap:5px;
+  margin-top:8px;
+}
+.pkmn-nested-composer.show{display:flex}
+.pkmn-nested-input{
+  flex:1;
+  min-width:0;
+  height:32px;
+  padding:0 9px;
+  border:1px solid var(--pf-line-strong);
+  border-radius:5px;
+  outline:0;
+  background:#fff;
+  color:var(--pf-text);
+  font-size:10px;
+}
+.pkmn-nested-send{
+  height:32px;
+  padding:0 9px;
+  border:1px solid #d5b47a;
+  border-radius:5px;
+  background:var(--pf-orange-soft);
+  color:#a86f22;
+  font-size:10px;
+}
+
+/* ---------- 底部评论输入：参考截图固定在屏幕底端 ---------- */
+.pkmn-reply{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:20;
+  height:60px;
+  min-height:60px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 9px;
+  background:rgba(249,250,251,.98);
+  border-top:1px solid var(--pf-line);
+}
+#pkmn-reply-input{
+  flex:1;
+  min-width:0;
+  height:44px;
+  padding:0 12px;
+  border:1px solid #d9dee4;
+  border-radius:6px;
+  outline:0;
+  background:#fff;
+  color:var(--pf-text);
+  font:inherit;
+  font-size:12px;
+}
+#pkmn-reply-input::placeholder{color:#9aa2ab}
+#pkmn-reply-input:focus{border-color:#b9c6d3}
+#pkmn-send{
+  flex:none;
+  width:48px;
+  height:44px;
+  padding:0;
+  border:1px solid var(--pf-orange);
+  border-radius:6px;
+  background:var(--pf-orange);
+  color:#fff;
+  font-size:0;
+  cursor:pointer;
+}
+#pkmn-send::after{content:'➤';font-size:19px;line-height:42px}
+
+/* ---------- 设置页 ---------- */
+#pkmn-settings{background:var(--pf-bg)}
+.pkmn-settings{
+  flex:1;
+  overflow:auto;
+  padding:12px;
+}
+.pkmn-group{
+  margin-bottom:10px;
+  padding:13px;
+  background:#fff;
+  border:1px solid var(--pf-line);
+  border-radius:7px;
+}
+.pkmn-label{color:var(--pf-text);font-size:12px;font-weight:650}
+.pkmn-small{color:var(--pf-text-3);font-size:10px;line-height:1.5}
+.pkmn-input,.pkmn-textarea,.pkmn-select{
+  width:100%;
+  border:1px solid var(--pf-line-strong);
+  border-radius:6px;
+  background:#fff;
+  color:var(--pf-text);
+  outline:0;
+  font:inherit;
+  font-size:12px;
+}
+.pkmn-input{height:38px;padding:0 10px}
+.pkmn-textarea{min-height:120px;padding:9px 10px;resize:vertical}
+.pkmn-select{height:36px;padding:0 8px}
 .pkmn-row{display:flex;align-items:center;gap:8px}
-.pkmn-group{display:flex;flex-direction:column;gap:6px}
-.pkmn-input,.pkmn-textarea,.pkmn-nested-input,.pkmn-select{box-sizing:border-box;min-width:0}
-.pkmn-textarea{width:100%;resize:vertical}
-.pkmn-input{flex:1}
-.pkmn-btn,.pkmn-primary,.pkmn-secondary,.pkmn-danger,.pkmn-inject,.pkmn-del{cursor:pointer}
+.pkmn-check{accent-color:var(--pf-orange)}
 
-.pkmn-home-apps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
-.pkmn-app-icon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;cursor:pointer}
-.pkmn-app-image{width:42px;height:42px;object-fit:contain}
-
-.pkmn-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:2147483647}
+/* ---------- 弹窗 ---------- */
+.pkmn-modal{
+  position:absolute;
+  inset:0;
+  z-index:70;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(26,34,43,.22);
+}
 .pkmn-modal.show{display:flex}
-.pkmn-modal-box{width:min(92vw,420px);max-height:85vh;overflow:auto;padding:16px}
+.pkmn-modal-box{
+  width:100%;
+  max-height:88%;
+  overflow:auto;
+  padding:17px;
+  border:1px solid var(--pf-line-strong);
+  border-radius:9px;
+  background:#fff;
+  box-shadow:0 14px 35px rgba(35,47,60,.16);
+}
 
-.pkmn-settings,.pkmn-worldbook-panel{overflow:auto;min-height:0}
-.pkmn-setting-title{font-weight:600}
+/* ---------- 世界书区域 ---------- */
+.pkmn-worldbook-panel,.pkmn-worldbook-group{
+  background:#fff;
+  border:1px solid var(--pf-line);
+  border-radius:7px;
+}
 .pkmn-worldbook-panel{padding:10px}
-.pkmn-worldbook-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer}
-.pkmn-worldbook-details{display:block}
-.pkmn-worldbook-count{margin-left:auto}
+.pkmn-worldbook-group{padding:10px;margin-bottom:8px}
+.pkmn-worldbook-summary{color:var(--pf-text);font-size:11px;font-weight:650}
+.pkmn-worldbook-count{color:var(--pf-text-3);font-size:9px}
+.pkmn-status-line{color:var(--pf-text-3);font-size:10px}
 
-.pkmn-nested-replies{display:flex;flex-direction:column;gap:6px}
-.pkmn-nested-msg{display:flex;gap:6px}
-.pkmn-nested-main{min-width:0;flex:1}
-.pkmn-nested-meta{display:flex;align-items:center;gap:5px}
-.pkmn-nested-name{font-weight:600}
-.pkmn-nested-composer{display:flex;gap:6px;align-items:flex-end}
-.pkmn-nested-target{display:block}
-.pkmn-nested-text{white-space:pre-wrap;overflow-wrap:anywhere}
+/* ---------- 空状态 ---------- */
+#pkmn-thread-list:empty:before{
+  content:"";
+}
 
-.pkmn-label,.pkmn-meta,.pkmn-small{font-size:inherit}
-.pkmn-tag,.pkmn-topic-badge,.pkmn-user-badge{display:inline-block}
-.pkmn-check{display:inline-flex;align-items:center;gap:5px}
-.pkmn-accent{font-weight:600}
+/* ---------- 小屏适配：不缩小到难以阅读 ---------- */
+@media(max-width:390px){
+  #pkmn-phone-panel{
+    width:340px!important;
+  }
+  .pkmn-post{padding-left:13px;padding-right:13px}
+  .pkmn-post-title{font-size:20px}
+  .pkmn-content{font-size:13.5px;line-height:1.9}
+  .pkmn-post-tools{gap:20px}
+  .pkmn-thread-card{padding-left:62px}
+}
 
-/* Functional state classes only */
-.active{font-weight:700}
-.is-user{}
-.dragging{cursor:grabbing!important}
-.show{display:block!important}
+/* ---------- 极窄环境 ---------- */
+@media(max-width:350px){
+  #pkmn-phone-panel{width:calc(100vw - 14px)!important}
+  .pkmn-post-title{font-size:18px}
+  .pkmn-content{font-size:13px}
+  .pkmn-btn{padding:0 8px;font-size:10px}
+}

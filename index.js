@@ -1883,7 +1883,7 @@
             </button>
 
             <span id="pkmn-forum-title">
-                论坛
+                城际论坛
             </span>
 
             <button id="pkmn-board-settings">
@@ -3130,7 +3130,7 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
         {
             const title = topDoc.createElement('div');
             title.className = 'pkmn-replies-title';
-            title.innerHTML = `<span>评论 ${topLevel.length + totalNested}</span><button type="button" class="pkmn-thread-refresh-btn">🔄 刷新帖子</button>`;
+            title.innerHTML = `<span>评论 ${topLevel.length + totalNested}</span><button type="button" class="pkmn-thread-refresh-btn">刷新讨论</button>`;
             box.appendChild(title);
 
             const refreshBtn = title.querySelector('.pkmn-thread-refresh-btn');
@@ -3148,7 +3148,7 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
                     } finally {
                         refreshingThread = false;
                         const live = topDoc.querySelector('.pkmn-thread-refresh-btn');
-                        if (live) { live.disabled = false; live.textContent = '🔄 刷新帖子'; }
+                        if (live) { live.disabled = false; live.textContent = '刷新讨论'; }
                     }
                 };
             }
