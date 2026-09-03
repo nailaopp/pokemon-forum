@@ -515,6 +515,9 @@
         contacts: [],
         contactChats: {},
         contactLinkMeta: {},
+        // 通讯录按 SillyTavern 当前角色卡聊天独立保存：新聊天为空，旧聊天恢复。
+        contactChatArchives: {},
+        contactChatArchivesVersion: 1,
         contactApi: {
             endpoint: '',
             key: '',
@@ -928,6 +931,8 @@
             console.warn('[pkmn-forum] switchChat: invalid key', key);
             return;
         }
+
+        try { switchContactChat(key, { silent: true }); } catch (e) { console.warn('[pkmn-forum] contact chat switch failed', e); }
 
         if (key === chatState.chatKey) {
             try {
@@ -5206,8 +5211,105 @@ ${esc(b.prompt)}
         return config.contactApi;
     }
 
+    function getContactChatArchiveKey(chatKey = null) {
+        const key = chatKey || getChatKey();
+        return (key && key !== 'fallback:unknown') ? key : null;
+    }
+
+    function emptyContactChatState() {
+        return { contacts: [], contactChats: {}, contactLinkMeta: {}, updatedAt: Date.now() };
+    }
+
+    function normalizeContactChatState(state) {
+        const s = state && typeof state === 'object' ? state : emptyContactChatState();
+        if (!Array.isArray(s.contacts)) s.contacts = [];
+        if (!s.contactChats || typeof s.contactChats !== 'object') s.contactChats = {};
+        if (!s.contactLinkMeta || typeof s.contactLinkMeta !== 'object') s.contactLinkMeta = {};
+        s.contacts.forEach(c => {
+            if (!c || typeof c !== 'object') return;
+            if (!c.nickname) c.nickname = c.name || '匿名用户';
+            if (c.note == null) c.note = '';
+            if (typeof c.linkForum !== 'boolean') c.linkForum = true;
+            if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 70;
+        });
+        return s;
+    }
+
+    function contactChatArchiveKey(chatKey) {
+        return NS + '_contacts_chat_' + simpleHash(String(chatKey || 'fallback:unknown'));
+    }
+
+    function saveContactChatArchive(chatKey = null) {
+        const key = getContactChatArchiveKey(chatKey);
+        if (!key) return false;
+        try {
+            const state = normalizeContactChatState({
+                contacts: clone(config.contacts || []),
+                contactChats: clone(config.contactChats || {}),
+                contactLinkMeta: clone(config.contactLinkMeta || {}),
+                updatedAt: Date.now()
+            });
+            localStorage.setItem(contactChatArchiveKey(key), JSON.stringify(state));
+            return true;
+        } catch (e) {
+            console.warn('[pkmn-forum] saveContactChatArchive failed', e);
+            return false;
+        }
+    }
+
+    function loadContactChatArchive(chatKey = null) {
+        const key = getContactChatArchiveKey(chatKey);
+        if (!key) return null;
+        try {
+            const raw = localStorage.getItem(contactChatArchiveKey(key));
+            return raw ? normalizeContactChatState(JSON.parse(raw)) : null;
+        } catch (e) {
+            console.warn('[pkmn-forum] loadContactChatArchive failed', e);
+            return null;
+        }
+    }
+
+    function switchContactChat(forcedKey = null, options = {}) {
+        const key = getContactChatArchiveKey(forcedKey);
+        if (!key) return false;
+        const current = getContactChatArchiveKey(config.__contactActiveChatKey);
+        if (current === key) {
+            currentContactId = null;
+            return true;
+        }
+
+        // 首次建立当前聊天档：迁移旧版全局通讯录到当前聊天一次。
+        if (!config.__contactArchiveMigrated) {
+            const existing = loadContactChatArchive(key);
+            if (!existing && ((config.contacts && config.contacts.length) || Object.keys(config.contactChats || {}).length)) {
+                saveContactChatArchive(key);
+            }
+            config.__contactArchiveMigrated = true;
+        }
+
+        if (current) saveContactChatArchive(current);
+
+        const next = loadContactChatArchive(key);
+        const state = next || emptyContactChatState();
+        config.contacts = state.contacts;
+        config.contactChats = state.contactChats;
+        config.contactLinkMeta = state.contactLinkMeta;
+        config.__contactActiveChatKey = key;
+        currentContactId = null;
+        saveGlobalConfig();
+
+        // 当前正显示通讯录时立即刷新；新聊天没有档案时自然显示空通讯录。
+        try {
+            if (document.getElementById('pkmn-contacts')?.classList.contains('active')) renderContacts();
+            if (document.getElementById('pkmn-chat')?.classList.contains('active')) openView('contacts');
+        } catch (_) {}
+        if (!options.silent) showToast(next ? '已恢复本聊天通讯录' : '新聊天：通讯录已清空');
+        return true;
+    }
+
     function saveContactConfig() {
         contactCfg();
+        saveContactChatArchive();
         saveGlobalConfig();
     }
 
@@ -6295,6 +6397,7 @@ ${blocks.join('\n\n')}
                     } else {
                         const id = key.startsWith('chat:') ? key.slice(5) : newChatId;
                         resetForumForNewChat(id);
+                        try { switchContactChat('chat:' + String(id), { silent: true }); } catch (e) { console.warn('[pkmn-forum] contact new-chat switch failed', e); }
                     }
                     lastChatKey = key;
                 }, 300);
@@ -6344,6 +6447,7 @@ ${blocks.join('\n\n')}
     // 初始载入
     // ============================================================
 
+    try { switchContactChat(getChatKey(), { silent: true }); } catch (e) { console.warn('[pkmn-forum] initial contact chat load failed', e); }
     try {
         chatState = loadChatState(getChatKey()) || makeChatState();
     } catch (e) {
