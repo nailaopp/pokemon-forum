@@ -5221,7 +5221,7 @@ ${esc(b.prompt)}
             if (!c.nickname) c.nickname = c.name || '匿名用户';
             if (c.note == null) c.note = '';
             if (typeof c.linkForum !== 'boolean') c.linkForum = true;
-            if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 70;
+            if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 50;
         });
         return config.contactApi;
     }
@@ -5245,7 +5245,7 @@ ${esc(b.prompt)}
             if (!c.nickname) c.nickname = c.name || '匿名用户';
             if (c.note == null) c.note = '';
             if (typeof c.linkForum !== 'boolean') c.linkForum = true;
-            if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 70;
+            if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 50;
         });
         return s;
     }
@@ -5465,6 +5465,22 @@ ${esc(b.prompt)}
         return lines.join('\n').slice(-maxChars);
     }
 
+    function moralBehaviorProfile(score) {
+        const n = Math.max(0, Math.min(100, Math.round(Number(score) || 50)));
+        if (n <= 15) return {stage:'危险型', range:'0～15', summary:'底线极低，容易把他人当作手段。', actions:'可能为利益出卖他人、利用秘密威胁、故意挑拨、报复或制造冲突；不是无条件作恶，但当利益、愤怒或报复动机足够强时更容易越过底线。', privacy:'默认不可靠，可能把私聊当筹码；只有风险过高或关系/利益不允许时才收手。'};
+        if (n <= 30) return {stage:'恶意/利己型', range:'16～30', summary:'明显利己，边界感较差。', actions:'容易八卦、添油加醋、嘲讽、利用信息换取利益；受到怂恿、奖励或情绪刺激时更可能泄露秘密。', privacy:'通常不会主动保护秘密，除非泄密对自己不利或关系较好。'};
+        if (n <= 45) return {stage:'灰色自私型', range:'31～45', summary:'不一定恶毒，但优先考虑自己。', actions:'可能看热闹、冷漠旁观、为了方便自己说出部分信息；常见态度是“我不害你，但也没义务替你保密”。', privacy:'不会主动传播所有私聊，但被追问、利益交换或关系恶化时可能松口。'};
+        if (n <= 60) return {stage:'普通人', range:'46～60', summary:'有基本良知，也有现实利益。', actions:'通常不主动泄密，偶尔吐槽或说漏无关紧要的信息；遇到明显冲突会先保护自己，不会为了玩家无条件牺牲。', privacy:'一般保留私聊，但不是绝对守密；关系、情绪、风险和场景会影响行为。'};
+        if (n <= 75) return {stage:'可靠型', range:'61～75', summary:'有较稳定的良知和边界感。', actions:'倾向帮助别人、拒绝恶意造谣、尊重隐私；与玩家发生小矛盾也通常不会拿私聊报复。', privacy:'默认保护私聊，被询问时倾向拒绝或只说无敏感内容。'};
+        if (n <= 90) return {stage:'高道德/守密型', range:'76～90', summary:'原则感强，重视隐私、公平与他人安全。', actions:'会主动阻止恶意传播、纠正明显造谣；不会因金钱、八卦或一时生气轻易泄密。', privacy:'强保护私聊；即使关系恶化，也不会把隐私当报复工具。遇到严重伤害他人的情况会优先考虑安全与原则。'};
+        return {stage:'极高道德型', range:'91～100', summary:'极少见，具有稳定且一致的高道德原则。', actions:'长期守信、尊重隐私、帮助弱者、不利用秘密获利；面对利益诱惑或个人恩怨也保持底线。', privacy:'几乎不会为了八卦、利益、情绪或讨好第三方泄露私聊；但不会无条件包庇正在严重伤害他人的行为。'};
+    }
+
+    function getMoralBehaviorText(score) {
+        const p = moralBehaviorProfile(score);
+        return `道德阶段：${p.stage}（${p.range}）\n阶段倾向：${p.summary}\n可能行为：${p.actions}\n私聊处理：${p.privacy}`;
+    }
+
     function buildLinkedContactMemory() {
         contactCfg();
         const linked = config.contacts.filter(c => c && c.linkForum);
@@ -5473,7 +5489,7 @@ ${esc(b.prompt)}
             const nickname = c.nickname || c.name || '匿名用户';
             const memory = getContactChatMemory(c);
             const rawMoral = Number(c.moralScore);
-            const moral = Number.isFinite(rawMoral) ? Math.max(0, Math.min(100, rawMoral)) : 70;
+            const moral = Number.isFinite(rawMoral) ? Math.max(0, Math.min(100, rawMoral)) : 50;
             return `【联系人：${nickname}】\n身份说明：论坛昵称与微信原昵称一致；玩家在私聊中是“玩家本人”，不是普通匿名网友。\n道德值：${moral}/100\n聊天记忆：\n${memory || '（暂无聊天记录）'}`;
         });
         return `【已开启“此聊天与论坛联动”的通讯录联系人】
@@ -5482,13 +5498,18 @@ ${blocks.join('\n\n')}
 【私聊记忆与道德检定——必须执行】
 1. 这些聊天记录属于玩家与联系人之间的私聊记忆，不是论坛公开资料；只能用于人物连续性、态度、判断和剧情参考。
 2. 联系人必须认出“玩家本人”，不要把当前玩家误认成普通匿名论坛网友。
-3. 每次准备把私聊内容带入论坛发言前，先进行一次“是否泄露”的道德与动机检定：综合道德值、NPC性格、与玩家关系、利益、情绪、风险、第三方在场情况和当前场景。
-4. 道德值80～100：默认保护隐私，不主动泄露具体聊天内容；除非存在非常强的剧情动机，否则不得公开细节。
-5. 道德值40～79：谨慎判断，可模糊提及与玩家有关的事情，但不应随意公开敏感细节。
-6. 道德值0～39：更容易因八卦、利益、炫耀、威胁、情绪等动机泄露，但仍必须符合NPC性格和当前情境，不是必然泄露。
-7. 即使允许泄露，也只能说NPC当下愿意说出的必要部分；禁止机械复制、逐字转述或倾倒整段私聊记录。
-8. 如果检定结果为“保护私聊”，论坛发言不得出现可追溯到私聊原文的具体信息；可以保留NPC因此产生的情绪、态度或关系变化。
-9. 开启联动绝不等于授权公开私聊。论坛AI不得因为看到了聊天记录就自动泄密。`;
+3. 每次准备把私聊内容带入论坛发言前，先进行一次“是否泄露”的道德与动机检定：综合道德阶段、NPC性格、与玩家关系/好感、忠诚度、利益、情绪、风险、第三方在场情况和当前场景。
+4. 道德值0～15：危险型；可能把秘密当筹码，在利益、报复、威胁等强动机下主动利用或泄露，但仍要符合剧情。
+5. 道德值16～30：恶意/利己型；容易八卦、添油加醋、交换情报或因利益/怂恿泄密。
+6. 道德值31～45：灰色自私型；不会无缘无故伤害玩家，但可能认为“没有义务替你保密”，在关系恶化、利益交换或被追问时松口。
+7. 道德值46～60：普通人；通常保留私聊，但会优先保护自己，不是绝对守密；可能出现轻微、无敏感内容的口头泄露。
+8. 道德值61～75：可靠型；倾向保护隐私、拒绝恶意传播，即使与玩家发生普通矛盾也不拿私聊报复。
+9. 道德值76～90：高道德/守密型；强保护隐私，不因八卦、金钱或一时愤怒轻易泄密，并可能主动阻止恶意传播。
+10. 道德值91～100：极高道德型；极少见，具有稳定原则，不利用秘密获利，也不因个人恩怨泄密；但严重危害他人时不会机械包庇。
+11. 道德值只是底线倾向，不是行为开关；低道德不等于每次都泄密，高道德也不等于无条件替玩家隐瞒。
+12. 即使允许泄露，也只能说NPC当下愿意说出的必要部分；禁止机械复制、逐字转述或倾倒整段私聊记录。
+13. 如果检定结果为“保护私聊”，论坛发言不得出现可追溯到私聊原文的具体信息；可以保留NPC因此产生的情绪、态度或关系变化。
+14. 开启联动绝不等于授权公开私聊。论坛AI不得因为看到了聊天记录就自动泄密。`;
     }
 
     function forumUserProfileHTML(author, extraClass='') {
@@ -5515,7 +5536,66 @@ ${blocks.join('\n\n')}
         if (!c.model) throw new Error('请先在通讯录设置中选择模型');
         const ctx = await buildContext();
         const player = currentUserProfile();
-        const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后判断他是否会泄露与玩家的私聊。\n根据当前正文、世界书、论坛用户资料和其可见发言风格综合判断，不要随机，不要把一次吐槽等同于低道德。\n评分 0～100：0=极低道德底线，100=极高道德底线。重点判断隐私意识、守信、八卦、利益驱动、情绪控制和泄露他人私事的倾向。\n评分建立后应保持稳定，除非以后明确发生重大剧情变化。\n只返回 JSON，不要 Markdown：{"score":0-100整数,"label":"较低/一般/较高/很高","reason":"不超过80字的依据"}\n\n【论坛用户】\n昵称：${String(info.name||'匿名用户')}\n简介：${String(info.bio||'未提供')}\nIP属地：${String(info.location||'未知')}\n\n【当前正文与世界书】\n${ctx.slice(0,32000)}\n\n【玩家身份】\n玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
+        let roleDb = '';
+        try {
+            // 把已选择的世界书当作本地角色资料库：优先检索角色名/作品名相关条目。
+            roleDb = await getSelectedWorldbookText(`${name} ${bio} ${String(sourcePost?.content || sourcePost?.text || '')}`);
+        } catch (e) {
+            roleDb = '';
+        }
+        const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后决定其在论坛、私聊和剧情中的道德底线与隐私行为。
+
+【核心原则：论坛整体道德偏低】
+这是一个普通匿名论坛。不要把“没有明显恶行”“说话正常”“喜欢宝可梦”“没有被发现做坏事”当成高道德证据。普通论坛用户多数处于现实、偏利己或中性状态，道德评分的中心应在45～55附近。没有证据证明高道德，就保持中性偏低。
+
+【七阶段评分】
+0～15：危险型——底线极低，可能为利益、报复或威胁利用他人秘密。
+16～30：恶意/利己型——明显利己，容易八卦、添油加醋、利用信息交换利益。
+31～45：灰色自私型——不一定恶毒，但优先考虑自己，可能认为“没有义务替你保密”。
+46～60：普通人——有基本良知，也有现实利益；通常不主动泄密，但不是圣人。
+61～75：可靠型——有稳定边界感和善意，倾向保护隐私。
+76～90：高道德/守密型——原则感强，较少受利益和情绪影响，通常主动保护隐私。
+91～100：极高道德型——极少见，接近圣人级，需要长期、具体、跨场景的强证据；不得轻易使用。
+
+【评分规则】
+1. 实际发帖、评论、回复、对他人的具体行为 > 个人简介、自我宣称。
+2. 没有恶行证据不等于高道德。
+3. 单次友善、客套、正义口号不能大幅加分。
+4. 单次争吵、吐槽、粗口也不能单独判为低道德；看是否有伤害、欺骗、骚扰、操纵、报复等行为。
+5. 对隐私的尊重、是否利用秘密、是否为了利益伤害他人，是本次评分的重要证据。
+6. 评分是稳定人格倾向，不是对某一句话的即时情绪评分。
+7. 最终评分必须落在上述行为证据能支持的范围；证据不足时优先45～55。
+
+【动漫/游戏/漫画/小说/影视/同人账号】
+如果怀疑该用户是虚构角色或同人角色：
+- 优先检索下方“角色资料库（世界书）”中的角色资料、原作行为和阵营信息；有资料才使用，不能凭印象编造。
+- 原作角色道德倾向 与 论坛账号本人实际行为必须分开。
+- 角色是反派，不等于账号本人一定低道德；角色是正派，也不等于账号本人一定高道德。
+- 如果角色资料库没有可靠资料，标记为“角色资料未知”，不要虚构原作经历，继续依据论坛实际行为评分。
+
+【需要额外输出的行为倾向】
+除了score，请给出：
+- label：较低/一般/较高/很高
+- stage：七阶段名称
+- loyalty：0～100，对玩家的潜在忠诚/站队倾向；没有证据时50附近
+- affinity：0～100，与玩家的当前好感/亲近倾向；没有证据时50附近
+- reason：不超过100字，指出最关键证据
+
+只返回 JSON，不要 Markdown：{"score":50,"label":"一般","stage":"普通人","loyalty":50,"affinity":50,"reason":"..."}
+
+【论坛用户】
+昵称：${String(info.name||'匿名用户')}
+简介：${String(info.bio||'未提供')}
+IP属地：${String(info.location||'未知')}
+
+【当前正文与世界书】
+${ctx.slice(0,32000)}
+
+【角色资料库（世界书检索结果）】
+${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得自行编造原作信息）'}
+
+【玩家身份】
+玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
         const raw = await callContactAI([{role:'system',content:'你是稳定的人物设定评估器。'}, {role:'user',content:prompt}]);
         const result = extractContactMoralResult(raw);
         if (!result) {
@@ -5524,8 +5604,11 @@ ${blocks.join('\n\n')}
         }
         const n = Number(result.score);
         const score = Math.max(0, Math.min(100, Math.round(n)));
-        const label = String(result.label || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高'));
-        return {score, label, reason:String(result.reason||'').slice(0,160)};
+        const label = String(result.label || (score < 46 ? '较低' : score < 76 ? '一般' : score < 91 ? '较高' : '很高'));
+        const loyalty = Math.max(0, Math.min(100, Math.round(Number.isFinite(Number(result.loyalty)) ? Number(result.loyalty) : 50)));
+        const affinity = Math.max(0, Math.min(100, Math.round(Number.isFinite(Number(result.affinity)) ? Number(result.affinity) : 50)));
+        const behavior = moralBehaviorProfile(score);
+        return {score, label, stage:String(result.stage || behavior.stage), loyalty, affinity, reason:String(result.reason||'').slice(0,160)};
     }
 
     function openForumUserCard(author, sourcePost=null) {
@@ -5565,7 +5648,7 @@ ${blocks.join('\n\n')}
             try {
                 const moral = await assessContactMoral({name, bio, location, sourcePost});
                 const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-                config.contacts.push({id, nickname:name, name, avatar, note:'', bio, location, linkForum:true, moralScore:moral.score, moralLabel:moral.label, moralReason:moral.reason});
+                config.contacts.push({id, nickname:name, name, avatar, note:'', bio, location, linkForum:true, moralScore:moral.score, moralLabel:moral.label, moralStage:moral.stage, moralLoyalty:moral.loyalty, moralAffinity:moral.affinity, moralReason:moral.reason});
                 config.contactChats[id] = [];
                 saveContactConfig(); close();
                 showToast(`已添加好友：${name}（AI道德倾向：${moral.label}）`);
@@ -5645,7 +5728,7 @@ ${blocks.join('\n\n')}
             }
             const playerSafe = config.userProfiles?.safe || {};
             const playerMature = config.userProfiles?.mature || {};
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 70))}/100\n\n【玩家身份识别】\n当前聊天对象就是玩家本人。玩家可能在论坛使用“${playerSafe.nickname||'旅行中的训练家'}”或“${playerMature.nickname||'匿名用户'}”等身份。不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【玩家身份识别】\n当前聊天对象就是玩家本人。玩家可能在论坛使用“${playerSafe.nickname||'旅行中的训练家'}”或“${playerMature.nickname||'匿名用户'}”等身份。不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -5666,7 +5749,7 @@ ${blocks.join('\n\n')}
         contactCfg();
         const body = $('pkmn-contact-person-settings-body');
         if (!body) return;
-        const score = Math.max(0, Math.min(100, Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 70));
+        const score = Math.max(0, Math.min(100, Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50));
         const label = c.moralLabel || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高');
         const avatar = String(c.avatar || (c.nickname || c.name || '匿').slice(0,1));
         body.innerHTML = `
@@ -5703,6 +5786,8 @@ ${blocks.join('\n\n')}
                 <div class="contact-settings-section-title"><span class="contact-settings-icon">◈</span> 道德检定</div>
                 <div class="contact-settings-score">AI 判定：<b>${esc(label)}</b><span>·</span><strong>${score} / 100</strong></div>
                 <div class="contact-settings-hint">加好友时由通讯录 AI 根据 NPC 人设、正文、世界书和论坛表现判断并保存。不能手动修改。</div>
+                <div class="contact-settings-reason">行为阶段：${esc(c.moralStage || moralBehaviorProfile(score).stage)}</div>
+                <div class="contact-settings-reason">行为倾向：${esc(getMoralBehaviorText(score))}</div>
                 ${c.moralReason ? `<div class="contact-settings-reason">判断依据：${esc(c.moralReason)}</div>` : ''}
             </section>
 
@@ -5830,7 +5915,7 @@ ${blocks.join('\n\n')}
         const name = prompt('联系人昵称');
         if (!name) return;
         const id = 'c_' + Date.now();
-        config.contacts.push({id,nickname:String(name).trim(),name:String(name).trim(),avatar:'👤',note:'',bio:'',location:'',linkForum:true,moralScore:70});
+        config.contacts.push({id,nickname:String(name).trim(),name:String(name).trim(),avatar:'👤',note:'',bio:'',location:'',linkForum:true,moralScore:50});
         saveContactConfig();
         renderContacts();
         showToast('已添加联系人');
