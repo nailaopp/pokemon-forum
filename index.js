@@ -2489,26 +2489,34 @@
     // ============================================================
 
     function openView(which) {
-        // Set every view's final transform in one synchronous pass.
-        // Using translate3d + explicit initial off-canvas CSS avoids the
-        // one-frame flash that occurred when the contacts view had no
-        // initial transform before renderContacts()/openView().
-        const views = {
-            home, forum, thread, settings,
-            contacts: $('pkmn-contacts'),
-            chat: $('pkmn-chat'),
-            contactSettings: $('pkmn-contact-settings-view'),
-            contactPersonSettings: $('pkmn-contact-person-settings-view')
+
+        // Keep all secondary views off-screen by default.  Inline transforms
+        // intentionally override the stylesheet default (no !important),
+        // so navigation can still bring the selected view to 0 without blanking it.
+        const positions = {
+            home: which === 'home' ? 'translate3d(0,0,0)' : 'translate3d(-100%,0,0)',
+            forum: which === 'forum' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            thread: which === 'thread' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            settings: which === 'settings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            contacts: which === 'contacts' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            chat: which === 'chat' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            contactSettings: which === 'contactSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            contactPersonSettings: which === 'contactPersonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
         };
-        Object.keys(views).forEach(key => {
-            const el = views[key];
-            if (!el) return;
-            const active = key === which;
-            const x = key === 'home'
-                ? (active ? 0 : -100)
-                : (active ? 0 : 100);
-            el.style.transform = `translate3d(${x}%,0,0)`;
-        });
+
+        home.style.transform = positions.home;
+        forum.style.transform = positions.forum;
+        thread.style.transform = positions.thread;
+        settings.style.transform = positions.settings;
+
+        const contacts = $('pkmn-contacts');
+        const chat = $('pkmn-chat');
+        const contactSettings = $('pkmn-contact-settings-view');
+        const contactPersonSettings = $('pkmn-contact-person-settings-view');
+        if (contacts) contacts.style.transform = positions.contacts;
+        if (chat) chat.style.transform = positions.chat;
+        if (contactSettings) contactSettings.style.transform = positions.contactSettings;
+        if (contactPersonSettings) contactPersonSettings.style.transform = positions.contactPersonSettings;
     }
 
     // ============================================================

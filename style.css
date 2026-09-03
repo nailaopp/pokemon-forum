@@ -128,20 +128,19 @@
   transition:transform .22s ease!important;
 }
 #pkmn-phone-panel #pkmn-home{transform:translateX(0);overflow:hidden!important}
-/* All secondary views start off-canvas. This prevents first-render flash/reflow when entering contacts. */
 #pkmn-phone-panel #pkmn-forum,
-#pkmn-phone-panel #pkmn-thread,
 #pkmn-phone-panel #pkmn-settings,
+#pkmn-phone-panel #pkmn-thread,
 #pkmn-phone-panel #pkmn-contacts,
 #pkmn-phone-panel #pkmn-chat,
 #pkmn-phone-panel #pkmn-contact-settings-view,
-#pkmn-phone-panel #pkmn-contact-person-settings-view{
-  transform:translate3d(100%,0,0)!important;
+#pkmn-phone-panel #pkmn-contact-person-settings-view{transform:translate3d(100%,0,0)}
+#pkmn-phone-panel .pkmn-view{
   will-change:transform;
   backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  transform:translate3d(100%,0,0);
 }
-#pkmn-phone-panel #pkmn-home{will-change:transform;backface-visibility:hidden}
-#pkmn-phone-panel .pkmn-view{contain:layout paint;}
 
 /* ---- home (kept functional, visually quiet) ---- */
 #pkmn-phone-panel .pkmn-home-apps{
