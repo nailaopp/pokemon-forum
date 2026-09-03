@@ -5368,7 +5368,56 @@ ${esc(b.prompt)}
         });
         if (!res.ok) throw new Error('HTTP '+res.status);
         const data = await res.json();
-        return data?.choices?.[0]?.message?.content || '';
+        const message = data?.choices?.[0]?.message || {};
+        const content = message?.content;
+        const reasoning = message?.reasoning_content || message?.reasoning || data?.choices?.[0]?.reasoning_content || '';
+        // 兼容 OpenAI/DeepSeek/部分代理返回的字符串、content 数组以及推理字段。
+        const flatten = value => {
+            if (typeof value === 'string') return value;
+            if (Array.isArray(value)) return value.map(x => typeof x === 'string' ? x : (x?.text || x?.content || '')).join('\n');
+            if (value && typeof value === 'object') return String(value.text || value.content || '');
+            return '';
+        };
+        const text = flatten(content);
+        return [text, flatten(reasoning)].filter(Boolean).join('\n');
+    }
+
+    function extractContactMoralResult(raw) {
+        const text = String(raw || '').trim();
+        if (!text) return null;
+
+        // 1) 首先尝试严格/代码块/嵌套 JSON。
+        let obj = null;
+        try { obj = parseJSON(text); } catch (_) {}
+        if (Array.isArray(obj)) obj = obj[0];
+        const fromObj = Number(obj?.score);
+        if (Number.isFinite(fromObj)) {
+            return {
+                score: fromObj,
+                label: String(obj?.label || ''),
+                reason: String(obj?.reason || '')
+            };
+        }
+
+        // 2) 兼容模型返回“道德评分：85”“score: 85”“评分 85/100”等普通文本。
+        const patterns = [
+            /(?:道德(?:倾向)?评分|道德分数|道德值|评分|score|moral(?:\s*score)?)[^0-9]{0,24}(\d{1,3})(?:\s*(?:\/\s*100|分|%))?/i,
+            /(?:^|\n)\s*(\d{1,3})\s*(?:\/\s*100|分)\s*(?:$|\n)/i
+        ];
+        let score = NaN;
+        for (const re of patterns) {
+            const m = text.match(re);
+            if (m) { score = Number(m[1]); break; }
+        }
+        if (!Number.isFinite(score) || score < 0 || score > 100) return null;
+
+        const labelMatch = text.match(/(?:label|等级|道德等级|倾向)[^\S\r\n]*[:：]?[^\S\r\n]*["“”']?([^\n,，}\"]{1,12})/i);
+        const reasonMatch = text.match(/(?:reason|理由|依据|原因)[^\S\r\n]*[:：]?\s*([^\n]{1,160})/i);
+        return {
+            score,
+            label: labelMatch ? labelMatch[1].trim() : '',
+            reason: reasonMatch ? reasonMatch[1].trim() : text.slice(0, 160)
+        };
     }
 
     async function contactTestConnection() {
@@ -5468,14 +5517,15 @@ ${blocks.join('\n\n')}
         const player = currentUserProfile();
         const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后判断他是否会泄露与玩家的私聊。\n根据当前正文、世界书、论坛用户资料和其可见发言风格综合判断，不要随机，不要把一次吐槽等同于低道德。\n评分 0～100：0=极低道德底线，100=极高道德底线。重点判断隐私意识、守信、八卦、利益驱动、情绪控制和泄露他人私事的倾向。\n评分建立后应保持稳定，除非以后明确发生重大剧情变化。\n只返回 JSON，不要 Markdown：{"score":0-100整数,"label":"较低/一般/较高/很高","reason":"不超过80字的依据"}\n\n【论坛用户】\n昵称：${String(info.name||'匿名用户')}\n简介：${String(info.bio||'未提供')}\nIP属地：${String(info.location||'未知')}\n\n【当前正文与世界书】\n${ctx.slice(0,32000)}\n\n【玩家身份】\n玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
         const raw = await callContactAI([{role:'system',content:'你是稳定的人物设定评估器。'}, {role:'user',content:prompt}]);
-        let obj = null;
-        try { obj = parseJSON(raw); } catch (_) {}
-        if (Array.isArray(obj)) obj = obj[0];
-        const n = Number(obj?.score);
-        if (!Number.isFinite(n)) throw new Error('AI 未返回有效的道德评分');
+        const result = extractContactMoralResult(raw);
+        if (!result) {
+            console.warn('[pkmn-forum] contact moral AI returned unparseable result:', raw);
+            throw new Error('AI 未返回有效的道德评分');
+        }
+        const n = Number(result.score);
         const score = Math.max(0, Math.min(100, Math.round(n)));
-        const label = String(obj?.label || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高'));
-        return {score, label, reason:String(obj?.reason||'').slice(0,160)};
+        const label = String(result.label || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高'));
+        return {score, label, reason:String(result.reason||'').slice(0,160)};
     }
 
     function openForumUserCard(author, sourcePost=null) {
