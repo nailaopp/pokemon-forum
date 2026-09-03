@@ -1,14 +1,14 @@
 {
-    "display_name": "宝可梦论坛纯白怪力",
-    "loading_order": 100,
-    "requires": [],
-    "optional": [],
-    "dependencies": [],
-    "js": "index.js",
-    "css": "style.css",
-    "author": "宝可梦论坛纯白怪力",
-    "version": "0.57.0",
-    "homePage": "",
-    "auto_update": false,
-    "minimum_client_version": "1.12.0"
+  "display_name": "宝可梦论坛纯白怪力",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "dependencies": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "宝可梦论坛纯白怪力",
+  "version": "0.58.0",
+  "homePage": "",
+  "auto_update": false,
+  "minimum_client_version": "1.12.0"
 }

@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 55; // fix undeclared chatState startup crash
+    const VERSION = 56; // persist contact/forum switches + expose forum read switch
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -5179,10 +5179,13 @@ ${esc(b.prompt)}
 
     function contactCfg() {
         if (!config.contactApi) config.contactApi = clone(DEFAULT_CONFIG.contactApi);
+        if (typeof config.contactApi.readForumAll !== 'boolean') config.contactApi.readForumAll = true;
         if (config.contactDefaultsVersion == null) {
-            config.contactDefaultsVersion = 2;
-            config.contactApi.readForumAll = true;
-            if (Array.isArray(config.contacts)) config.contacts.forEach(c => { if (c && c.linkForum === false) c.linkForum = true; });
+            config.contactDefaultsVersion = 3;
+            if (typeof config.contactApi.readForumAll !== 'boolean') config.contactApi.readForumAll = true;
+        } else if (config.contactDefaultsVersion < 3) {
+            config.contactDefaultsVersion = 3;
+            if (typeof config.contactApi.readForumAll !== 'boolean') config.contactApi.readForumAll = true;
         }
         if (!Array.isArray(config.contacts)) config.contacts = clone(DEFAULT_CONFIG.contacts);
         // 清理旧版本预置联系人，通讯录默认保持空白。
@@ -5501,6 +5504,11 @@ ${blocks.join('\n\n')}
                 ${c.moralReason ? `<div class="pkmn-small">判断依据：${esc(c.moralReason)}</div>` : ''}
             </div>
             <button class="pkmn-btn pkmn-primary" id="contact-person-save" style="width:100%">保存</button>`;
+        $('contact-person-link-forum').onchange = (e) => {
+            c.linkForum = !!e.target.checked;
+            saveContactConfig();
+            showToast(c.linkForum ? '✓ 已开启此聊天与论坛联动' : '✓ 已关闭此聊天与论坛联动');
+        };
         $('contact-person-save').onclick = () => {
             c.note = $('contact-person-note').value.trim();
             c.linkForum = !!$('contact-person-link-forum').checked;
@@ -5531,8 +5539,13 @@ ${blocks.join('\n\n')}
                 <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
             </div>
             <div class="wechat-setting-card">
-                <div class="wechat-setting-title">上下文说明</div>
-                <div class="pkmn-small">正文和世界书的读取权限直接沿用论坛设置；这里不重复设置。下面的“读取论坛全部内容”仅控制通讯录是否额外读取论坛帖子、评论和回复。</div>
+                <div class="wechat-setting-title">论坛内容读取</div>
+                <label class="pkmn-switch-row" style="justify-content:space-between">
+                    <span>读取论坛全部内容</span>
+                    <input type="checkbox" id="contact-read-forum-all" ${c.readForumAll !== false ? 'checked' : ''}>
+                </label>
+                <div class="pkmn-small">开启后，通讯录 AI 回复时可额外读取论坛的帖子、评论和回复；关闭后仅使用当前聊天、正文和世界书等允许的上下文。</div>
+                <div class="pkmn-small" style="margin-top:6px">此开关为通讯录全局设置，默认开启，修改后会立即保存。</div>
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">通讯录 AI 提示词</div>
@@ -5544,6 +5557,11 @@ ${blocks.join('\n\n')}
                 <div class="pkmn-small">联系人资料和聊天记录独立保存，不影响论坛 API。默认没有预置联系人。</div>
                 <button class="pkmn-btn pkmn-secondary" id="contact-add-inline" style="margin-top:10px;width:100%">添加联系人</button>
             </div>`;
+        $('contact-read-forum-all').onchange = (e) => {
+            c.readForumAll = !!e.target.checked;
+            saveContactConfig();
+            showToast(c.readForumAll ? '✓ 已开启读取论坛全部内容' : '✓ 已关闭读取论坛全部内容');
+        };
         $('contact-save-settings').onclick = () => {
             c.endpoint=$('contact-api-endpoint').value.trim();
             c.key=$('contact-api-key').value.trim();
@@ -5551,6 +5569,7 @@ ${blocks.join('\n\n')}
             c.temperature=Number($('contact-api-temp').value)||0.85;
             c.maxTokens=Math.max(100,Number($('contact-api-max').value)||900);
             c.systemPrompt=$('contact-system-prompt').value;
+            c.readForumAll = !!$('contact-read-forum-all').checked;
             saveContactConfig();
             showToast('通讯录设置已保存');
         };
@@ -5573,7 +5592,7 @@ ${blocks.join('\n\n')}
         const name = prompt('联系人昵称');
         if (!name) return;
         const id = 'c_' + Date.now();
-        config.contacts.push({id,nickname:String(name).trim(),name:String(name).trim(),avatar:'👤',note:'',bio:'',location:'',linkForum:false,moralScore:70});
+        config.contacts.push({id,nickname:String(name).trim(),name:String(name).trim(),avatar:'👤',note:'',bio:'',location:'',linkForum:true,moralScore:70});
         saveContactConfig();
         renderContacts();
         showToast('已添加联系人');
