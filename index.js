@@ -512,11 +512,7 @@
             MATURE_BOARDS.map(x => ({ ...x })),
 
         // 独立通讯录/微信式聊天配置
-        contacts: [
-            { id:'ash', name:'小智', avatar:'⚡', note:'旅行中的训练家', bio:'来自真新镇的训练家。', location:'关都 · 真新镇' },
-            { id:'misty', name:'小霞', avatar:'💧', note:'水系训练家', bio:'喜欢水系宝可梦的训练家。', location:'关都 · 华蓝市' },
-            { id:'brock', name:'小刚', avatar:'🪨', note:'尼比道馆训练家', bio:'擅长岩石系宝可梦。', location:'关都 · 尼比市' }
-        ],
+        contacts: [],
         contactChats: {},
         contactApi: {
             endpoint: '',
@@ -524,7 +520,8 @@
             model: '',
             temperature: 0.85,
             maxTokens: 900,
-            systemPrompt: '你正在模拟宝可梦世界中的通讯软件聊天。请严格按照联系人本人的身份、性格、经历、当前所在地和当前剧情进行回复。你不是旁白，不要替玩家决定行动。回复要像真实微信消息一样自然、简洁、有来有回。除非剧情需要，不要使用舞台说明、JSON或长篇旁白。'
+            systemPrompt: '你正在模拟宝可梦世界中的通讯软件聊天。请严格按照联系人本人的身份、性格、经历、当前所在地和当前剧情进行回复。你不是旁白，不要替玩家决定行动。回复要像真实微信消息一样自然、简洁、有来有回。除非剧情需要，不要使用舞台说明、JSON或长篇旁白。',
+            readForumAll: false
         }
     };
 
@@ -5144,6 +5141,11 @@ ${esc(b.prompt)}
     function contactCfg() {
         if (!config.contactApi) config.contactApi = clone(DEFAULT_CONFIG.contactApi);
         if (!Array.isArray(config.contacts)) config.contacts = clone(DEFAULT_CONFIG.contacts);
+        // 清理旧版本预置联系人，通讯录默认保持空白。
+        const legacyIds = new Set(['ash','misty','brock']);
+        if (config.contacts.some(x => legacyIds.has(String(x?.id || '')))) {
+            config.contacts = config.contacts.filter(x => !legacyIds.has(String(x?.id || '')));
+        }
         if (!config.contactChats || typeof config.contactChats !== 'object') config.contactChats = {};
         return config.contactApi;
     }
@@ -5178,6 +5180,28 @@ ${esc(b.prompt)}
         if (!res.ok) throw new Error('HTTP '+res.status);
         const data = await res.json();
         return data?.choices?.[0]?.message?.content || '';
+    }
+
+    async function contactTestConnection() {
+        const c = contactCfg();
+        const base = contactApiBase();
+        if (!base) throw new Error('请先填写通讯录 API Endpoint');
+        const res = await fetch(base + '/models', { headers: { ...(c.key ? {Authorization:'Bearer '+c.key} : {}) } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+    }
+
+    async function loadContactModels() {
+        const c = contactCfg();
+        const data = await contactTestConnection();
+        const raw = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        const models = raw.map(m => typeof m === 'string' ? m : (m?.id || m?.name || '')).filter(Boolean);
+        if (!models.length) throw new Error('接口正常，但没有返回模型');
+        c.models = models;
+        if (!c.model || !models.includes(c.model)) c.model = models[0];
+        saveContactConfig();
+        renderContactSettings();
+        return models;
     }
 
     function contactById(id) {
@@ -5244,7 +5268,12 @@ ${esc(b.prompt)}
         $('pkmn-chat-messages').appendChild(typing);
         try {
             const context = await buildContext();
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n姓名：${c.name}\n备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}`;
+            let forumContext = '';
+            if (contactCfg().readForumAll) {
+                const allThreads = [...(chatState.safeThreads || []), ...(chatState.matureThreads || [])];
+                forumContext = '\n【论坛全部内容】\n' + JSON.stringify(allThreads).slice(0, 30000);
+            }
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n姓名：${c.name}\n备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -5261,13 +5290,21 @@ ${esc(b.prompt)}
 
     function renderContactSettings() {
         const c = contactCfg();
+        const models = Array.isArray(c.models) ? c.models : [];
         $('pkmn-contact-settings-body').innerHTML = `
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">AI 接口</div>
                 <label>API Endpoint<input class="pkmn-input" id="contact-api-endpoint" value="${esc(c.endpoint)}" placeholder="https://.../v1"></label>
                 <label>API Key<input class="pkmn-input" id="contact-api-key" type="password" value="${esc(c.key)}" placeholder="留空则不发送 Authorization"></label>
-                <label>模型<input class="pkmn-input" id="contact-api-model" value="${esc(c.model)}" placeholder="例如 gpt-4o-mini"></label>
+                <label>模型<select class="pkmn-select" id="contact-api-model">${models.map(m => `<option value="${esc(m)}" ${m===c.model?'selected':''}>${esc(m)}</option>`).join('')}${c.model && !models.includes(c.model) ? `<option selected value="${esc(c.model)}">${esc(c.model)}</option>` : ''}</select></label>
+                <div class="pkmn-row" style="margin-top:8px"><button class="pkmn-btn pkmn-secondary" id="contact-test-api">🔌 检测连接</button><button class="pkmn-btn pkmn-secondary" id="contact-load-models">📥 加载模型</button></div>
+                <div class="pkmn-small" id="contact-api-status" style="margin-top:8px">${models.length ? '● 已有模型缓存' : '● 未检测'}</div>
                 <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">上下文权限</div>
+                <label class="pkmn-switch-row"><input type="checkbox" id="contact-read-forum-all" ${c.readForumAll ? 'checked' : ''}><span>读取论坛全部内容</span></label>
+                <div class="pkmn-small">开启后，通讯录 AI 会把当前聊天中表论坛和里论坛的帖子及回复作为额外上下文；关闭后不读取论坛内容。</div>
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">通讯录 AI 提示词</div>
@@ -5276,7 +5313,7 @@ ${esc(b.prompt)}
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">联系人</div>
-                <div class="pkmn-small">联系人资料和聊天记录独立保存，不影响论坛 API。</div>
+                <div class="pkmn-small">联系人资料和聊天记录独立保存，不影响论坛 API。默认没有预置联系人。</div>
                 <button class="pkmn-btn pkmn-secondary" id="contact-add-inline" style="margin-top:10px;width:100%">添加联系人</button>
             </div>`;
         $('contact-save-settings').onclick = () => {
@@ -5286,8 +5323,21 @@ ${esc(b.prompt)}
             c.temperature=Number($('contact-api-temp').value)||0.85;
             c.maxTokens=Math.max(100,Number($('contact-api-max').value)||900);
             c.systemPrompt=$('contact-system-prompt').value;
+            c.readForumAll=!!$('contact-read-forum-all').checked;
             saveContactConfig();
             showToast('通讯录设置已保存');
+        };
+        $('contact-test-api').onclick = async () => {
+            try {
+                c.endpoint=$('contact-api-endpoint').value.trim(); c.key=$('contact-api-key').value.trim(); saveContactConfig();
+                await contactTestConnection(); $('contact-api-status').textContent='● 连接正常'; showToast('✓ 通讯录 API 连接成功');
+            } catch(e) { $('contact-api-status').textContent='● 检测失败'; showToast('✕ 连接失败：'+(e.message||e)); }
+        };
+        $('contact-load-models').onclick = async () => {
+            try {
+                c.endpoint=$('contact-api-endpoint').value.trim(); c.key=$('contact-api-key').value.trim(); saveContactConfig();
+                const ms=await loadContactModels(); showToast('✓ 已加载 '+ms.length+' 个模型');
+            } catch(e) { showToast('✕ 加载模型失败：'+(e.message||e)); }
         };
         $('contact-add-inline').onclick = addContact;
     }
