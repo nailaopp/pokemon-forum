@@ -2792,7 +2792,7 @@
         if (!first) return '未知地区';
         let region = first.ipLocation || first.location || '';
         if (!region) {
-            return '未知地点';
+            return '关都 · 真新镇';
         }
         return region;
     }
@@ -3532,6 +3532,9 @@ ${ctx}
                             author:
                                 x.author,
 
+                            ipLocation:
+                                x.ipLocation || x.location || '关都 · 真新镇',
+
                             time:
                                 '刚刚',
 
@@ -3540,6 +3543,9 @@ ${ctx}
                                     {
                                         author:
                                             x.author,
+
+                                        ipLocation:
+                                            x.ipLocation || x.location || '关都 · 真新镇',
 
                                         content:
                                             x.content
@@ -3727,6 +3733,9 @@ ${targetContent}
                         {
                             author:
                                 x.author,
+
+                            ipLocation:
+                                x.ipLocation || x.location || '关都 · 真新镇',
 
                             content:
                                 x.content
