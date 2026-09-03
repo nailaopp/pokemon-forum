@@ -5757,9 +5757,8 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 const allThreads = [...(chatState.safeThreads || []), ...(chatState.matureThreads || [])];
                 forumContext = '\n【论坛全部内容】\n' + JSON.stringify(allThreads).slice(0, 30000);
             }
-            const playerSafe = config.userProfiles?.safe || {};
-            const playerMature = config.userProfiles?.mature || {};
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【玩家身份识别】\n当前聊天对象就是玩家本人。玩家可能在论坛使用“${playerSafe.nickname||'旅行中的训练家'}”或“${playerMature.nickname||'匿名用户'}”等身份。不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const contactPlayerIdentity = getContactPlayerIdentity();
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n当前聊天对象就是玩家本人。玩家在微信中的身份设定为：${contactPlayerIdentity || '未设置'}\n请以这个身份理解玩家，不要读取或推测论坛中的玩家身份，也不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -5941,6 +5940,12 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 <button class="pkmn-btn pkmn-primary" id="contact-save-settings" style="margin-top:10px;width:100%">保存通讯录设置</button>
             </div>
             <div class="wechat-setting-card">
+                <div class="wechat-setting-title">玩家身份</div>
+                <div class="pkmn-small">这是微信/通讯录独立使用的玩家身份，不读取或同步论坛身份，并随当前酒馆聊天单独保存。</div>
+                <textarea class="pkmn-textarea" id="contact-player-identity" style="min-height:120px;margin-top:8px" placeholder="设置你在微信中的身份，例如：训练家、朋友、队友……">${esc(contactIdentity)}</textarea>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-player-identity" style="margin-top:8px;width:100%">保存玩家身份</button>
+            </div>
+            <div class="wechat-setting-card">
                 <div class="wechat-setting-title">联系人</div>
                 <div class="pkmn-small">联系人资料和聊天记录独立保存，不影响论坛 API。默认没有预置联系人。</div>
                 <button class="pkmn-btn pkmn-secondary" id="contact-add-inline" style="margin-top:10px;width:100%">添加联系人</button>
@@ -5980,6 +5985,10 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 c.endpoint=$('contact-api-endpoint').value.trim(); c.key=$('contact-api-key').value.trim(); saveContactConfig();
                 const ms=await loadContactModels(); showToast('✓ 已加载 '+ms.length+' 个模型');
             } catch(e) { showToast('✕ 加载模型失败：'+(e.message||e)); }
+        };
+        $('contact-save-player-identity').onclick = () => {
+            setContactPlayerIdentity($('contact-player-identity').value);
+            showToast('✓ 微信玩家身份已保存');
         };
         $('contact-add-inline').onclick = addContact;
     }
@@ -6759,7 +6768,3 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
     }); // end whenReady
 
 })();
-// 微信设置独立玩家身份：仅作用于通讯录/微信，不与论坛身份同步。
-document.addEventListener('click', () => {
-    setTimeout(ensureContactPlayerIdentityUI, 0);
-}, true);
