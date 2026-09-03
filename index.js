@@ -5353,35 +5353,22 @@ ${esc(b.prompt)}
         const base = contactApiBase();
         if (!base) throw new Error('请先在通讯录设置中配置 API');
         if (!c.model) throw new Error('请先填写通讯录模型');
-
-        // 通讯录 AI 请求必须有超时，否则网络/API 一直 pending 时
-        // “AI 正在判断…”会永久卡住，导致无法加好友。
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 30000);
-        try {
-            const res = await fetch(base + '/chat/completions', {
-                method:'POST',
-                headers:{
-                    'Content-Type':'application/json',
-                    ...(c.key ? {Authorization:'Bearer '+c.key} : {})
-                },
-                body:JSON.stringify({
-                    model:c.model,
-                    messages,
-                    temperature:Number(c.temperature) || 0.85,
-                    max_tokens:Number(c.maxTokens) || 900
-                }),
-                signal: controller.signal
-            });
-            if (!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            return data?.choices?.[0]?.message?.content || '';
-        } catch (e) {
-            if (e?.name === 'AbortError') throw new Error('通讯录 AI 请求超时（30秒），请检查 API 设置或网络连接');
-            throw e;
-        } finally {
-            clearTimeout(timer);
-        }
+        const res = await fetch(base + '/chat/completions', {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+                ...(c.key ? {Authorization:'Bearer '+c.key} : {})
+            },
+            body:JSON.stringify({
+                model:c.model,
+                messages,
+                temperature:Number(c.temperature) || 0.85,
+                max_tokens:Number(c.maxTokens) || 900
+            })
+        });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        return data?.choices?.[0]?.message?.content || '';
     }
 
     async function contactTestConnection() {
@@ -5477,17 +5464,7 @@ ${blocks.join('\n\n')}
         const c = contactCfg();
         if (!contactApiBase()) throw new Error('请先在通讯录设置中配置 API');
         if (!c.model) throw new Error('请先在通讯录设置中选择模型');
-
-        // 世界书读取也加保护，避免上下文阶段卡住时永远停留在“AI 正在判断”。
-        let ctx;
-        try {
-            ctx = await Promise.race([
-                buildContext(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('读取当前剧情上下文超时，请检查世界书或当前聊天内容')), 15000))
-            ]);
-        } catch (e) {
-            throw e;
-        }
+        const ctx = await buildContext();
         const player = currentUserProfile();
         const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后判断他是否会泄露与玩家的私聊。\n根据当前正文、世界书、论坛用户资料和其可见发言风格综合判断，不要随机，不要把一次吐槽等同于低道德。\n评分 0～100：0=极低道德底线，100=极高道德底线。重点判断隐私意识、守信、八卦、利益驱动、情绪控制和泄露他人私事的倾向。\n评分建立后应保持稳定，除非以后明确发生重大剧情变化。\n只返回 JSON，不要 Markdown：{"score":0-100整数,"label":"较低/一般/较高/很高","reason":"不超过80字的依据"}\n\n【论坛用户】\n昵称：${String(info.name||'匿名用户')}\n简介：${String(info.bio||'未提供')}\nIP属地：${String(info.location||'未知')}\n\n【当前正文与世界书】\n${ctx.slice(0,32000)}\n\n【玩家身份】\n玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
         const raw = await callContactAI([{role:'system',content:'你是稳定的人物设定评估器。'}, {role:'user',content:prompt}]);
