@@ -1,22 +1,57 @@
 
-    function ensureContactPlayerIdentityUI() {
-        const root = document.querySelector('#ns-contact-settings, .ns-contact-settings, [data-contact-settings]');
-        if (!root || root.querySelector('#ns-contact-player-identity-panel')) return;
-        const wrap = document.createElement('div');
-        wrap.id = 'ns-contact-player-identity-panel';
-        wrap.className = 'ns-contact-setting-card';
-        wrap.innerHTML = `<div class="ns-contact-setting-title">玩家身份</div>
-          <textarea id="ns-contact-player-identity" class="ns-contact-setting-input" rows="3" placeholder="设置微信中使用的玩家身份"></textarea>
-          <button type="button" id="ns-save-contact-player-identity" class="ns-contact-setting-btn">保存</button>`;
-        root.appendChild(wrap);
-        const input = wrap.querySelector('#ns-contact-player-identity');
-        input.value = getContactPlayerIdentity();
-        wrap.querySelector('#ns-save-contact-player-identity').addEventListener('click', () => {
-            setContactPlayerIdentity(input.value);
-        });
+    function installContactSettingsExtras() {
+        // Locate the actual settings panel from controls that are known to exist there.
+        const anchor = document.querySelector('#ns-contact-api-save, #ns-save-contact-api, #ns-contact-settings, .ns-contact-settings');
+        const root = anchor ? (anchor.closest('.ns-contact-settings') || anchor.closest('.ns-modal') || anchor.parentElement) : null;
+        if (!root) return;
+
+        let identity = root.querySelector('#ns-contact-player-identity-card');
+        if (!identity) {
+            identity = document.createElement('div');
+            identity.id = 'ns-contact-player-identity-card';
+            identity.className = 'ns-contact-setting-card';
+            identity.innerHTML = `<div class="ns-contact-setting-title">玩家身份</div>
+              <textarea id="ns-contact-player-identity" class="ns-contact-setting-input" rows="3" placeholder="设置微信中使用的玩家身份"></textarea>
+              <button type="button" id="ns-save-contact-player-identity" class="ns-contact-setting-btn">保存玩家身份</button>`;
+            root.appendChild(identity);
+            identity.querySelector('#ns-contact-player-identity').value = getContactPlayerIdentity();
+            identity.querySelector('#ns-save-contact-player-identity').addEventListener('click', () => {
+                setContactPlayerIdentity(identity.querySelector('#ns-contact-player-identity').value);
+            });
+        }
+
+        let moral = root.querySelector('#ns-hidden-moral-entry');
+        if (!moral) {
+            moral = document.createElement('div');
+            moral.id='ns-hidden-moral-entry';
+            moral.style.marginTop='8px';
+            moral.innerHTML=`<button type="button" id="ns-hidden-moral-button"
+                style="background:#fff;color:#222;border:1px solid #ccc;border-radius:8px;padding:7px 12px;">
+                道德检定
+              </button>
+              <div id="ns-hidden-moral-unlock" style="display:none;margin-top:8px;">
+                <input id="ns-moral-unlock-input" type="text" autocomplete="off"
+                  style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:8px;">
+              </div>`;
+            root.appendChild(moral);
+            moral.querySelector('#ns-hidden-moral-button').addEventListener('click',()=>{
+                const box=moral.querySelector('#ns-hidden-moral-unlock');
+                box.style.display='block';
+                const input=moral.querySelector('#ns-moral-unlock-input');
+                input.value='';
+                input.focus();
+            });
+            moral.querySelector('#ns-moral-unlock-input').addEventListener('input',(e)=>{
+                if(e.target.value==='114516'){
+                    const hidden = root.querySelectorAll('.ns-moral-settings, [data-moral-setting], #ns-moral-settings');
+                    hidden.forEach(el=>el.style.display='block');
+                }
+            });
+        }
     }
 
-    /**
+
+/**
  * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.41)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
@@ -5906,6 +5941,23 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
     }
 
     function renderContactSettings() {
+        const __contactIdentity = getContactPlayerIdentity();
+        const __identityCard = `
+          <div class="ns-contact-setting-card ns-contact-player-identity-card">
+            <div class="ns-contact-setting-title">玩家身份</div>
+            <textarea id="ns-contact-player-identity" class="ns-contact-setting-input" rows="3" placeholder="设置微信中使用的玩家身份">${escapeHtml(__contactIdentity)}</textarea>
+            <button type="button" id="ns-save-contact-player-identity" class="ns-contact-setting-btn">保存玩家身份</button>
+          </div>
+          <button type="button" id="ns-hidden-moral-button"
+            style="background:#fff;color:#222;border:1px solid #d0d0d0;border-radius:8px;padding:7px 12px;margin-top:8px;">
+            道德检定
+          </button>
+          <div id="ns-hidden-moral-unlock" style="display:none;margin-top:8px;">
+            <input id="ns-moral-unlock-input" type="text" autocomplete="off"
+              style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:8px;">
+          </div>
+        `;
+
         // 微信独立玩家身份：与论坛身份完全分离，按当前酒馆聊天保存。
         const contactIdentity = getContactPlayerIdentity();
         
@@ -6767,4 +6819,24 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
 
     }); // end whenReady
 
+})();
+
+(function(){
+    let timer=null;
+    const tryInstall=()=>{
+        clearTimeout(timer);
+        timer=setTimeout(()=>{ try { installContactSettingsExtras(); } catch(e) {} }, 80);
+    };
+    const obs=new MutationObserver(tryInstall);
+    obs.observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('click',tryInstall,true);
+})();
+
+(function(){
+    const hideMoral=()=>{
+      document.querySelectorAll('.ns-moral-settings,[data-moral-setting],#ns-moral-settings').forEach(el=>{
+        if(!el.dataset.moralUnlocked) el.style.display='none';
+      });
+    };
+    hideMoral();
 })();

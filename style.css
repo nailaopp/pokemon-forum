@@ -1540,3 +1540,7 @@
     left:50%;
     top:50%;
 }
+
+.ns-contact-player-identity-card{margin-top:10px}
+.ns-contact-player-identity-card .ns-contact-setting-title{font-weight:600;margin-bottom:6px}
+.ns-contact-player-identity-card textarea{width:100%;box-sizing:border-box}
