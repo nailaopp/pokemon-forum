@@ -2489,35 +2489,26 @@
     // ============================================================
 
     function openView(which) {
-
-        home.style.transform =
-            which === 'home'
-                ? 'translateX(0)'
-                : 'translateX(-100%)';
-
-        forum.style.transform =
-            which === 'forum'
-                ? 'translateX(0)'
-                : 'translateX(100%)';
-
-        thread.style.transform =
-            which === 'thread'
-                ? 'translateX(0)'
-                : 'translateX(100%)';
-
-        settings.style.transform =
-            which === 'settings'
-                ? 'translateX(0)'
-                : 'translateX(100%)';
-
-        const contacts = $('pkmn-contacts');
-        const chat = $('pkmn-chat');
-        const contactSettings = $('pkmn-contact-settings-view');
-        const contactPersonSettings = $('pkmn-contact-person-settings-view');
-        if (contacts) contacts.style.transform = which === 'contacts' ? 'translateX(0)' : 'translateX(100%)';
-        if (chat) chat.style.transform = which === 'chat' ? 'translateX(0)' : 'translateX(100%)';
-        if (contactSettings) contactSettings.style.transform = which === 'contactSettings' ? 'translateX(0)' : 'translateX(100%)';
-        if (contactPersonSettings) contactPersonSettings.style.transform = which === 'contactPersonSettings' ? 'translateX(0)' : 'translateX(100%)';
+        // Set every view's final transform in one synchronous pass.
+        // Using translate3d + explicit initial off-canvas CSS avoids the
+        // one-frame flash that occurred when the contacts view had no
+        // initial transform before renderContacts()/openView().
+        const views = {
+            home, forum, thread, settings,
+            contacts: $('pkmn-contacts'),
+            chat: $('pkmn-chat'),
+            contactSettings: $('pkmn-contact-settings-view'),
+            contactPersonSettings: $('pkmn-contact-person-settings-view')
+        };
+        Object.keys(views).forEach(key => {
+            const el = views[key];
+            if (!el) return;
+            const active = key === which;
+            const x = key === 'home'
+                ? (active ? 0 : -100)
+                : (active ? 0 : 100);
+            el.style.transform = `translate3d(${x}%,0,0)`;
+        });
     }
 
     // ============================================================
