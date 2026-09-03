@@ -1,56 +1,3 @@
-
-    function installContactSettingsExtras() {
-        // Locate the actual settings panel from controls that are known to exist there.
-        const anchor = document.querySelector('#ns-contact-api-save, #ns-save-contact-api, #ns-contact-settings, .ns-contact-settings');
-        const root = anchor ? (anchor.closest('.ns-contact-settings') || anchor.closest('.ns-modal') || anchor.parentElement) : null;
-        if (!root) return;
-
-        let identity = root.querySelector('#ns-contact-player-identity-card');
-        if (!identity) {
-            identity = document.createElement('div');
-            identity.id = 'ns-contact-player-identity-card';
-            identity.className = 'ns-contact-setting-card';
-            identity.innerHTML = `<div class="ns-contact-setting-title">玩家身份</div>
-              <textarea id="ns-contact-player-identity" class="ns-contact-setting-input" rows="3" placeholder="设置微信中使用的玩家身份"></textarea>
-              <button type="button" id="ns-save-contact-player-identity" class="ns-contact-setting-btn">保存玩家身份</button>`;
-            root.appendChild(identity);
-            identity.querySelector('#ns-contact-player-identity').value = getContactPlayerIdentity();
-            identity.querySelector('#ns-save-contact-player-identity').addEventListener('click', () => {
-                setContactPlayerIdentity(identity.querySelector('#ns-contact-player-identity').value);
-            });
-        }
-
-        let moral = root.querySelector('#ns-hidden-moral-entry');
-        if (!moral) {
-            moral = document.createElement('div');
-            moral.id='ns-hidden-moral-entry';
-            moral.style.marginTop='8px';
-            moral.innerHTML=`<button type="button" id="ns-hidden-moral-button"
-                style="background:#fff;color:#222;border:1px solid #ccc;border-radius:8px;padding:7px 12px;">
-                道德检定
-              </button>
-              <div id="ns-hidden-moral-unlock" style="display:none;margin-top:8px;">
-                <input id="ns-moral-unlock-input" type="text" autocomplete="off"
-                  style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:8px;">
-              </div>`;
-            root.appendChild(moral);
-            moral.querySelector('#ns-hidden-moral-button').addEventListener('click',()=>{
-                const box=moral.querySelector('#ns-hidden-moral-unlock');
-                box.style.display='block';
-                const input=moral.querySelector('#ns-moral-unlock-input');
-                input.value='';
-                input.focus();
-            });
-            moral.querySelector('#ns-moral-unlock-input').addEventListener('input',(e)=>{
-                if(e.target.value==='114516'){
-                    const hidden = root.querySelectorAll('.ns-moral-settings, [data-moral-setting], #ns-moral-settings');
-                    hidden.forEach(el=>el.style.display='block');
-                }
-            });
-        }
-    }
-
-
 /**
  * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.41)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
@@ -525,7 +472,6 @@
     // ============================================================
 
     const DEFAULT_CONFIG = {
-        contactPlayerIdentity: '',
 
         version: VERSION,
 
@@ -569,6 +515,7 @@
         contacts: [],
         contactChats: {},
         contactLinkMeta: {},
+        contactPlayerIdentity: '',
         // 通讯录按 SillyTavern 当前角色卡聊天独立保存：新聊天为空，旧聊天恢复。
         contactChatArchives: {},
         contactChatArchivesVersion: 1,
@@ -5260,7 +5207,6 @@ ${esc(b.prompt)}
         contactCfg();
         config.contactPlayerIdentity = String(value || '');
         saveContactConfig();
-        renderContactSettings();
     }
 
     function contactCfg() {
@@ -5298,7 +5244,7 @@ ${esc(b.prompt)}
     }
 
     function emptyContactChatState() {
-        return { contacts: [], contactChats: {}, contactLinkMeta: {}, updatedAt: Date.now() };
+        return { contacts: [], contactChats: {}, contactLinkMeta: {}, contactPlayerIdentity: '', updatedAt: Date.now() };
     }
 
     function normalizeContactChatState(state) {
@@ -5306,6 +5252,7 @@ ${esc(b.prompt)}
         if (!Array.isArray(s.contacts)) s.contacts = [];
         if (!s.contactChats || typeof s.contactChats !== 'object') s.contactChats = {};
         if (!s.contactLinkMeta || typeof s.contactLinkMeta !== 'object') s.contactLinkMeta = {};
+        if (typeof s.contactPlayerIdentity !== 'string') s.contactPlayerIdentity = '';
         s.contacts.forEach(c => {
             if (!c || typeof c !== 'object') return;
             if (!c.nickname) c.nickname = c.name || '匿名用户';
@@ -5328,6 +5275,7 @@ ${esc(b.prompt)}
                 contacts: clone(config.contacts || []),
                 contactChats: clone(config.contactChats || {}),
                 contactLinkMeta: clone(config.contactLinkMeta || {}),
+                contactPlayerIdentity: String(config.contactPlayerIdentity || ''),
                 updatedAt: Date.now()
             });
             localStorage.setItem(contactChatArchiveKey(key), JSON.stringify(state));
@@ -5375,6 +5323,7 @@ ${esc(b.prompt)}
         config.contacts = state.contacts;
         config.contactChats = state.contactChats;
         config.contactLinkMeta = state.contactLinkMeta;
+        config.contactPlayerIdentity = String(state.contactPlayerIdentity || '');
         config.__contactActiveChatKey = key;
         currentContactId = null;
         saveGlobalConfig();
@@ -5793,7 +5742,7 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 forumContext = '\n【论坛全部内容】\n' + JSON.stringify(allThreads).slice(0, 30000);
             }
             const contactPlayerIdentity = getContactPlayerIdentity();
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n当前聊天对象就是玩家本人。玩家在微信中的身份设定为：${contactPlayerIdentity || '未设置'}\n请以这个身份理解玩家，不要读取或推测论坛中的玩家身份，也不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -5847,8 +5796,11 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 <div class="contact-settings-persist">ⓘ 此设置为当前联系人的独立设置，修改后立即保存，下次打开仍保持当前状态。</div>
             </section>
 
-            ${window.__pkmnMoralSettingsUnlocked ? `
-            <section class="contact-settings-card">
+            <button type="button" class="contact-moral-unlock-btn" id="contact-moral-unlock-btn" style="background:#fff;color:#222;border:1px solid #d0d0d0;border-radius:8px;padding:9px 12px;width:100%;margin-top:10px;">道德检定</button>
+            <div id="contact-moral-unlock-box" style="display:none;margin-top:8px;">
+                <input id="contact-moral-unlock-input" type="text" autocomplete="off" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ccc;border-radius:8px;" />
+            </div>
+            <section class="contact-settings-card" id="contact-moral-settings-panel" style="display:none;">
                 <div class="contact-settings-section-title"><span class="contact-settings-icon">◈</span> 道德检定</div>
                 <div class="contact-settings-score">AI 判定：<b>${esc(label)}</b><span>·</span><strong>${score} / 100</strong></div>
                 <div class="contact-settings-hint">加好友时由通讯录 AI 根据 NPC 人设、正文、世界书和论坛表现判断并保存。不能手动修改。</div>
@@ -5856,7 +5808,6 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 <div class="contact-settings-reason">行为倾向：${esc(getMoralBehaviorText(score))}</div>
                 ${c.moralReason ? `<div class="contact-settings-reason">判断依据：${esc(c.moralReason)}</div>` : ''}
             </section>
-            ` : ''}
 
             <button class="contact-settings-save" id="contact-person-save"><span>✓</span> 保存联系人设置</button>
             <button class="contact-settings-delete" id="contact-person-delete" type="button"><span>🗑</span> 删除联系人</button>
@@ -5867,6 +5818,19 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
             c.linkForum = !!e.target.checked;
             saveContactConfig();
             showToast(c.linkForum ? '✓ 已开启此聊天与论坛联动' : '✓ 已关闭此聊天与论坛联动');
+        };
+        $('contact-moral-unlock-btn').onclick = () => {
+            const box = $('contact-moral-unlock-box');
+            const input = $('contact-moral-unlock-input');
+            box.style.display = 'block';
+            input.value = '';
+            input.focus();
+        };
+        $('contact-moral-unlock-input').oninput = (e) => {
+            if (String(e.target.value) === '114516') {
+                $('contact-moral-settings-panel').style.display = 'block';
+                $('contact-moral-unlock-box').style.display = 'none';
+            }
         };
         $('contact-person-save').onclick = () => {
             c.note = $('contact-person-note').value.trim();
@@ -5895,43 +5859,6 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
             openView('contacts');
             showToast(`✓ 已删除联系人：${name}`);
         };
-
-        // Hidden moral-settings unlock: no visible title or hint. The hotspot is intentionally blank.
-        const moralHotspot = document.createElement('button');
-        moralHotspot.type = 'button';
-        moralHotspot.className = 'pkmn-moral-hidden-hotspot';
-        moralHotspot.setAttribute('aria-hidden', 'true');
-        moralHotspot.tabIndex = -1;
-        moralHotspot.title = '';
-        body.appendChild(moralHotspot);
-        moralHotspot.onclick = () => {
-            if (window.__pkmnMoralSettingsUnlocked) return;
-            const wrap = document.createElement('div');
-            wrap.className = 'pkmn-moral-unlock-overlay';
-            const input = document.createElement('input');
-            input.type = 'password';
-            input.autocomplete = 'off';
-            input.spellcheck = false;
-            input.className = 'pkmn-moral-unlock-input';
-            wrap.appendChild(input);
-            document.body.appendChild(wrap);
-            input.focus();
-            const finish = () => {
-                const ok = input.value === '114516';
-                wrap.remove();
-                if (ok) {
-                    window.__pkmnMoralSettingsUnlocked = true;
-                    renderContactPersonSettings();
-                }
-            };
-            input.addEventListener('keydown', e => {
-                if (e.key === 'Enter') finish();
-                else if (e.key === 'Escape') wrap.remove();
-            });
-            input.addEventListener('blur', () => {
-                // Keep the hidden unlock input available if focus moves briefly; no message is shown.
-            });
-        };
     }
 
     function openCurrentContactSettings() {
@@ -5941,29 +5868,16 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
     }
 
     function renderContactSettings() {
-        const __contactIdentity = getContactPlayerIdentity();
-        const __identityCard = `
-          <div class="ns-contact-setting-card ns-contact-player-identity-card">
-            <div class="ns-contact-setting-title">玩家身份</div>
-            <textarea id="ns-contact-player-identity" class="ns-contact-setting-input" rows="3" placeholder="设置微信中使用的玩家身份">${escapeHtml(__contactIdentity)}</textarea>
-            <button type="button" id="ns-save-contact-player-identity" class="ns-contact-setting-btn">保存玩家身份</button>
-          </div>
-          <button type="button" id="ns-hidden-moral-button"
-            style="background:#fff;color:#222;border:1px solid #d0d0d0;border-radius:8px;padding:7px 12px;margin-top:8px;">
-            道德检定
-          </button>
-          <div id="ns-hidden-moral-unlock" style="display:none;margin-top:8px;">
-            <input id="ns-moral-unlock-input" type="text" autocomplete="off"
-              style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:8px;">
-          </div>
-        `;
-
-        // 微信独立玩家身份：与论坛身份完全分离，按当前酒馆聊天保存。
-        const contactIdentity = getContactPlayerIdentity();
-        
         const c = contactCfg();
         const models = Array.isArray(c.models) ? c.models : [];
+        const contactPlayerIdentity = getContactPlayerIdentity();
         $('pkmn-contact-settings-body').innerHTML = `
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">玩家身份</div>
+                <textarea class="pkmn-textarea" id="contact-player-identity" rows="4" placeholder="设置微信中使用的玩家身份">${esc(contactPlayerIdentity)}</textarea>
+                <div class="pkmn-small" style="margin-top:6px">仅供微信/通讯录使用，与论坛身份完全独立。</div>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-player-identity" style="margin-top:8px;width:100%">保存玩家身份</button>
+            </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">AI 接口</div>
                 <label>API Endpoint<input class="pkmn-input" id="contact-api-endpoint" value="${esc(c.endpoint)}" placeholder="https://.../v1"></label>
@@ -5992,12 +5906,6 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 <button class="pkmn-btn pkmn-primary" id="contact-save-settings" style="margin-top:10px;width:100%">保存通讯录设置</button>
             </div>
             <div class="wechat-setting-card">
-                <div class="wechat-setting-title">玩家身份</div>
-                <div class="pkmn-small">这是微信/通讯录独立使用的玩家身份，不读取或同步论坛身份，并随当前酒馆聊天单独保存。</div>
-                <textarea class="pkmn-textarea" id="contact-player-identity" style="min-height:120px;margin-top:8px" placeholder="设置你在微信中的身份，例如：训练家、朋友、队友……">${esc(contactIdentity)}</textarea>
-                <button class="pkmn-btn pkmn-primary" id="contact-save-player-identity" style="margin-top:8px;width:100%">保存玩家身份</button>
-            </div>
-            <div class="wechat-setting-card">
                 <div class="wechat-setting-title">联系人</div>
                 <div class="pkmn-small">联系人资料和聊天记录独立保存，不影响论坛 API。默认没有预置联系人。</div>
                 <button class="pkmn-btn pkmn-secondary" id="contact-add-inline" style="margin-top:10px;width:100%">添加联系人</button>
@@ -6006,6 +5914,10 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
             c.readForumAll = !!e.target.checked;
             saveContactConfig();
             showToast(c.readForumAll ? '✓ 已开启读取论坛全部内容' : '✓ 已关闭读取论坛全部内容');
+        };
+        $('contact-save-player-identity').onclick = () => {
+            setContactPlayerIdentity($('contact-player-identity').value.trim());
+            showToast('✓ 微信玩家身份已保存');
         };
         const readContactApiFields = () => {
             c.endpoint=$('contact-api-endpoint').value.trim();
@@ -6037,10 +5949,6 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 c.endpoint=$('contact-api-endpoint').value.trim(); c.key=$('contact-api-key').value.trim(); saveContactConfig();
                 const ms=await loadContactModels(); showToast('✓ 已加载 '+ms.length+' 个模型');
             } catch(e) { showToast('✕ 加载模型失败：'+(e.message||e)); }
-        };
-        $('contact-save-player-identity').onclick = () => {
-            setContactPlayerIdentity($('contact-player-identity').value);
-            showToast('✓ 微信玩家身份已保存');
         };
         $('contact-add-inline').onclick = addContact;
     }
@@ -6819,24 +6727,4 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
 
     }); // end whenReady
 
-})();
-
-(function(){
-    let timer=null;
-    const tryInstall=()=>{
-        clearTimeout(timer);
-        timer=setTimeout(()=>{ try { installContactSettingsExtras(); } catch(e) {} }, 80);
-    };
-    const obs=new MutationObserver(tryInstall);
-    obs.observe(document.body,{childList:true,subtree:true});
-    document.addEventListener('click',tryInstall,true);
-})();
-
-(function(){
-    const hideMoral=()=>{
-      document.querySelectorAll('.ns-moral-settings,[data-moral-setting],#ns-moral-settings').forEach(el=>{
-        if(!el.dataset.moralUnlocked) el.style.display='none';
-      });
-    };
-    hideMoral();
 })();
