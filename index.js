@@ -514,6 +514,7 @@
         // 独立通讯录/微信式聊天配置
         contacts: [],
         contactChats: {},
+        contactLinkMeta: {},
         contactApi: {
             endpoint: '',
             key: '',
@@ -2057,6 +2058,15 @@
         <div class="pkmn-settings" id="pkmn-contact-settings-body"></div>
     </div>
 
+    <!-- 单联系人设置 -->
+    <div id="pkmn-contact-person-settings-view" class="pkmn-view">
+        <div class="pkmn-head">
+            <button id="pkmn-contact-person-settings-back">‹</button>
+            <span>聊天设置</span>
+        </div>
+        <div class="pkmn-settings" id="pkmn-contact-person-settings-body"></div>
+    </div>
+
 </div>
 
 <div class="pkmn-footer">
@@ -2503,9 +2513,11 @@
         const contacts = $('pkmn-contacts');
         const chat = $('pkmn-chat');
         const contactSettings = $('pkmn-contact-settings-view');
+        const contactPersonSettings = $('pkmn-contact-person-settings-view');
         if (contacts) contacts.style.transform = which === 'contacts' ? 'translateX(0)' : 'translateX(100%)';
         if (chat) chat.style.transform = which === 'chat' ? 'translateX(0)' : 'translateX(100%)';
         if (contactSettings) contactSettings.style.transform = which === 'contactSettings' ? 'translateX(0)' : 'translateX(100%)';
+        if (contactPersonSettings) contactPersonSettings.style.transform = which === 'contactPersonSettings' ? 'translateX(0)' : 'translateX(100%)';
     }
 
     // ============================================================
@@ -3044,6 +3056,8 @@ font-size:12px
 凡是标记为【主角本人】的内容，都代表当前聊天主角自己发送的内容。其他内容才是论坛网友。不要冒充主角。
 【当前正文与世界书上下文】
 ${ctx}
+【通讯录联动记忆】
+${buildLinkedContactMemory()}
 【当前帖子】《${targetThread.title}》
 【当前评论】${parentAuthor}：${rootPost.content}
 【已有楼中回复】
@@ -3062,7 +3076,7 @@ ${matureRule}
 
     function renderNestedReplies(rootPost, rootIndex) {
         const nested=ensureNestedReplies(rootPost); if(!nested.length)return '';
-        return `<div class="pkmn-nested-replies" data-root-index="${rootIndex}">${nested.map((r,idx)=>{const isUser=!!r.isUser;const name=String(r.author||'匿名网友');const target=r.replyToAuthor?`<span class="pkmn-nested-target">回复 @${esc(r.replyToAuthor)}</span>`:'';return `<div class="pkmn-nested-msg${isUser?' is-user':''}"><div class="pkmn-nested-main"><div class="pkmn-nested-bubble"><span class="pkmn-nested-name">${esc(name)}</span>${target}<span class="pkmn-nested-text">${esc(r.content||'')}</span></div><button class="pkmn-comment-reply-btn pkmn-nested-reply-btn" type="button" data-reply-root="${rootIndex}" data-reply-target="${idx}">回复</button></div></div>`;}).join('')}</div>`;
+        return `<div class="pkmn-nested-replies" data-root-index="${rootIndex}">${nested.map((r,idx)=>{const isUser=!!r.isUser;const name=String(r.author||'匿名网友');const target=r.replyToAuthor?`<span class="pkmn-nested-target">回复 @${esc(r.replyToAuthor)}</span>`:'';return `<div class="pkmn-nested-msg${isUser?' is-user':''}"><div class="pkmn-nested-main"><div class="pkmn-nested-bubble"><span class="pkmn-nested-name">${forumUserProfileHTML(name)}</span>${target}<span class="pkmn-nested-text">${esc(r.content||'')}</span></div><button class="pkmn-comment-reply-btn pkmn-nested-reply-btn" type="button" data-reply-root="${rootIndex}" data-reply-target="${idx}">回复</button></div></div>`;}).join('')}</div>`;
     }
     function renderCommentReplyComposer(rootIndex) { return `<div class="pkmn-nested-composer" data-root-index="${rootIndex}" data-target-index="-1"><input class="pkmn-nested-input" placeholder="回复这条评论..."><button class="pkmn-nested-send" type="button">发送</button></div>`; }
 
@@ -3187,7 +3201,7 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
 <div class="pkmn-post-head">
     <div class="pkmn-post-avatar">${esc(mainAvatar)}</div>
     <div class="pkmn-post-user">
-        <div class="pkmn-post-author">${esc(first.author || '匿名用户')}</div>
+        <div class="pkmn-post-author">${forumUserProfileHTML(first.author || '匿名用户')}</div>
         <div class="pkmn-post-time">${esc(t.time || '刚刚')} · ${esc(mainLocation)}</div>
     </div>
 </div>
@@ -3253,7 +3267,7 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
 <div class="pkmn-reply-avatar">${esc(avatar)}</div>
 <div class="pkmn-reply-main">
     <div class="pkmn-reply-name">
-        ${esc(name)}
+        ${forumUserProfileHTML(name)}
         ${isUser ? '<span style="margin-left:4px;color:#55a348">· 我</span>' : ''}
     </div>
     <div class="pkmn-reply-bubble">${esc(p.content)}</div>
@@ -3270,6 +3284,14 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
         }
 
         // 评论区使用事件委托，避免每次重新渲染后按钮失效。
+        box.querySelectorAll('[data-forum-user]').forEach(el => {
+            el.onclick = e => {
+                e.preventDefault();
+                e.stopPropagation();
+                openForumUserCard(el.dataset.forumUser, null);
+            };
+        });
+
         box.querySelectorAll('[data-reply-root]').forEach(btn => {
             btn.onclick = e => {
                 e.preventDefault();
@@ -3516,6 +3538,9 @@ author必须是与{{user}}无关的匿名网络昵称。
 ]
 
 ${ctx}
+
+【通讯录联动记忆】
+${buildLinkedContactMemory()}
 `;
 
             const raw =
@@ -3917,6 +3942,9 @@ ${
 ${history}
 
 ${ctx}
+
+【通讯录联动记忆】
+${buildLinkedContactMemory()}
 `;
 
             const raw =
@@ -5147,6 +5175,14 @@ ${esc(b.prompt)}
             config.contacts = config.contacts.filter(x => !legacyIds.has(String(x?.id || '')));
         }
         if (!config.contactChats || typeof config.contactChats !== 'object') config.contactChats = {};
+        if (!config.contactLinkMeta || typeof config.contactLinkMeta !== 'object') config.contactLinkMeta = {};
+        config.contacts.forEach(c => {
+            if (!c || typeof c !== 'object') return;
+            if (!c.nickname) c.nickname = c.name || '匿名用户';
+            if (c.note == null) c.note = '';
+            if (typeof c.linkForum !== 'boolean') c.linkForum = false;
+            if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 70;
+        });
         return config.contactApi;
     }
 
@@ -5208,19 +5244,105 @@ ${esc(b.prompt)}
         return config.contacts.find(x => x.id === id);
     }
 
+    function contactByNickname(nickname) {
+        const n = String(nickname || '').trim();
+        if (!n) return null;
+        return config.contacts.find(c => String(c.nickname || c.name || '').trim() === n) || null;
+    }
+
+    function contactDisplayName(c) {
+        if (!c) return '匿名用户';
+        return String(c.note || '').trim() || String(c.nickname || c.name || '匿名用户');
+    }
+
+    function getContactChatMemory(c, maxChars=7000) {
+        if (!c || !c.id) return '';
+        const chat = Array.isArray(config.contactChats[c.id]) ? config.contactChats[c.id] : [];
+        if (!chat.length) return '';
+        const lines = chat.slice(-24).map(m => `${m.role === 'user' ? '玩家' : (c.nickname || c.name || '联系人')}：${String(m.content || '')}`);
+        return lines.join('\n').slice(-maxChars);
+    }
+
+    function buildLinkedContactMemory() {
+        contactCfg();
+        const linked = config.contacts.filter(c => c && c.linkForum);
+        if (!linked.length) return '【通讯录联动】当前没有开启与论坛联动的联系人。';
+        const blocks = linked.map(c => {
+            const nickname = c.nickname || c.name || '匿名用户';
+            const memory = getContactChatMemory(c);
+            const moral = Math.max(0, Math.min(100, Number(c.moralScore) || 70));
+            return `【联系人：${nickname}】\n身份说明：论坛昵称与微信原昵称一致；玩家在私聊中是“玩家本人”，不是普通匿名网友。\n道德值：${moral}/100\n聊天记忆：\n${memory || '（暂无聊天记录）'}`;
+        });
+        return `【已开启“此聊天与论坛联动”的通讯录联系人】\n${blocks.join('\n\n')}\n\n【私聊泄露规则】\n1. 这些聊天记录属于玩家与联系人之间的私聊记忆，不是论坛公开资料。\n2. 联系人必须认出“玩家本人”，不要把玩家误认成普通匿名网友。\n3. 是否在论坛提及私聊内容必须进行道德与动机检定：综合道德值、NPC性格、与玩家关系、利益、情绪、风险和当前场景判断。\n4. 高道德或重视隐私的联系人不得随意泄露；低道德联系人才更可能因为八卦、利益、炫耀、威胁等原因泄露。\n5. 即使决定泄露，也只泄露当前情境下他愿意说出的部分，不要机械复制整段私聊。\n6. 不得因为开启联动就自动公开私聊内容。`;
+    }
+
+    function forumUserProfileHTML(author, extraClass='') {
+        return `<span class="pkmn-clickable-user ${extraClass}" data-forum-user="${esc(author)}" title="查看用户资料 / 加好友">${esc(author)}</span>`;
+    }
+
+    function openForumUserCard(author, sourcePost=null) {
+        const name = String(author || '匿名用户').trim();
+        if (!name) return;
+        contactCfg();
+        const existing = contactByNickname(name);
+        const avatar = name.slice(0,1) || '匿';
+        const bio = String(sourcePost?.authorBio || sourcePost?.bio || '').trim();
+        const location = String(sourcePost?.ipLocation || sourcePost?.location || '').trim();
+        const modal = topDoc.createElement('div');
+        modal.className = 'pkmn-user-card-modal';
+        modal.innerHTML = `
+<div class="pkmn-user-card-backdrop"></div>
+<div class="pkmn-user-card">
+  <button class="pkmn-user-card-close" type="button">×</button>
+  <div class="pkmn-user-card-avatar">${esc(avatar)}</div>
+  <div class="pkmn-user-card-name">${esc(name)}</div>
+  <div class="pkmn-user-card-sub">论坛用户</div>
+  ${location ? `<div class="pkmn-user-card-line">IP属地：${esc(location)}</div>` : ''}
+  ${bio ? `<div class="pkmn-user-card-line">${esc(bio)}</div>` : ''}
+  <div class="pkmn-user-card-actions">
+    ${existing ? `<button class="pkmn-btn pkmn-primary" data-user-card-chat>发消息</button>` : `<button class="pkmn-btn pkmn-primary" data-user-card-add>加为好友</button>`}
+    <button class="pkmn-btn pkmn-secondary" data-user-card-close>取消</button>
+  </div>
+</div>`;
+        topDoc.body.appendChild(modal);
+        const close = () => modal.remove();
+        modal.querySelectorAll('[data-user-card-close], .pkmn-user-card-backdrop, .pkmn-user-card-close').forEach(el => el.onclick = close);
+        const addBtn = modal.querySelector('[data-user-card-add]');
+        if (addBtn) addBtn.onclick = () => {
+            const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+            config.contacts.push({
+                id,
+                nickname: name,
+                name,
+                avatar,
+                note: '',
+                bio,
+                location,
+                linkForum: false,
+                moralScore: 70
+            });
+            config.contactChats[id] = [];
+            saveContactConfig();
+            close();
+            showToast('已添加好友：' + name);
+        };
+        const chatBtn = modal.querySelector('[data-user-card-chat]');
+        if (chatBtn) chatBtn.onclick = () => { close(); openContact(existing.id); };
+    }
+
     function renderContacts(filter='') {
         contactCfg();
         const list = $('pkmn-contact-list');
         if (!list) return;
         const q = String(filter || '').trim().toLowerCase();
-        const items = config.contacts.filter(c => !q || [c.name,c.note,c.location].join(' ').toLowerCase().includes(q));
+        const items = config.contacts.filter(c => !q || [c.nickname,c.name,c.note,c.location].join(' ').toLowerCase().includes(q));
         list.innerHTML = items.map(c => {
             const chat = config.contactChats[c.id] || [];
             const last = chat.length ? chat[chat.length-1].content : (c.note || '点击开始聊天');
             const time = chat.length ? chat[chat.length-1].time : '';
             return `<button class="wechat-contact" data-contact="${esc(c.id)}">
                 <span class="wechat-avatar">${esc(c.avatar || '👤')}</span>
-                <span class="wechat-contact-main"><b>${esc(c.name)}</b><small>${esc(last).slice(0,48)}</small></span>
+                <span class="wechat-contact-main"><b>${esc(contactDisplayName(c))}</b><small>${esc(last).slice(0,48)}</small></span>
                 <time>${esc(time)}</time>
             </button>`;
         }).join('') || '<div class="wechat-empty">没有找到联系人</div>';
@@ -5230,7 +5352,7 @@ ${esc(b.prompt)}
     function renderChat() {
         const c = contactById(currentContactId);
         if (!c) return;
-        $('pkmn-chat-title').textContent = c.name;
+        $('pkmn-chat-title').textContent = contactDisplayName(c);
         const box = $('pkmn-chat-messages');
         const msgs = config.contactChats[currentContactId] || [];
         box.innerHTML = msgs.map(m => {
@@ -5240,7 +5362,7 @@ ${esc(b.prompt)}
                 <div><div class="wechat-bubble">${esc(m.content).replace(/\n/g,'<br>')}</div><small class="wechat-time">${esc(m.time||'')}</small></div>
                 ${mine ? '<span class="wechat-avatar mini me">我</span>' : ''}
             </div>`;
-        }).join('') || `<div class="wechat-daytip">与 ${esc(c.name)} 的聊天</div>`;
+        }).join('') || `<div class="wechat-daytip">与 ${esc(contactDisplayName(c))} 的聊天</div>`;
         box.scrollTop = box.scrollHeight;
     }
 
@@ -5273,7 +5395,9 @@ ${esc(b.prompt)}
                 const allThreads = [...(chatState.safeThreads || []), ...(chatState.matureThreads || [])];
                 forumContext = '\n【论坛全部内容】\n' + JSON.stringify(allThreads).slice(0, 30000);
             }
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n姓名：${c.name}\n备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const playerSafe = config.userProfiles?.safe || {};
+            const playerMature = config.userProfiles?.mature || {};
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number(c.moralScore)||70))}/100\n\n【玩家身份识别】\n当前聊天对象就是玩家本人。玩家可能在论坛使用“${playerSafe.nickname||'旅行中的训练家'}”或“${playerMature.nickname||'匿名用户'}”等身份。不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -5286,6 +5410,50 @@ ${esc(b.prompt)}
             chat.push({role:'assistant', content:'消息发送失败：'+(e.message||e), time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
             renderChat();
         }
+    }
+
+    function renderContactPersonSettings() {
+        const c = contactById(currentContactId);
+        if (!c) return;
+        contactCfg();
+        const body = $('pkmn-contact-person-settings-body');
+        if (!body) return;
+        body.innerHTML = `
+            <div class="wechat-setting-card contact-profile-card">
+                <div class="contact-profile-avatar">${esc(String(c.avatar || (c.nickname||c.name||'匿').slice(0,1)))}</div>
+                <div><div class="wechat-setting-title">${esc(c.nickname || c.name)}</div><div class="pkmn-small">微信原昵称不可被备注修改</div></div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">备注</div>
+                <label>备注名<input class="pkmn-input" id="contact-person-note" value="${esc(c.note||'')}" placeholder="设置备注名"></label>
+                <div class="pkmn-small">通讯录列表显示备注名；不设置时显示原微信昵称。</div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">论坛联动</div>
+                <label class="pkmn-switch-row"><input type="checkbox" id="contact-person-link-forum" ${c.linkForum ? 'checked' : ''}><span>此聊天与论坛联动</span></label>
+                <div class="pkmn-small">开启后，论坛 AI 可以读取这个人的通讯录聊天记忆；这个人在论坛发帖/评论时也可以参考与你的私聊记忆。</div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">道德检定</div>
+                <label>道德值（0～100）<input class="pkmn-input" id="contact-person-moral" type="number" min="0" max="100" value="${esc(c.moralScore ?? 70)}"></label>
+                <div class="pkmn-small">数值越低越容易因八卦、利益或情绪泄露私聊；高道德角色默认会保护玩家隐私。最终仍结合 NPC 性格、关系、动机和场景判断。</div>
+            </div>
+            <button class="pkmn-btn pkmn-primary" id="contact-person-save" style="width:100%">保存</button>`;
+        $('contact-person-save').onclick = () => {
+            c.note = $('contact-person-note').value.trim();
+            c.linkForum = !!$('contact-person-link-forum').checked;
+            c.moralScore = Math.max(0, Math.min(100, Number($('contact-person-moral').value) || 0));
+            saveContactConfig();
+            showToast('联系人设置已保存');
+            renderContacts();
+            $('pkmn-chat-title').textContent = contactDisplayName(c);
+        };
+    }
+
+    function openCurrentContactSettings() {
+        if (!contactById(currentContactId)) return;
+        renderContactPersonSettings();
+        openView('contactPersonSettings');
     }
 
     function renderContactSettings() {
@@ -5346,7 +5514,7 @@ ${esc(b.prompt)}
         const name = prompt('联系人昵称');
         if (!name) return;
         const id = 'c_' + Date.now();
-        config.contacts.push({id,name:String(name).trim(),avatar:'👤',note:'新联系人',bio:'',location:''});
+        config.contacts.push({id,nickname:String(name).trim(),name:String(name).trim(),avatar:'👤',note:'',bio:'',location:'',linkForum:false,moralScore:70});
         saveContactConfig();
         renderContacts();
         showToast('已添加联系人');
@@ -5366,7 +5534,9 @@ ${esc(b.prompt)}
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendContactMessage(); }
     });
     $('pkmn-contact-settings')?.addEventListener('click', () => { renderContactSettings(); openView('contactSettings'); });
+    $('pkmn-chat-more')?.addEventListener('click', () => openCurrentContactSettings());
     $('pkmn-contact-settings-back')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
+    $('pkmn-contact-person-settings-back')?.addEventListener('click', () => { renderChat(); openView('chat'); });
 
     $('pkmn-open-safe').onclick =
         () => {
