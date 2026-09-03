@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 56; // persist contact/forum switches + expose forum read switch
+    const VERSION = 57; // beautify contact settings UI + persist contact/forum switches
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -5482,40 +5482,63 @@ ${blocks.join('\n\n')}
         contactCfg();
         const body = $('pkmn-contact-person-settings-body');
         if (!body) return;
+        const score = Math.max(0, Math.min(100, Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 70));
+        const label = c.moralLabel || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高');
+        const avatar = String(c.avatar || (c.nickname || c.name || '匿').slice(0,1));
         body.innerHTML = `
-            <div class="wechat-setting-card contact-profile-card">
-                <div class="contact-profile-avatar">${esc(String(c.avatar || (c.nickname||c.name||'匿').slice(0,1)))}</div>
-                <div><div class="wechat-setting-title">${esc(c.nickname || c.name)}</div><div class="pkmn-small">微信原昵称不可被备注修改</div></div>
+            <div class="contact-settings-profile">
+                <div class="contact-settings-avatar">${esc(avatar)}</div>
+                <div class="contact-settings-profile-main">
+                    <div class="contact-settings-name">${esc(c.nickname || c.name || '匿名用户')}</div>
+                    <div class="contact-settings-original">微信原昵称：${esc(c.nickname || c.name || '匿名用户')}</div>
+                </div>
             </div>
-            <div class="wechat-setting-card">
-                <div class="wechat-setting-title">备注</div>
-                <label>备注名<input class="pkmn-input" id="contact-person-note" value="${esc(c.note||'')}" placeholder="设置备注名"></label>
-                <div class="pkmn-small">通讯录列表显示备注名；不设置时显示原微信昵称。</div>
-            </div>
-            <div class="wechat-setting-card">
-                <div class="wechat-setting-title">论坛联动</div>
-                <label class="pkmn-switch-row"><input type="checkbox" id="contact-person-link-forum" ${c.linkForum ? 'checked' : ''}><span>此聊天与论坛联动</span></label>
-                <div class="pkmn-small">开启后，论坛 AI 可以读取这个人的通讯录聊天记忆；这个人在论坛发帖/评论时也可以参考与你的私聊记忆。</div>
-            </div>
-            <div class="wechat-setting-card">
-                <div class="wechat-setting-title">道德检定</div>
-                <div class="pkmn-input" style="opacity:.85;pointer-events:none">AI 判定：${esc(c.moralLabel || (Number(c.moralScore) < 40 ? '较低' : Number(c.moralScore) < 70 ? '一般' : Number(c.moralScore) < 85 ? '较高' : '很高'))} · ${esc(Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 70)))} / 100</div>
-                <div class="pkmn-small">加好友时由通讯录 AI 根据 NPC 人设、正文、世界书和论坛表现判断并保存。不能手动修改。</div>
-                ${c.moralReason ? `<div class="pkmn-small">判断依据：${esc(c.moralReason)}</div>` : ''}
-            </div>
-            <button class="pkmn-btn pkmn-primary" id="contact-person-save" style="width:100%">保存</button>`;
-        $('contact-person-link-forum').onchange = (e) => {
+
+            <section class="contact-settings-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">✎</span> 备注</div>
+                <label class="contact-settings-field-label">备注名
+                    <input class="pkmn-input contact-settings-input" id="contact-person-note" value="${esc(c.note||'')}" placeholder="设置备注名">
+                </label>
+                <div class="contact-settings-hint">通讯录列表显示备注名；不设置时显示原微信昵称。</div>
+            </section>
+
+            <section class="contact-settings-card contact-settings-link-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">🔗</span> 论坛联动</div>
+                <label class="contact-settings-toggle-row" for="contact-person-link-forum">
+                    <span>
+                        <b>此聊天与论坛联动</b>
+                        <small>开启后，论坛 AI 可读取此联系人的通讯录聊天记忆；该联系人在论坛发帖、评论时也可参考与你的私聊记忆。</small>
+                    </span>
+                    <input type="checkbox" id="contact-person-link-forum" ${c.linkForum !== false ? 'checked' : ''}>
+                    <i aria-hidden="true"></i>
+                </label>
+                <div class="contact-settings-persist">ⓘ 此设置为当前联系人的独立设置，修改后立即保存，下次打开仍保持当前状态。</div>
+            </section>
+
+            <section class="contact-settings-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">◈</span> 道德检定</div>
+                <div class="contact-settings-score">AI 判定：<b>${esc(label)}</b><span>·</span><strong>${score} / 100</strong></div>
+                <div class="contact-settings-hint">加好友时由通讯录 AI 根据 NPC 人设、正文、世界书和论坛表现判断并保存。不能手动修改。</div>
+                ${c.moralReason ? `<div class="contact-settings-reason">判断依据：${esc(c.moralReason)}</div>` : ''}
+            </section>
+
+            <button class="contact-settings-save" id="contact-person-save"><span>✓</span> 保存联系人设置</button>
+        `;
+
+        const toggle = $('contact-person-link-forum');
+        toggle.onchange = (e) => {
             c.linkForum = !!e.target.checked;
             saveContactConfig();
             showToast(c.linkForum ? '✓ 已开启此聊天与论坛联动' : '✓ 已关闭此聊天与论坛联动');
         };
         $('contact-person-save').onclick = () => {
             c.note = $('contact-person-note').value.trim();
-            c.linkForum = !!$('contact-person-link-forum').checked;
+            c.linkForum = !!toggle.checked;
             saveContactConfig();
-            showToast('联系人设置已保存');
+            showToast('✓ 联系人设置已保存');
             renderContacts();
             $('pkmn-chat-title').textContent = contactDisplayName(c);
+            renderContactPersonSettings();
         };
     }
 

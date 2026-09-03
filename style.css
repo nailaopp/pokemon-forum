@@ -1283,3 +1283,42 @@
 #pkmn-phone-panel .pkmn-switch-row input:checked{background:#07c160}
 #pkmn-phone-panel .pkmn-switch-row input:checked:before{transform:translateX(19px)}
 @keyframes pkmnUserCardIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ============================================================
+   联系人聊天设置 · 精致版
+   ============================================================ */
+#pkmn-phone-panel #pkmn-contact-person-settings-view{background:#f4f5f7}
+#pkmn-phone-panel #pkmn-contact-person-settings-view .wechat-nav{height:58px;background:rgba(255,255,255,.97);border-bottom:1px solid #e9eaec;box-shadow:0 1px 7px rgba(25,35,45,.05);position:relative;z-index:2}
+#pkmn-phone-panel #pkmn-contact-person-settings-view .wechat-nav-title{font-size:18px;letter-spacing:.1px}
+#pkmn-phone-panel #pkmn-contact-person-settings-view .pkmn-settings{padding:14px 12px 28px;overflow:auto}
+#pkmn-phone-panel .contact-settings-profile{display:flex;align-items:center;gap:14px;background:#fff;border-radius:16px;padding:18px 16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,30,40,.045);border:1px solid rgba(0,0,0,.025)}
+#pkmn-phone-panel .contact-settings-avatar{width:64px;height:64px;border-radius:15px;background:linear-gradient(145deg,#dcecf2,#c7dfe8);display:flex;align-items:center;justify-content:center;flex:none;color:#fff;font-size:29px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+#pkmn-phone-panel .contact-settings-profile-main{min-width:0}
+#pkmn-phone-panel .contact-settings-name{font-size:19px;font-weight:750;color:#1f252b;line-height:1.35}
+#pkmn-phone-panel .contact-settings-original{margin-top:5px;font-size:12px;color:#9aa0a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .contact-settings-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,30,40,.045);border:1px solid rgba(0,0,0,.025)}
+#pkmn-phone-panel .contact-settings-section-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:750;color:#20262c;margin-bottom:13px}
+#pkmn-phone-panel .contact-settings-icon{width:27px;height:27px;border-radius:8px;background:#f1f3f5;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#4f5963}
+#pkmn-phone-panel .contact-settings-field-label{display:block;font-size:12px;color:#777f87;margin:0!important}
+#pkmn-phone-panel .contact-settings-input{height:48px;border-radius:11px!important;border:1px solid #dfe3e7!important;background:#fff!important;font-size:15px!important;padding:0 13px!important;margin-top:6px!important;outline:none}
+#pkmn-phone-panel .contact-settings-input:focus{border-color:#b9c3cc!important;box-shadow:0 0 0 3px rgba(80,100,120,.07)}
+#pkmn-phone-panel .contact-settings-hint{font-size:12px;line-height:1.65;color:#969da4;margin-top:9px}
+#pkmn-phone-panel .contact-settings-link-card{padding-bottom:13px}
+#pkmn-phone-panel .contact-settings-toggle-row{position:relative;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:13px 0 11px!important;margin:0!important;color:#20262c!important;cursor:pointer}
+#pkmn-phone-panel .contact-settings-toggle-row>span{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px}
+#pkmn-phone-panel .contact-settings-toggle-row b{font-size:15px;font-weight:650;color:#252b31}
+#pkmn-phone-panel .contact-settings-toggle-row small{font-size:12px;line-height:1.6;color:#9299a0;font-weight:400}
+#pkmn-phone-panel .contact-settings-toggle-row input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;pointer-events:none!important}
+#pkmn-phone-panel .contact-settings-toggle-row i{display:block;position:relative;flex:none;width:50px;height:30px;border-radius:16px;background:#cfd4d8;box-shadow:inset 0 1px 2px rgba(0,0,0,.12);transition:background .18s ease,box-shadow .18s ease}
+#pkmn-phone-panel .contact-settings-toggle-row i:after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:transform .18s ease}
+#pkmn-phone-panel .contact-settings-toggle-row input:checked+i{background:#07c160;box-shadow:inset 0 1px 2px rgba(0,80,35,.15)}
+#pkmn-phone-panel .contact-settings-toggle-row input:checked+i:after{transform:translateX(20px)}
+#pkmn-phone-panel .contact-settings-persist{background:#f0f7ff;border-radius:11px;padding:10px 11px;font-size:11px;line-height:1.55;color:#5f88b4;margin-top:3px}
+#pkmn-phone-panel .contact-settings-score{height:46px;border:1px solid #e0e4e7;border-radius:11px;display:flex;align-items:center;padding:0 12px;box-sizing:border-box;font-size:14px;color:#555e66;background:#fafbfc}
+#pkmn-phone-panel .contact-settings-score b{margin-left:4px;color:#30373e}
+#pkmn-phone-panel .contact-settings-score span{margin:0 6px;color:#b0b5ba}
+#pkmn-phone-panel .contact-settings-score strong{color:#555e66;font-weight:650}
+#pkmn-phone-panel .contact-settings-reason{margin-top:8px;padding:9px 10px;border-radius:9px;background:#f7f8f9;color:#8b9298;font-size:11px;line-height:1.55}
+#pkmn-phone-panel .contact-settings-save{width:100%;height:48px;border:1px solid #bfe5c9;border-radius:13px;background:#f2fbf4;color:#17843d;font-size:15px;font-weight:700;box-shadow:0 2px 8px rgba(20,100,45,.05);cursor:pointer;margin:2px 0 4px}
+#pkmn-phone-panel .contact-settings-save:active{transform:scale(.985);background:#e7f7ea}
+#pkmn-phone-panel .contact-settings-save span{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%;background:#24a148;color:#fff;font-size:13px;margin-right:6px}
