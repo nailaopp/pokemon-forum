@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 58; // add per-contact delete action
+    const VERSION = 59; // persist contact API independently
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -561,6 +561,20 @@
                 Array.isArray(c.api.models)
                     ? c.api.models
                     : [];
+
+            c.contactApi = Object.assign(
+                clone(DEFAULT_CONFIG.contactApi),
+                c.contactApi || {}
+            );
+            try {
+                const rawContactApi = localStorage.getItem(NS + '_contact_api');
+                if (rawContactApi) {
+                    const savedContactApi = JSON.parse(rawContactApi);
+                    if (savedContactApi && typeof savedContactApi === 'object') {
+                        c.contactApi = Object.assign(c.contactApi, savedContactApi);
+                    }
+                }
+            } catch (_) {}
 
             c.userProfiles = Object.assign(
                 clone(DEFAULT_CONFIG.userProfiles),
@@ -5184,6 +5198,7 @@ ${esc(b.prompt)}
     let currentContactId = null;
 
     function contactCfg() {
+        // 通讯录 API 使用独立持久化键，避免酒馆聊天档案切换/迁移时覆盖全局 API 配置。
         if (!config.contactApi) config.contactApi = clone(DEFAULT_CONFIG.contactApi);
         if (typeof config.contactApi.readForumAll !== 'boolean') config.contactApi.readForumAll = true;
         if (config.contactDefaultsVersion == null) {
@@ -5308,7 +5323,23 @@ ${esc(b.prompt)}
     }
 
     function saveContactConfig() {
-        contactCfg();
+        const c = config.contactApi || (config.contactApi = clone(DEFAULT_CONFIG.contactApi));
+        if (typeof c.readForumAll !== 'boolean') c.readForumAll = true;
+        // API 配置与当前酒馆聊天的联系人档案分开保存；切换新/旧聊天不会丢失 API。
+        try {
+            localStorage.setItem(NS + '_contact_api', JSON.stringify({
+                endpoint: c.endpoint || '',
+                key: c.key || '',
+                model: c.model || '',
+                models: Array.isArray(c.models) ? c.models : [],
+                temperature: Number.isFinite(Number(c.temperature)) ? Number(c.temperature) : 0.85,
+                maxTokens: Number.isFinite(Number(c.maxTokens)) ? Number(c.maxTokens) : 900,
+                systemPrompt: c.systemPrompt || DEFAULT_CONFIG.contactApi.systemPrompt,
+                readForumAll: c.readForumAll !== false
+            }));
+        } catch (e) {
+            console.warn('[pkmn-forum] save contact API config failed', e);
+        }
         saveContactChatArchive();
         saveGlobalConfig();
     }
@@ -5322,22 +5353,35 @@ ${esc(b.prompt)}
         const base = contactApiBase();
         if (!base) throw new Error('请先在通讯录设置中配置 API');
         if (!c.model) throw new Error('请先填写通讯录模型');
-        const res = await fetch(base + '/chat/completions', {
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json',
-                ...(c.key ? {Authorization:'Bearer '+c.key} : {})
-            },
-            body:JSON.stringify({
-                model:c.model,
-                messages,
-                temperature:Number(c.temperature) || 0.85,
-                max_tokens:Number(c.maxTokens) || 900
-            })
-        });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        const data = await res.json();
-        return data?.choices?.[0]?.message?.content || '';
+
+        // 通讯录 AI 请求必须有超时，否则网络/API 一直 pending 时
+        // “AI 正在判断…”会永久卡住，导致无法加好友。
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
+        try {
+            const res = await fetch(base + '/chat/completions', {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json',
+                    ...(c.key ? {Authorization:'Bearer '+c.key} : {})
+                },
+                body:JSON.stringify({
+                    model:c.model,
+                    messages,
+                    temperature:Number(c.temperature) || 0.85,
+                    max_tokens:Number(c.maxTokens) || 900
+                }),
+                signal: controller.signal
+            });
+            if (!res.ok) throw new Error('HTTP '+res.status);
+            const data = await res.json();
+            return data?.choices?.[0]?.message?.content || '';
+        } catch (e) {
+            if (e?.name === 'AbortError') throw new Error('通讯录 AI 请求超时（30秒），请检查 API 设置或网络连接');
+            throw e;
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     async function contactTestConnection() {
@@ -5433,7 +5477,17 @@ ${blocks.join('\n\n')}
         const c = contactCfg();
         if (!contactApiBase()) throw new Error('请先在通讯录设置中配置 API');
         if (!c.model) throw new Error('请先在通讯录设置中选择模型');
-        const ctx = await buildContext();
+
+        // 世界书读取也加保护，避免上下文阶段卡住时永远停留在“AI 正在判断”。
+        let ctx;
+        try {
+            ctx = await Promise.race([
+                buildContext(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('读取当前剧情上下文超时，请检查世界书或当前聊天内容')), 15000))
+            ]);
+        } catch (e) {
+            throw e;
+        }
         const player = currentUserProfile();
         const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后判断他是否会泄露与玩家的私聊。\n根据当前正文、世界书、论坛用户资料和其可见发言风格综合判断，不要随机，不要把一次吐槽等同于低道德。\n评分 0～100：0=极低道德底线，100=极高道德底线。重点判断隐私意识、守信、八卦、利益驱动、情绪控制和泄露他人私事的倾向。\n评分建立后应保持稳定，除非以后明确发生重大剧情变化。\n只返回 JSON，不要 Markdown：{"score":0-100整数,"label":"较低/一般/较高/很高","reason":"不超过80字的依据"}\n\n【论坛用户】\n昵称：${String(info.name||'匿名用户')}\n简介：${String(info.bio||'未提供')}\nIP属地：${String(info.location||'未知')}\n\n【当前正文与世界书】\n${ctx.slice(0,32000)}\n\n【玩家身份】\n玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
         const raw = await callContactAI([{role:'system',content:'你是稳定的人物设定评估器。'}, {role:'user',content:prompt}]);
@@ -5680,6 +5734,7 @@ ${blocks.join('\n\n')}
                 <label>API Key<input class="pkmn-input" id="contact-api-key" type="password" value="${esc(c.key)}" placeholder="留空则不发送 Authorization"></label>
                 <label>模型<select class="pkmn-select" id="contact-api-model">${models.map(m => `<option value="${esc(m)}" ${m===c.model?'selected':''}>${esc(m)}</option>`).join('')}${c.model && !models.includes(c.model) ? `<option selected value="${esc(c.model)}">${esc(c.model)}</option>` : ''}</select></label>
                 <div class="pkmn-row" style="margin-top:8px"><button class="pkmn-btn pkmn-secondary" id="contact-test-api">🔌 检测连接</button><button class="pkmn-btn pkmn-secondary" id="contact-load-models">📥 加载模型</button></div>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-api" style="margin-top:8px;width:100%">💾 保存 API 设置</button>
                 <div class="pkmn-small" id="contact-api-status" style="margin-top:8px">${models.length ? '● 已有模型缓存' : '● 未检测'}</div>
                 <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
             </div>
@@ -5710,12 +5765,20 @@ ${blocks.join('\n\n')}
             saveContactConfig();
             showToast(c.readForumAll ? '✓ 已开启读取论坛全部内容' : '✓ 已关闭读取论坛全部内容');
         };
-        $('contact-save-settings').onclick = () => {
+        const readContactApiFields = () => {
             c.endpoint=$('contact-api-endpoint').value.trim();
             c.key=$('contact-api-key').value.trim();
             c.model=$('contact-api-model').value.trim();
             c.temperature=Number($('contact-api-temp').value)||0.85;
             c.maxTokens=Math.max(100,Number($('contact-api-max').value)||900);
+        };
+        $('contact-save-api').onclick = () => {
+            readContactApiFields();
+            saveContactConfig();
+            showToast('✓ API 设置已保存');
+        };
+        $('contact-save-settings').onclick = () => {
+            readContactApiFields();
             c.systemPrompt=$('contact-system-prompt').value;
             c.readForumAll = !!$('contact-read-forum-all').checked;
             saveContactConfig();
