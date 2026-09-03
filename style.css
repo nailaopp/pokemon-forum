@@ -1102,3 +1102,118 @@
   font-size:13px!important;
   font-weight:700!important;
 }
+
+/* v0.17 PC小窗口适配：保持手机效果，修复PC字体放大 */
+@media (min-width:768px){
+  #pkmn-phone-panel{
+    font-size:14px!important;
+  }
+
+  #pkmn-phone-panel .pkmn-region,
+  #pkmn-phone-panel .pkmn-location,
+  #pkmn-phone-panel .pkmn-area,
+  #pkmn-phone-panel .pkmn-post-location{
+    font-size:12px!important;
+    line-height:18px!important;
+  }
+
+  #pkmn-phone-panel .pkmn-post-tags{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    margin:12px 0 8px!important;
+  }
+
+  #pkmn-phone-panel .pkmn-post-tags span{
+    font-size:11px!important;
+    padding:4px 9px!important;
+    line-height:16px!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* v0.18 PC/桌面端修复：防止地区和标签继承大字号 */
+@media (min-width:768px){
+  #pkmn-phone-panel .pkmn-thread-location,
+  #pkmn-phone-panel .pkmn-thread-location *{
+    font-size:13px!important;
+    line-height:20px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+  }
+
+  #pkmn-phone-panel .pkmn-thread-tags{
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    gap:6px!important;
+    width:100%!important;
+  }
+
+  #pkmn-phone-panel .pkmn-thread-tags .pkmn-tag,
+  #pkmn-phone-panel .pkmn-post-tags .pkmn-tag{
+    display:inline-flex!important;
+    width:auto!important;
+    min-width:0!important;
+    white-space:nowrap!important;
+    font-size:12px!important;
+    line-height:20px!important;
+    padding:3px 8px!important;
+    margin:0!important;
+  }
+}
+
+/* settings checkbox checked state fix */
+#pkmn-phone-panel .pkmn-check input[type="checkbox"]{
+  appearance:auto!important;
+  -webkit-appearance:checkbox!important;
+  accent-color:#e7a83d!important;
+}
+
+#pkmn-phone-panel .pkmn-check input[type="checkbox"]:checked{
+  accent-color:#e7a83d!important;
+}
+
+
+
+/* settings checkbox visual state fix v0.20 */
+#pkmn-phone-panel .pkmn-check input[type="checkbox"]{
+  -webkit-appearance: checkbox !important;
+  appearance: checkbox !important;
+  accent-color: #e7a83d !important;
+  cursor:pointer !important;
+}
+
+#pkmn-phone-panel .pkmn-check input[type="checkbox"]:checked{
+  accent-color:#e7a83d !important;
+}
+
+/* v0.22 字体隔离：地区/IP 与红色标签不受酒馆全局字体影响 */
+#pkmn-phone-panel .pkmn-region,
+#pkmn-phone-panel .pkmn-location,
+#pkmn-phone-panel .pkmn-area,
+#pkmn-phone-panel .pkmn-post-location,
+#pkmn-phone-panel .pkmn-thread-location,
+#pkmn-phone-panel .pkmn-thread-location * {
+  font-size:12px!important;
+  line-height:18px!important;
+  transform:none!important;
+}
+
+#pkmn-phone-panel .pkmn-post-tags,
+#pkmn-phone-panel .pkmn-thread-tags {
+  font-size:11px!important;
+  line-height:16px!important;
+}
+
+#pkmn-phone-panel .pkmn-post-tags span,
+#pkmn-phone-panel .pkmn-thread-tags span,
+#pkmn-phone-panel .pkmn-thread-tags .pkmn-tag,
+#pkmn-phone-panel .pkmn-post-tags .pkmn-tag {
+  font-size:11px!important;
+  line-height:16px!important;
+  white-space:nowrap!important;
+  word-break:keep-all!important;
+  overflow-wrap:normal!important;
+}
