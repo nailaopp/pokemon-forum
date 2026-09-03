@@ -522,7 +522,7 @@
             temperature: 0.85,
             maxTokens: 900,
             systemPrompt: '你正在模拟宝可梦世界中的通讯软件聊天。请严格按照联系人本人的身份、性格、经历、当前所在地和当前剧情进行回复。你不是旁白，不要替玩家决定行动。回复要像真实微信消息一样自然、简洁、有来有回。除非剧情需要，不要使用舞台说明、JSON或长篇旁白。',
-            readForumAll: false
+            readForumAll: true
         }
     };
 
@@ -5179,6 +5179,11 @@ ${esc(b.prompt)}
 
     function contactCfg() {
         if (!config.contactApi) config.contactApi = clone(DEFAULT_CONFIG.contactApi);
+        if (config.contactDefaultsVersion == null) {
+            config.contactDefaultsVersion = 2;
+            config.contactApi.readForumAll = true;
+            if (Array.isArray(config.contacts)) config.contacts.forEach(c => { if (c && c.linkForum === false) c.linkForum = true; });
+        }
         if (!Array.isArray(config.contacts)) config.contacts = clone(DEFAULT_CONFIG.contacts);
         // 清理旧版本预置联系人，通讯录默认保持空白。
         const legacyIds = new Set(['ash','misty','brock']);
@@ -5191,7 +5196,7 @@ ${esc(b.prompt)}
             if (!c || typeof c !== 'object') return;
             if (!c.nickname) c.nickname = c.name || '匿名用户';
             if (c.note == null) c.note = '';
-            if (typeof c.linkForum !== 'boolean') c.linkForum = false;
+            if (typeof c.linkForum !== 'boolean') c.linkForum = true;
             if (!Number.isFinite(Number(c.moralScore))) c.moralScore = 70;
         });
         return config.contactApi;
@@ -5318,6 +5323,24 @@ ${blocks.join('\n\n')}
         }, true);
     }
 
+    async function assessContactMoral(info) {
+        const c = contactCfg();
+        if (!contactApiBase()) throw new Error('请先在通讯录设置中配置 API');
+        if (!c.model) throw new Error('请先在通讯录设置中选择模型');
+        const ctx = await buildContext();
+        const player = currentUserProfile();
+        const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后判断他是否会泄露与玩家的私聊。\n根据当前正文、世界书、论坛用户资料和其可见发言风格综合判断，不要随机，不要把一次吐槽等同于低道德。\n评分 0～100：0=极低道德底线，100=极高道德底线。重点判断隐私意识、守信、八卦、利益驱动、情绪控制和泄露他人私事的倾向。\n评分建立后应保持稳定，除非以后明确发生重大剧情变化。\n只返回 JSON，不要 Markdown：{"score":0-100整数,"label":"较低/一般/较高/很高","reason":"不超过80字的依据"}\n\n【论坛用户】\n昵称：${String(info.name||'匿名用户')}\n简介：${String(info.bio||'未提供')}\nIP属地：${String(info.location||'未知')}\n\n【当前正文与世界书】\n${ctx.slice(0,32000)}\n\n【玩家身份】\n玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
+        const raw = await callContactAI([{role:'system',content:'你是稳定的人物设定评估器。'}, {role:'user',content:prompt}]);
+        let obj = null;
+        try { obj = parseJSON(raw); } catch (_) {}
+        if (Array.isArray(obj)) obj = obj[0];
+        const n = Number(obj?.score);
+        if (!Number.isFinite(n)) throw new Error('AI 未返回有效的道德评分');
+        const score = Math.max(0, Math.min(100, Math.round(n)));
+        const label = String(obj?.label || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高'));
+        return {score, label, reason:String(obj?.reason||'').slice(0,160)};
+    }
+
     function openForumUserCard(author, sourcePost=null) {
         const name = String(author || '匿名用户').trim();
         if (!name) return;
@@ -5349,23 +5372,20 @@ ${blocks.join('\n\n')}
         const close = () => modal.remove();
         modal.querySelectorAll('[data-user-card-close], .pkmn-user-card-backdrop, .pkmn-user-card-close').forEach(el => el.onclick = close);
         const addBtn = modal.querySelector('[data-user-card-add]');
-        if (addBtn) addBtn.onclick = () => {
-            const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-            config.contacts.push({
-                id,
-                nickname: name,
-                name,
-                avatar,
-                note: '',
-                bio,
-                location,
-                linkForum: false,
-                moralScore: 70
-            });
-            config.contactChats[id] = [];
-            saveContactConfig();
-            close();
-            showToast('已添加好友：' + name);
+        if (addBtn) addBtn.onclick = async () => {
+            if (addBtn.disabled) return;
+            addBtn.disabled = true; addBtn.textContent = 'AI 正在判断…';
+            try {
+                const moral = await assessContactMoral({name, bio, location, sourcePost});
+                const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+                config.contacts.push({id, nickname:name, name, avatar, note:'', bio, location, linkForum:true, moralScore:moral.score, moralLabel:moral.label, moralReason:moral.reason});
+                config.contactChats[id] = [];
+                saveContactConfig(); close();
+                showToast(`已添加好友：${name}（AI道德倾向：${moral.label}）`);
+            } catch(e) {
+                addBtn.disabled = false; addBtn.textContent = '加为好友';
+                showToast('添加好友失败：'+(e?.message||e));
+            }
         };
         const chatBtn = modal.querySelector('[data-user-card-chat]');
         if (chatBtn) chatBtn.onclick = () => { close(); openContact(existing.id); };
@@ -5476,14 +5496,14 @@ ${blocks.join('\n\n')}
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">道德检定</div>
-                <label>道德值（0～100）<input class="pkmn-input" id="contact-person-moral" type="number" min="0" max="100" value="${esc(c.moralScore ?? 70)}"></label>
-                <div class="pkmn-small">数值越低越容易因八卦、利益或情绪泄露私聊；高道德角色默认会保护玩家隐私。最终仍结合 NPC 性格、关系、动机和场景判断。</div>
+                <div class="pkmn-input" style="opacity:.85;pointer-events:none">AI 判定：${esc(c.moralLabel || (Number(c.moralScore) < 40 ? '较低' : Number(c.moralScore) < 70 ? '一般' : Number(c.moralScore) < 85 ? '较高' : '很高'))} · ${esc(Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 70)))} / 100</div>
+                <div class="pkmn-small">加好友时由通讯录 AI 根据 NPC 人设、正文、世界书和论坛表现判断并保存。不能手动修改。</div>
+                ${c.moralReason ? `<div class="pkmn-small">判断依据：${esc(c.moralReason)}</div>` : ''}
             </div>
             <button class="pkmn-btn pkmn-primary" id="contact-person-save" style="width:100%">保存</button>`;
         $('contact-person-save').onclick = () => {
             c.note = $('contact-person-note').value.trim();
             c.linkForum = !!$('contact-person-link-forum').checked;
-            c.moralScore = Math.max(0, Math.min(100, Number($('contact-person-moral').value) || 0));
             saveContactConfig();
             showToast('联系人设置已保存');
             renderContacts();
@@ -5511,9 +5531,8 @@ ${blocks.join('\n\n')}
                 <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
             </div>
             <div class="wechat-setting-card">
-                <div class="wechat-setting-title">上下文权限</div>
-                <label class="pkmn-switch-row"><input type="checkbox" id="contact-read-forum-all" ${c.readForumAll ? 'checked' : ''}><span>读取论坛全部内容</span></label>
-                <div class="pkmn-small">开启后，通讯录 AI 会把当前聊天中表论坛和里论坛的帖子及回复作为额外上下文；关闭后不读取论坛内容。</div>
+                <div class="wechat-setting-title">上下文说明</div>
+                <div class="pkmn-small">正文和世界书的读取权限直接沿用论坛设置；这里不重复设置。下面的“读取论坛全部内容”仅控制通讯录是否额外读取论坛帖子、评论和回复。</div>
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">通讯录 AI 提示词</div>
@@ -5532,7 +5551,6 @@ ${blocks.join('\n\n')}
             c.temperature=Number($('contact-api-temp').value)||0.85;
             c.maxTokens=Math.max(100,Number($('contact-api-max').value)||900);
             c.systemPrompt=$('contact-system-prompt').value;
-            c.readForumAll=!!$('contact-read-forum-all').checked;
             saveContactConfig();
             showToast('通讯录设置已保存');
         };
