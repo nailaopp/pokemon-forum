@@ -1501,3 +1501,42 @@
   #pkmn-phone-panel .pkmn-thread-snippet{font-size:11px!important}
   #pkmn-phone-panel .pkmn-btn{padding:0 7px!important;font-size:11px!important}
 }
+
+
+/* Hidden moral-settings unlock: visually indistinguishable from empty space. */
+.pkmn-moral-hidden-hotspot{
+    display:block;
+    width:100%;
+    height:22px;
+    margin:0;
+    padding:0;
+    border:0;
+    background:transparent;
+    opacity:0;
+    cursor:default;
+    appearance:none;
+    -webkit-appearance:none;
+}
+.pkmn-moral-hidden-hotspot:focus{outline:none;}
+.pkmn-moral-unlock-overlay{
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+    pointer-events:none;
+}
+.pkmn-moral-unlock-input{
+    width:1px;
+    height:1px;
+    padding:0;
+    border:0;
+    outline:none;
+    opacity:0;
+    pointer-events:auto;
+    position:fixed;
+    left:50%;
+    top:50%;
+}

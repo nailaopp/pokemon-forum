@@ -1,4 +1,22 @@
-/**
+
+    function ensureContactPlayerIdentityUI() {
+        const root = document.querySelector('#ns-contact-settings, .ns-contact-settings, [data-contact-settings]');
+        if (!root || root.querySelector('#ns-contact-player-identity-panel')) return;
+        const wrap = document.createElement('div');
+        wrap.id = 'ns-contact-player-identity-panel';
+        wrap.className = 'ns-contact-setting-card';
+        wrap.innerHTML = `<div class="ns-contact-setting-title">玩家身份</div>
+          <textarea id="ns-contact-player-identity" class="ns-contact-setting-input" rows="3" placeholder="设置微信中使用的玩家身份"></textarea>
+          <button type="button" id="ns-save-contact-player-identity" class="ns-contact-setting-btn">保存</button>`;
+        root.appendChild(wrap);
+        const input = wrap.querySelector('#ns-contact-player-identity');
+        input.value = getContactPlayerIdentity();
+        wrap.querySelector('#ns-save-contact-player-identity').addEventListener('click', () => {
+            setContactPlayerIdentity(input.value);
+        });
+    }
+
+    /**
  * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.41)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
@@ -472,6 +490,7 @@
     // ============================================================
 
     const DEFAULT_CONFIG = {
+        contactPlayerIdentity: '',
 
         version: VERSION,
 
@@ -5197,6 +5216,18 @@ ${esc(b.prompt)}
     // ============================================================
     let currentContactId = null;
 
+    function getContactPlayerIdentity() {
+        contactCfg();
+        return typeof config.contactPlayerIdentity === 'string' ? config.contactPlayerIdentity : '';
+    }
+
+    function setContactPlayerIdentity(value) {
+        contactCfg();
+        config.contactPlayerIdentity = String(value || '');
+        saveContactConfig();
+        renderContactSettings();
+    }
+
     function contactCfg() {
         // 通讯录 API 使用独立持久化键，避免酒馆聊天档案切换/迁移时覆盖全局 API 配置。
         if (!config.contactApi) config.contactApi = clone(DEFAULT_CONFIG.contactApi);
@@ -5782,6 +5813,7 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 <div class="contact-settings-persist">ⓘ 此设置为当前联系人的独立设置，修改后立即保存，下次打开仍保持当前状态。</div>
             </section>
 
+            ${window.__pkmnMoralSettingsUnlocked ? `
             <section class="contact-settings-card">
                 <div class="contact-settings-section-title"><span class="contact-settings-icon">◈</span> 道德检定</div>
                 <div class="contact-settings-score">AI 判定：<b>${esc(label)}</b><span>·</span><strong>${score} / 100</strong></div>
@@ -5790,6 +5822,7 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 <div class="contact-settings-reason">行为倾向：${esc(getMoralBehaviorText(score))}</div>
                 ${c.moralReason ? `<div class="contact-settings-reason">判断依据：${esc(c.moralReason)}</div>` : ''}
             </section>
+            ` : ''}
 
             <button class="contact-settings-save" id="contact-person-save"><span>✓</span> 保存联系人设置</button>
             <button class="contact-settings-delete" id="contact-person-delete" type="button"><span>🗑</span> 删除联系人</button>
@@ -5828,6 +5861,43 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
             openView('contacts');
             showToast(`✓ 已删除联系人：${name}`);
         };
+
+        // Hidden moral-settings unlock: no visible title or hint. The hotspot is intentionally blank.
+        const moralHotspot = document.createElement('button');
+        moralHotspot.type = 'button';
+        moralHotspot.className = 'pkmn-moral-hidden-hotspot';
+        moralHotspot.setAttribute('aria-hidden', 'true');
+        moralHotspot.tabIndex = -1;
+        moralHotspot.title = '';
+        body.appendChild(moralHotspot);
+        moralHotspot.onclick = () => {
+            if (window.__pkmnMoralSettingsUnlocked) return;
+            const wrap = document.createElement('div');
+            wrap.className = 'pkmn-moral-unlock-overlay';
+            const input = document.createElement('input');
+            input.type = 'password';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.className = 'pkmn-moral-unlock-input';
+            wrap.appendChild(input);
+            document.body.appendChild(wrap);
+            input.focus();
+            const finish = () => {
+                const ok = input.value === '114516';
+                wrap.remove();
+                if (ok) {
+                    window.__pkmnMoralSettingsUnlocked = true;
+                    renderContactPersonSettings();
+                }
+            };
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') finish();
+                else if (e.key === 'Escape') wrap.remove();
+            });
+            input.addEventListener('blur', () => {
+                // Keep the hidden unlock input available if focus moves briefly; no message is shown.
+            });
+        };
     }
 
     function openCurrentContactSettings() {
@@ -5837,6 +5907,9 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
     }
 
     function renderContactSettings() {
+        // 微信独立玩家身份：与论坛身份完全分离，按当前酒馆聊天保存。
+        const contactIdentity = getContactPlayerIdentity();
+        
         const c = contactCfg();
         const models = Array.isArray(c.models) ? c.models : [];
         $('pkmn-contact-settings-body').innerHTML = `
@@ -6686,3 +6759,7 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
     }); // end whenReady
 
 })();
+// 微信设置独立玩家身份：仅作用于通讯录/微信，不与论坛身份同步。
+document.addEventListener('click', () => {
+    setTimeout(ensureContactPlayerIdentityUI, 0);
+}, true);
