@@ -938,6 +938,8 @@
                 loadFromChatMetadata(key);
             } catch (_) {}
             normalizeForumState(chatState);
+            currentThreadId = null;
+            try { clearForumThreadInjection(); } catch (_) {}
             renderForumList();
             return;
         }
@@ -5941,6 +5943,7 @@ ${blocks.join('\n\n')}
         } catch (_) {}
         try { openView('home'); } catch (_) {}
         try {
+            // QQ/酒馆可能在手机关闭期间已经切换聊天；打开时强制以当前聊天为准。
             const k = getChatKey();
             if (k && k !== 'fallback:unknown') {
                 // 强制按当前聊天重载（即使用同 key 也合并存档）
@@ -6268,9 +6271,11 @@ ${blocks.join('\n\n')}
                     switchChat(finalKey, true);
                     lastChatKey = finalKey;
                 };
-                setTimeout(() => trySwitch(0), 50);
-                setTimeout(() => trySwitch(1), 400);
-                setTimeout(() => trySwitch(2), 1000);
+                // SillyTavern/QQ 在切换聊天时，事件触发与当前 chatId 更新可能不同步。
+                // 多阶段校正，确保论坛档案跟随“新聊天”而不是继续显示旧聊天。
+                [30, 120, 300, 650, 1200, 1800].forEach(delay => {
+                    setTimeout(() => trySwitch(delay === 30 ? 0 : 1), delay);
+                });
             });
 
             TH.eventOn(createdEv, (newChatId) => {
@@ -6316,7 +6321,7 @@ ${blocks.join('\n\n')}
         } catch (e) {
             console.warn('[pkmn-forum] chat poll error', e);
         }
-    }, 1000);
+    }, 350);
 
 
     // ============================================================
