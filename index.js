@@ -1844,7 +1844,7 @@
 <div class="pkmn-status">
     <span id="pkmn-time">00:00</span>
     <div class="pkmn-status-right">
-        <span class="pkmn-status-icons" aria-hidden="true">📶 🔋</span>
+        <span class="pkmn-status-icons" aria-hidden="true"><i class="pkmn-signal" aria-hidden="true"></i><i class="pkmn-wifi" aria-hidden="true"></i><i class="pkmn-battery" aria-hidden="true"></i></span>
         <button id="pkmn-phone-scale" type="button" aria-label="切换手机大小">↕</button>
     </div>
     <div class="pkmn-notch"></div>
@@ -5561,14 +5561,17 @@ ${blocks.join('\n\n')}
                 <div class="pkmn-small" id="contact-api-status" style="margin-top:8px">${models.length ? '● 已有模型缓存' : '● 未检测'}</div>
                 <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
             </div>
-            <div class="wechat-setting-card">
-                <div class="wechat-setting-title">论坛内容读取</div>
-                <label class="pkmn-switch-row" style="justify-content:space-between">
-                    <span>读取论坛全部内容</span>
+            <div class="wechat-setting-card contact-settings-link-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">◎</span> 论坛内容读取</div>
+                <label class="contact-settings-toggle-row" for="contact-read-forum-all">
+                    <span>
+                        <b>读取论坛全部内容</b>
+                        <small>开启后，通讯录 AI 回复时可额外读取论坛的帖子、评论和回复；关闭后仅使用当前聊天、正文和世界书等允许的上下文。</small>
+                    </span>
                     <input type="checkbox" id="contact-read-forum-all" ${c.readForumAll !== false ? 'checked' : ''}>
+                    <i aria-hidden="true"></i>
                 </label>
-                <div class="pkmn-small">开启后，通讯录 AI 回复时可额外读取论坛的帖子、评论和回复；关闭后仅使用当前聊天、正文和世界书等允许的上下文。</div>
-                <div class="pkmn-small" style="margin-top:6px">此开关为通讯录全局设置，默认开启，修改后会立即保存。</div>
+                <div class="contact-settings-persist">ⓘ 此开关为通讯录全局设置，默认开启，修改后立即保存，下次打开仍保持当前状态。</div>
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">通讯录 AI 提示词</div>
