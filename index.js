@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = 57; // beautify contact settings UI + persist contact/forum switches
+    const VERSION = 58; // add per-contact delete action
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -5626,6 +5626,7 @@ ${blocks.join('\n\n')}
             </section>
 
             <button class="contact-settings-save" id="contact-person-save"><span>✓</span> 保存联系人设置</button>
+            <button class="contact-settings-delete" id="contact-person-delete" type="button"><span>🗑</span> 删除联系人</button>
         `;
 
         const toggle = $('contact-person-link-forum');
@@ -5642,6 +5643,24 @@ ${blocks.join('\n\n')}
             renderContacts();
             $('pkmn-chat-title').textContent = contactDisplayName(c);
             renderContactPersonSettings();
+        };
+        $('contact-person-delete').onclick = () => {
+            const name = contactDisplayName(c);
+            if (!window.confirm(`删除联系人“${name}”？\n\n将删除该联系人在当前酒馆聊天中的资料、备注、联动设置及通讯录聊天记录。此操作无法恢复。`)) return;
+            const idx = config.contacts.findIndex(x => String(x.id) === String(currentContactId));
+            if (idx < 0) return;
+            config.contacts.splice(idx, 1);
+            if (config.contactChats && Object.prototype.hasOwnProperty.call(config.contactChats, currentContactId)) {
+                delete config.contactChats[currentContactId];
+            }
+            if (config.contactLinkMeta && Object.prototype.hasOwnProperty.call(config.contactLinkMeta, currentContactId)) {
+                delete config.contactLinkMeta[currentContactId];
+            }
+            currentContactId = null;
+            saveContactConfig();
+            renderContacts();
+            openView('contacts');
+            showToast(`✓ 已删除联系人：${name}`);
         };
     }
 

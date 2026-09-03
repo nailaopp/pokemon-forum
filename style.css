@@ -1331,6 +1331,9 @@
 #pkmn-phone-panel .contact-settings-reason{margin-top:8px;padding:9px 10px;border-radius:9px;background:#f7f8f9;color:#8b9298;font-size:11px;line-height:1.55}
 #pkmn-phone-panel .contact-settings-save{width:100%;height:48px;border:1px solid #bfe5c9;border-radius:13px;background:#f2fbf4;color:#17843d;font-size:15px;font-weight:700;box-shadow:0 2px 8px rgba(20,100,45,.05);cursor:pointer;margin:2px 0 4px}
 #pkmn-phone-panel .contact-settings-save:active{transform:scale(.985);background:#e7f7ea}
+#pkmn-phone-panel .contact-settings-delete{width:100%;height:44px;border:1px solid #f0caca;border-radius:12px;background:#fff6f6;color:#c83f3f;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(160,40,40,.04);cursor:pointer;margin:6px 0 2px}
+#pkmn-phone-panel .contact-settings-delete:active{transform:scale(.985);background:#ffeded}
+#pkmn-phone-panel .contact-settings-delete span{margin-right:6px}
 #pkmn-phone-panel .contact-settings-save span{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%;background:#24a148;color:#fff;font-size:13px;margin-right:6px}
 
 

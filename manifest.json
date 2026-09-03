@@ -1,5 +1,5 @@
 {
-  "display_name": "宝可梦论坛纯白怪力",
+  "display_name": "宝可梦论坛纯黑母怪力",
   "loading_order": 100,
   "requires": [],
   "optional": [],
@@ -7,7 +7,7 @@
   "js": "index.js",
   "css": "style.css",
   "author": "宝可梦论坛纯白怪力",
-  "version": "0.60.2",
+  "version": "0.11",
   "homePage": "",
   "auto_update": false,
   "minimum_client_version": "1.12.0"
