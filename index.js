@@ -509,7 +509,23 @@
             SAFE_BOARDS.map(x => ({ ...x })),
 
         matureBoards:
-            MATURE_BOARDS.map(x => ({ ...x }))
+            MATURE_BOARDS.map(x => ({ ...x })),
+
+        // 独立通讯录/微信式聊天配置
+        contacts: [
+            { id:'ash', name:'小智', avatar:'⚡', note:'旅行中的训练家', bio:'来自真新镇的训练家。', location:'关都 · 真新镇' },
+            { id:'misty', name:'小霞', avatar:'💧', note:'水系训练家', bio:'喜欢水系宝可梦的训练家。', location:'关都 · 华蓝市' },
+            { id:'brock', name:'小刚', avatar:'🪨', note:'尼比道馆训练家', bio:'擅长岩石系宝可梦。', location:'关都 · 尼比市' }
+        ],
+        contactChats: {},
+        contactApi: {
+            endpoint: '',
+            key: '',
+            model: '',
+            temperature: 0.85,
+            maxTokens: 900,
+            systemPrompt: '你正在模拟宝可梦世界中的通讯软件聊天。请严格按照联系人本人的身份、性格、经历、当前所在地和当前剧情进行回复。你不是旁白，不要替玩家决定行动。回复要像真实微信消息一样自然、简洁、有来有回。除非剧情需要，不要使用舞台说明、JSON或长篇旁白。'
+        }
     };
 
     function clone(x) {
@@ -1860,6 +1876,11 @@
                 91宝可梦论坛
             </div>
 
+            <div class="pkmn-app-icon pkmn-contacts-icon" id="pkmn-open-contacts">
+                <div class="pkmn-app-image wechat-app-logo">💬</div>
+                通讯录
+            </div>
+
             <div
                 class="pkmn-app-icon"
                 id="pkmn-open-settings"
@@ -1992,22 +2013,51 @@
     >
 
         <div class="pkmn-head">
-
-            <button id="pkmn-settings-back">
-                ‹
-            </button>
-
-            <span>
-                论坛设置
-            </span>
-
+            <button id="pkmn-settings-back">‹</button>
+            <span>论坛设置</span>
         </div>
 
-        <div
-            class="pkmn-settings"
-            id="pkmn-settings-body"
-        ></div>
+        <div class="pkmn-settings" id="pkmn-settings-body"></div>
 
+    </div>
+
+    <!-- 通讯录 -->
+    <div id="pkmn-contacts" class="pkmn-view pkmn-chat-app">
+        <div class="wechat-nav">
+            <button id="pkmn-contacts-back">‹</button>
+            <div class="wechat-nav-title">通讯录</div>
+            <button id="pkmn-contacts-add">＋</button>
+        </div>
+        <div class="wechat-search"><span>⌕</span><input id="pkmn-contact-search" placeholder="搜索"></div>
+        <div class="wechat-contact-list" id="pkmn-contact-list"></div>
+        <div class="wechat-bottom-nav">
+            <button class="active">👤<small>通讯录</small></button>
+            <button id="pkmn-contact-settings">⚙️<small>设置</small></button>
+        </div>
+    </div>
+
+    <!-- 微信式聊天 -->
+    <div id="pkmn-chat" class="pkmn-view pkmn-chat-app">
+        <div class="wechat-nav">
+            <button id="pkmn-chat-back">‹</button>
+            <div class="wechat-nav-title" id="pkmn-chat-title">聊天</div>
+            <button id="pkmn-chat-more">⋯</button>
+        </div>
+        <div class="wechat-messages" id="pkmn-chat-messages"></div>
+        <div class="wechat-inputbar">
+            <button type="button">＋</button>
+            <textarea id="pkmn-chat-input" rows="1" placeholder="输入消息"></textarea>
+            <button class="wechat-send" id="pkmn-chat-send">发送</button>
+        </div>
+    </div>
+
+    <!-- 通讯录独立设置 -->
+    <div id="pkmn-contact-settings-view" class="pkmn-view">
+        <div class="pkmn-head">
+            <button id="pkmn-contact-settings-back">‹</button>
+            <span>通讯录设置</span>
+        </div>
+        <div class="pkmn-settings" id="pkmn-contact-settings-body"></div>
     </div>
 
 </div>
@@ -2452,6 +2502,13 @@
             which === 'settings'
                 ? 'translateX(0)'
                 : 'translateX(100%)';
+
+        const contacts = $('pkmn-contacts');
+        const chat = $('pkmn-chat');
+        const contactSettings = $('pkmn-contact-settings-view');
+        if (contacts) contacts.style.transform = which === 'contacts' ? 'translateX(0)' : 'translateX(100%)';
+        if (chat) chat.style.transform = which === 'chat' ? 'translateX(0)' : 'translateX(100%)';
+        if (contactSettings) contactSettings.style.transform = which === 'contactSettings' ? 'translateX(0)' : 'translateX(100%)';
     }
 
     // ============================================================
@@ -2594,12 +2651,14 @@
             const isMainCharacter = Boolean(p.isUser || (i === 0 && t.isUserThread));
             const tag = isMainCharacter ? '【主角本人】' : '【论坛网友】';
             const bio = p.authorBio ? `（简介：${p.authorBio}）` : '';
-            lines.push(`${i + 1}楼 ${tag} ${p.author || '匿名用户'}${bio}：${p.content || ''}`);
+            const ip = p.ipLocation || p.location || '关都 · 真新镇';
+            lines.push(`${i + 1}楼 ${tag} ${p.author || '匿名用户'}（IP属地：${ip}）${bio}：${p.content || ''}`);
             const nested = Array.isArray(p.replies) ? p.replies : [];
             nested.forEach((r, ri) => {
                 const rTag = r.isUser ? '【主角本人】' : '【论坛网友】';
                 const rBio = r.authorBio ? `（简介：${r.authorBio}）` : '';
-                lines.push(`  └ 回复${ri + 1} ${rTag} ${r.author || '匿名用户'}${rBio}：${r.content || ''}`);
+                const rip = r.ipLocation || r.location || '关都 · 真新镇';
+                lines.push(`  └ 回复${ri + 1} ${rTag} ${r.author || '匿名用户'}（IP属地：${rip}）${rBio}：${r.content || ''}`);
             });
         });
         return lines.join('\n');
@@ -5076,9 +5135,188 @@ ${esc(b.prompt)}
         );
     }
 
+
+    // ============================================================
+    // 通讯录 / 微信式聊天
+    // ============================================================
+    let currentContactId = null;
+
+    function contactCfg() {
+        if (!config.contactApi) config.contactApi = clone(DEFAULT_CONFIG.contactApi);
+        if (!Array.isArray(config.contacts)) config.contacts = clone(DEFAULT_CONFIG.contacts);
+        if (!config.contactChats || typeof config.contactChats !== 'object') config.contactChats = {};
+        return config.contactApi;
+    }
+
+    function saveContactConfig() {
+        contactCfg();
+        saveGlobalConfig();
+    }
+
+    function contactApiBase() {
+        return normalizeEndpointInput(contactCfg().endpoint);
+    }
+
+    async function callContactAI(messages) {
+        const c = contactCfg();
+        const base = contactApiBase();
+        if (!base) throw new Error('请先在通讯录设置中配置 API');
+        if (!c.model) throw new Error('请先填写通讯录模型');
+        const res = await fetch(base + '/chat/completions', {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+                ...(c.key ? {Authorization:'Bearer '+c.key} : {})
+            },
+            body:JSON.stringify({
+                model:c.model,
+                messages,
+                temperature:Number(c.temperature) || 0.85,
+                max_tokens:Number(c.maxTokens) || 900
+            })
+        });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        return data?.choices?.[0]?.message?.content || '';
+    }
+
+    function contactById(id) {
+        return config.contacts.find(x => x.id === id);
+    }
+
+    function renderContacts(filter='') {
+        contactCfg();
+        const list = $('pkmn-contact-list');
+        if (!list) return;
+        const q = String(filter || '').trim().toLowerCase();
+        const items = config.contacts.filter(c => !q || [c.name,c.note,c.location].join(' ').toLowerCase().includes(q));
+        list.innerHTML = items.map(c => {
+            const chat = config.contactChats[c.id] || [];
+            const last = chat.length ? chat[chat.length-1].content : (c.note || '点击开始聊天');
+            const time = chat.length ? chat[chat.length-1].time : '';
+            return `<button class="wechat-contact" data-contact="${esc(c.id)}">
+                <span class="wechat-avatar">${esc(c.avatar || '👤')}</span>
+                <span class="wechat-contact-main"><b>${esc(c.name)}</b><small>${esc(last).slice(0,48)}</small></span>
+                <time>${esc(time)}</time>
+            </button>`;
+        }).join('') || '<div class="wechat-empty">没有找到联系人</div>';
+        list.querySelectorAll('[data-contact]').forEach(el => el.onclick = () => openContact(el.dataset.contact));
+    }
+
+    function renderChat() {
+        const c = contactById(currentContactId);
+        if (!c) return;
+        $('pkmn-chat-title').textContent = c.name;
+        const box = $('pkmn-chat-messages');
+        const msgs = config.contactChats[currentContactId] || [];
+        box.innerHTML = msgs.map(m => {
+            const mine = m.role === 'user';
+            return `<div class="wechat-msg-row ${mine?'mine':'theirs'}">
+                ${mine ? '' : `<span class="wechat-avatar mini">${esc(c.avatar||'👤')}</span>`}
+                <div><div class="wechat-bubble">${esc(m.content).replace(/\n/g,'<br>')}</div><small class="wechat-time">${esc(m.time||'')}</small></div>
+                ${mine ? '<span class="wechat-avatar mini me">我</span>' : ''}
+            </div>`;
+        }).join('') || `<div class="wechat-daytip">与 ${esc(c.name)} 的聊天</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function openContact(id) {
+        currentContactId = id;
+        renderChat();
+        openView('chat');
+        setTimeout(() => $('pkmn-chat-input')?.focus(), 120);
+    }
+
+    async function sendContactMessage() {
+        const input = $('pkmn-chat-input');
+        const text = String(input?.value || '').trim();
+        const c = contactById(currentContactId);
+        if (!text || !c) return;
+        contactCfg();
+        if (!config.contactChats[currentContactId]) config.contactChats[currentContactId] = [];
+        const chat = config.contactChats[currentContactId];
+        chat.push({role:'user', content:text, time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
+        input.value = '';
+        renderChat();
+        const typing = document.createElement('div');
+        typing.className='wechat-typing';
+        typing.textContent=c.name+' 正在输入…';
+        $('pkmn-chat-messages').appendChild(typing);
+        try {
+            const context = await buildContext();
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n姓名：${c.name}\n备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}`;
+            const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
+            const reply = await callContactAI([{role:'system',content:system}, ...recent]);
+            typing.remove();
+            chat.push({role:'assistant', content:reply || '……', time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
+            saveContactConfig();
+            renderChat();
+            renderContacts($('pkmn-contact-search')?.value || '');
+        } catch (e) {
+            typing.remove();
+            chat.push({role:'assistant', content:'消息发送失败：'+(e.message||e), time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
+            renderChat();
+        }
+    }
+
+    function renderContactSettings() {
+        const c = contactCfg();
+        $('pkmn-contact-settings-body').innerHTML = `
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">AI 接口</div>
+                <label>API Endpoint<input class="pkmn-input" id="contact-api-endpoint" value="${esc(c.endpoint)}" placeholder="https://.../v1"></label>
+                <label>API Key<input class="pkmn-input" id="contact-api-key" type="password" value="${esc(c.key)}" placeholder="留空则不发送 Authorization"></label>
+                <label>模型<input class="pkmn-input" id="contact-api-model" value="${esc(c.model)}" placeholder="例如 gpt-4o-mini"></label>
+                <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">通讯录 AI 提示词</div>
+                <textarea class="pkmn-textarea" id="contact-system-prompt" style="min-height:220px">${esc(c.systemPrompt)}</textarea>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-settings" style="margin-top:10px;width:100%">保存通讯录设置</button>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">联系人</div>
+                <div class="pkmn-small">联系人资料和聊天记录独立保存，不影响论坛 API。</div>
+                <button class="pkmn-btn pkmn-secondary" id="contact-add-inline" style="margin-top:10px;width:100%">添加联系人</button>
+            </div>`;
+        $('contact-save-settings').onclick = () => {
+            c.endpoint=$('contact-api-endpoint').value.trim();
+            c.key=$('contact-api-key').value.trim();
+            c.model=$('contact-api-model').value.trim();
+            c.temperature=Number($('contact-api-temp').value)||0.85;
+            c.maxTokens=Math.max(100,Number($('contact-api-max').value)||900);
+            c.systemPrompt=$('contact-system-prompt').value;
+            saveContactConfig();
+            showToast('通讯录设置已保存');
+        };
+        $('contact-add-inline').onclick = addContact;
+    }
+
+    function addContact() {
+        const name = prompt('联系人昵称');
+        if (!name) return;
+        const id = 'c_' + Date.now();
+        config.contacts.push({id,name:String(name).trim(),avatar:'👤',note:'新联系人',bio:'',location:''});
+        saveContactConfig();
+        renderContacts();
+        showToast('已添加联系人');
+    }
+
     // ============================================================
     // 事件
     // ============================================================
+
+    $('pkmn-open-contacts')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
+    $('pkmn-contacts-back')?.addEventListener('click', () => openView('home'));
+    $('pkmn-contacts-add')?.addEventListener('click', addContact);
+    $('pkmn-contact-search')?.addEventListener('input', e => renderContacts(e.target.value));
+    $('pkmn-chat-back')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
+    $('pkmn-chat-send')?.addEventListener('click', sendContactMessage);
+    $('pkmn-chat-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendContactMessage(); }
+    });
+    $('pkmn-contact-settings')?.addEventListener('click', () => { renderContactSettings(); openView('contactSettings'); });
+    $('pkmn-contact-settings-back')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
 
     $('pkmn-open-safe').onclick =
         () => {
