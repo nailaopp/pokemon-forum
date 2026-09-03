@@ -2914,7 +2914,7 @@
                         `
 <div class="pkmn-thread-avatar">${esc(avatarName)}</div>
 <div class="pkmn-thread-body">
-    <div class="pkmn-thread-user"><span>${esc(t.author || '匿名用户')}</span>${t.isUserThread ? '<span class="pkmn-user-badge">我的帖子</span>' : '<span class="pkmn-topic-badge">讨论</span>'}</div>
+    <div class="pkmn-thread-user">${forumUserProfileHTML(t.author || '匿名用户')}${t.isUserThread ? '<span class="pkmn-user-badge">我的帖子</span>' : '<span class="pkmn-topic-badge">讨论</span>'}</div>
     <div class="pkmn-thread-location">🌐 ${esc(listLocation)}</div>
     <div class="pkmn-thread-title">${esc(t.title || '无标题')}</div>
     <div class="pkmn-thread-snippet">${esc(snippet)}</div>
@@ -2934,6 +2934,14 @@
 
                     d.onclick =
                         e => {
+                            // 用户名/头像点击只打开资料卡，不进入帖子详情。
+                            const userEl = e.target.closest && e.target.closest('[data-forum-user]');
+                            if (userEl) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                openForumUserCard(userEl.dataset.forumUser, t.posts?.[0] || null);
+                                return;
+                            }
 
                             if (
                                 e.target
@@ -5296,6 +5304,20 @@ ${blocks.join('\n\n')}
         return `<span class="pkmn-clickable-user ${extraClass}" data-forum-user="${esc(author)}" title="查看用户资料 / 加好友">${esc(author)}</span>`;
     }
 
+    // 论坛用户名统一使用事件委托，兼容帖子列表、帖子详情以及动态重绘后的内容。
+    if (!panel.__pkmnForumUserDelegate) {
+        panel.__pkmnForumUserDelegate = true;
+        panel.addEventListener('click', e => {
+            const userEl = e.target && e.target.closest ? e.target.closest('[data-forum-user]') : null;
+            if (!userEl || !panel.contains(userEl)) return;
+            if (userEl.closest('.pkmn-user-card-modal')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const author = userEl.dataset.forumUser || userEl.textContent || '匿名用户';
+            openForumUserCard(author, null);
+        }, true);
+    }
+
     function openForumUserCard(author, sourcePost=null) {
         const name = String(author || '匿名用户').trim();
         if (!name) return;
@@ -5320,7 +5342,10 @@ ${blocks.join('\n\n')}
     <button class="pkmn-btn pkmn-secondary" data-user-card-close>取消</button>
   </div>
 </div>`;
-        topDoc.body.appendChild(modal);
+        // 资料卡必须挂在手机面板内，否则 #pkmn-phone-panel 下的样式不会命中。
+        // 使用 appendChild(panel) 后，点击论坛用户时资料卡会稳定显示在手机界面上。
+        const host = topDoc.getElementById('pkmn-phone-panel') || topDoc.body;
+        host.appendChild(modal);
         const close = () => modal.remove();
         modal.querySelectorAll('[data-user-card-close], .pkmn-user-card-backdrop, .pkmn-user-card-close').forEach(el => el.onclick = close);
         const addBtn = modal.querySelector('[data-user-card-add]');
