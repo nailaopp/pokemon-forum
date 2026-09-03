@@ -3724,6 +3724,9 @@ ${buildLinkedContactMemory()}
 论坛简介：${userProfile.bio || '未设置'}
 凡是标记为【主角本人】的楼层，都代表当前聊天主角自己发送的内容。其他楼层才是论坛网友。生成回复时不要冒充主角，也不要把主角已经说过的话再次当成网友发言。
 
+【通讯录联动记忆】
+${buildLinkedContactMemory()}
+
 ${boardPrompt()}
 
 ${matureRule}
@@ -5270,10 +5273,23 @@ ${esc(b.prompt)}
         const blocks = linked.map(c => {
             const nickname = c.nickname || c.name || '匿名用户';
             const memory = getContactChatMemory(c);
-            const moral = Math.max(0, Math.min(100, Number(c.moralScore) || 70));
+            const rawMoral = Number(c.moralScore);
+            const moral = Number.isFinite(rawMoral) ? Math.max(0, Math.min(100, rawMoral)) : 70;
             return `【联系人：${nickname}】\n身份说明：论坛昵称与微信原昵称一致；玩家在私聊中是“玩家本人”，不是普通匿名网友。\n道德值：${moral}/100\n聊天记忆：\n${memory || '（暂无聊天记录）'}`;
         });
-        return `【已开启“此聊天与论坛联动”的通讯录联系人】\n${blocks.join('\n\n')}\n\n【私聊泄露规则】\n1. 这些聊天记录属于玩家与联系人之间的私聊记忆，不是论坛公开资料。\n2. 联系人必须认出“玩家本人”，不要把玩家误认成普通匿名网友。\n3. 是否在论坛提及私聊内容必须进行道德与动机检定：综合道德值、NPC性格、与玩家关系、利益、情绪、风险和当前场景判断。\n4. 高道德或重视隐私的联系人不得随意泄露；低道德联系人才更可能因为八卦、利益、炫耀、威胁等原因泄露。\n5. 即使决定泄露，也只泄露当前情境下他愿意说出的部分，不要机械复制整段私聊。\n6. 不得因为开启联动就自动公开私聊内容。`;
+        return `【已开启“此聊天与论坛联动”的通讯录联系人】
+${blocks.join('\n\n')}
+
+【私聊记忆与道德检定——必须执行】
+1. 这些聊天记录属于玩家与联系人之间的私聊记忆，不是论坛公开资料；只能用于人物连续性、态度、判断和剧情参考。
+2. 联系人必须认出“玩家本人”，不要把当前玩家误认成普通匿名论坛网友。
+3. 每次准备把私聊内容带入论坛发言前，先进行一次“是否泄露”的道德与动机检定：综合道德值、NPC性格、与玩家关系、利益、情绪、风险、第三方在场情况和当前场景。
+4. 道德值80～100：默认保护隐私，不主动泄露具体聊天内容；除非存在非常强的剧情动机，否则不得公开细节。
+5. 道德值40～79：谨慎判断，可模糊提及与玩家有关的事情，但不应随意公开敏感细节。
+6. 道德值0～39：更容易因八卦、利益、炫耀、威胁、情绪等动机泄露，但仍必须符合NPC性格和当前情境，不是必然泄露。
+7. 即使允许泄露，也只能说NPC当下愿意说出的必要部分；禁止机械复制、逐字转述或倾倒整段私聊记录。
+8. 如果检定结果为“保护私聊”，论坛发言不得出现可追溯到私聊原文的具体信息；可以保留NPC因此产生的情绪、态度或关系变化。
+9. 开启联动绝不等于授权公开私聊。论坛AI不得因为看到了聊天记录就自动泄密。`;
     }
 
     function forumUserProfileHTML(author, extraClass='') {
@@ -5397,7 +5413,7 @@ ${esc(b.prompt)}
             }
             const playerSafe = config.userProfiles?.safe || {};
             const playerMature = config.userProfiles?.mature || {};
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number(c.moralScore)||70))}/100\n\n【玩家身份识别】\n当前聊天对象就是玩家本人。玩家可能在论坛使用“${playerSafe.nickname||'旅行中的训练家'}”或“${playerMature.nickname||'匿名用户'}”等身份。不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 70))}/100\n\n【玩家身份识别】\n当前聊天对象就是玩家本人。玩家可能在论坛使用“${playerSafe.nickname||'旅行中的训练家'}”或“${playerMature.nickname||'匿名用户'}”等身份。不要把当前聊天对象当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
