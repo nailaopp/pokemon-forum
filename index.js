@@ -515,6 +515,7 @@
         contacts: [],
         contactChats: {},
         contactLinkMeta: {},
+        contactPlayerNickname: '',
         contactPlayerIdentity: '',
         // 通讯录按 SillyTavern 当前角色卡聊天独立保存：新聊天为空，旧聊天恢复。
         contactChatArchives: {},
@@ -5198,6 +5199,17 @@ ${esc(b.prompt)}
     // ============================================================
     let currentContactId = null;
 
+    function getContactPlayerNickname() {
+        contactCfg();
+        return typeof config.contactPlayerNickname === 'string' ? config.contactPlayerNickname : '';
+    }
+
+    function setContactPlayerNickname(value) {
+        contactCfg();
+        config.contactPlayerNickname = String(value || '');
+        saveContactConfig();
+    }
+
     function getContactPlayerIdentity() {
         contactCfg();
         return typeof config.contactPlayerIdentity === 'string' ? config.contactPlayerIdentity : '';
@@ -5207,6 +5219,10 @@ ${esc(b.prompt)}
         contactCfg();
         config.contactPlayerIdentity = String(value || '');
         saveContactConfig();
+    }
+
+    function getContactPlayerDisplayName() {
+        return getContactPlayerNickname().trim() || '我';
     }
 
     function contactCfg() {
@@ -5244,7 +5260,7 @@ ${esc(b.prompt)}
     }
 
     function emptyContactChatState() {
-        return { contacts: [], contactChats: {}, contactLinkMeta: {}, contactPlayerIdentity: '', updatedAt: Date.now() };
+        return { contacts: [], contactChats: {}, contactLinkMeta: {}, contactPlayerNickname: '', contactPlayerIdentity: '', updatedAt: Date.now() };
     }
 
     function normalizeContactChatState(state) {
@@ -5252,6 +5268,7 @@ ${esc(b.prompt)}
         if (!Array.isArray(s.contacts)) s.contacts = [];
         if (!s.contactChats || typeof s.contactChats !== 'object') s.contactChats = {};
         if (!s.contactLinkMeta || typeof s.contactLinkMeta !== 'object') s.contactLinkMeta = {};
+        if (typeof s.contactPlayerNickname !== 'string') s.contactPlayerNickname = '';
         if (typeof s.contactPlayerIdentity !== 'string') s.contactPlayerIdentity = '';
         s.contacts.forEach(c => {
             if (!c || typeof c !== 'object') return;
@@ -5275,6 +5292,7 @@ ${esc(b.prompt)}
                 contacts: clone(config.contacts || []),
                 contactChats: clone(config.contactChats || {}),
                 contactLinkMeta: clone(config.contactLinkMeta || {}),
+                contactPlayerNickname: String(config.contactPlayerNickname || ''),
                 contactPlayerIdentity: String(config.contactPlayerIdentity || ''),
                 updatedAt: Date.now()
             });
@@ -5323,6 +5341,7 @@ ${esc(b.prompt)}
         config.contacts = state.contacts;
         config.contactChats = state.contactChats;
         config.contactLinkMeta = state.contactLinkMeta;
+        config.contactPlayerNickname = String(state.contactPlayerNickname || '');
         config.contactPlayerIdentity = String(state.contactPlayerIdentity || '');
         config.__contactActiveChatKey = key;
         currentContactId = null;
@@ -5698,17 +5717,25 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
     function renderChat() {
         const c = contactById(currentContactId);
         if (!c) return;
-        $('pkmn-chat-title').textContent = contactDisplayName(c);
+        const contactName = contactDisplayName(c);
+        const playerName = getContactPlayerDisplayName();
+        $('pkmn-chat-title').textContent = contactName;
         const box = $('pkmn-chat-messages');
         const msgs = config.contactChats[currentContactId] || [];
         box.innerHTML = msgs.map(m => {
             const mine = m.role === 'user';
+            const displayName = mine ? playerName : contactName;
+            const avatarText = mine ? playerName.slice(0, 1) : String(c.avatar || contactName || '👤').slice(0, 1);
             return `<div class="wechat-msg-row ${mine?'mine':'theirs'}">
-                ${mine ? '' : `<span class="wechat-avatar mini">${esc(c.avatar||'👤')}</span>`}
-                <div><div class="wechat-bubble">${esc(m.content).replace(/\n/g,'<br>')}</div><small class="wechat-time">${esc(m.time||'')}</small></div>
-                ${mine ? '<span class="wechat-avatar mini me">我</span>' : ''}
+                ${mine ? '' : `<span class="wechat-avatar mini">${esc(avatarText)}</span>`}
+                <div class="wechat-msg-main">
+                    <div class="wechat-msg-name">${esc(displayName)}</div>
+                    <div class="wechat-bubble">${esc(m.content).replace(/\n/g,'<br>')}</div>
+                    <small class="wechat-time">${esc(m.time||'')}</small>
+                </div>
+                ${mine ? `<span class="wechat-avatar mini me">${esc(avatarText)}</span>` : ''}
             </div>`;
-        }).join('') || `<div class="wechat-daytip">与 ${esc(contactDisplayName(c))} 的聊天</div>`;
+        }).join('') || `<div class="wechat-daytip">与 ${esc(contactName)} 的聊天</div>`;
         box.scrollTop = box.scrollHeight;
     }
 
@@ -5732,7 +5759,7 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
         renderChat();
         const typing = document.createElement('div');
         typing.className='wechat-typing';
-        typing.textContent=c.name+' 正在输入…';
+        typing.textContent=contactDisplayName(c)+' 正在输入…';
         $('pkmn-chat-messages').appendChild(typing);
         try {
             const context = await buildContext();
@@ -5741,8 +5768,9 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
                 const allThreads = [...(chatState.safeThreads || []), ...(chatState.matureThreads || [])];
                 forumContext = '\n【论坛全部内容】\n' + JSON.stringify(allThreads).slice(0, 30000);
             }
+            const contactPlayerNickname = getContactPlayerDisplayName();
             const contactPlayerIdentity = getContactPlayerIdentity();
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n玩家昵称：${contactPlayerNickname}\n玩家身份：${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述昵称与身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -5872,11 +5900,16 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
         const models = Array.isArray(c.models) ? c.models : [];
         const contactPlayerIdentity = getContactPlayerIdentity();
         $('pkmn-contact-settings-body').innerHTML = `
-            <div class="wechat-setting-card">
-                <div class="wechat-setting-title">玩家身份</div>
-                <textarea class="pkmn-textarea" id="contact-player-identity" rows="4" placeholder="设置微信中使用的玩家身份">${esc(contactPlayerIdentity)}</textarea>
-                <div class="pkmn-small" style="margin-top:6px">仅供微信/通讯录使用，与论坛身份完全独立。</div>
-                <button class="pkmn-btn pkmn-primary" id="contact-save-player-identity" style="margin-top:8px;width:100%">保存玩家身份</button>
+            <div class="wechat-setting-card contact-player-profile-card">
+                <div class="wechat-setting-title">玩家资料</div>
+                <label class="pkmn-label">玩家昵称
+                    <input class="pkmn-input" id="contact-player-nickname" value="${esc(getContactPlayerNickname())}" placeholder="例如：阿杰">
+                </label>
+                <label class="pkmn-label" style="margin-top:9px;display:block">玩家身份
+                    <textarea class="pkmn-textarea" id="contact-player-identity" rows="3" placeholder="例如：宝可梦训练家、沼王饲养员……">${esc(contactPlayerIdentity)}</textarea>
+                </label>
+                <div class="pkmn-small" style="margin-top:6px">微信/通讯录独立资料。聊天界面显示“玩家昵称”，AI 会同时读取“玩家身份”；两者都不与论坛玩家资料同步。</div>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-player-identity" style="margin-top:8px;width:100%">保存玩家资料</button>
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">AI 接口</div>
@@ -5916,8 +5949,10 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
             showToast(c.readForumAll ? '✓ 已开启读取论坛全部内容' : '✓ 已关闭读取论坛全部内容');
         };
         $('contact-save-player-identity').onclick = () => {
+            setContactPlayerNickname($('contact-player-nickname').value.trim());
             setContactPlayerIdentity($('contact-player-identity').value.trim());
-            showToast('✓ 微信玩家身份已保存');
+            showToast('✓ 微信玩家资料已保存');
+            renderChat();
         };
         const readContactApiFields = () => {
             c.endpoint=$('contact-api-endpoint').value.trim();
