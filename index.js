@@ -5404,16 +5404,15 @@ ${esc(b.prompt)}
         const data = await res.json();
         const message = data?.choices?.[0]?.message || {};
         const content = message?.content;
-        const reasoning = message?.reasoning_content || message?.reasoning || data?.choices?.[0]?.reasoning_content || '';
-        // 兼容 OpenAI/DeepSeek/部分代理返回的字符串、content 数组以及推理字段。
+        // 只使用模型最终 content，不把 reasoning_content 混进业务回复。
+        // 否则推理过程里出现的“50”等数字可能被道德评分解析器误当成最终评分。
         const flatten = value => {
             if (typeof value === 'string') return value;
             if (Array.isArray(value)) return value.map(x => typeof x === 'string' ? x : (x?.text || x?.content || '')).join('\n');
             if (value && typeof value === 'object') return String(value.text || value.content || '');
             return '';
         };
-        const text = flatten(content);
-        return [text, flatten(reasoning)].filter(Boolean).join('\n');
+        return flatten(content);
     }
 
     function extractContactMoralResult(raw) {
@@ -5429,6 +5428,9 @@ ${esc(b.prompt)}
             return {
                 score: fromObj,
                 label: String(obj?.label || ''),
+                stage: String(obj?.stage || ''),
+                loyalty: obj?.loyalty,
+                affinity: obj?.affinity,
                 reason: String(obj?.reason || '')
             };
         }
@@ -5450,6 +5452,9 @@ ${esc(b.prompt)}
         return {
             score,
             label: labelMatch ? labelMatch[1].trim() : '',
+            stage: '',
+            loyalty: undefined,
+            affinity: undefined,
             reason: reasonMatch ? reasonMatch[1].trim() : text.slice(0, 160)
         };
     }
@@ -5564,85 +5569,72 @@ ${blocks.join('\n\n')}
         }, true);
     }
 
+    function forumMoralEvidenceForUser(name) {
+        const target = normalizeSearchText(String(name || ''));
+        if (!target) return '论坛中没有可检索的用户名。';
+        const allThreads = [];
+        for (const boardThreads of [chatState?.safeThreads, chatState?.matureThreads]) {
+            if (Array.isArray(boardThreads)) allThreads.push(...boardThreads);
+        }
+        const blocks = [];
+        for (const t of allThreads) {
+            if (!t || !Array.isArray(t.posts)) continue;
+            const matched = [];
+            for (const post of t.posts) {
+                if (!post) continue;
+                const author = String(post.author || '');
+                const authorKey = normalizeSearchText(author);
+                if (authorKey && (authorKey === target || authorKey.includes(target) || target.includes(authorKey))) {
+                    matched.push({type:'主帖/楼层', author, content:String(post.content || '')});
+                }
+                const replies = Array.isArray(post.replies) ? post.replies : [];
+                for (const r of replies) {
+                    if (!r) continue;
+                    const ra = String(r.author || '');
+                    const replyAuthorKey = normalizeSearchText(ra);
+                    if (replyAuthorKey && (replyAuthorKey === target || replyAuthorKey.includes(target) || target.includes(replyAuthorKey))) {
+                        matched.push({type:'回复', author:ra, content:String(r.content || ''), replyToAuthor:String(r.replyToAuthor || '')});
+                    }
+                }
+            }
+            if (matched.length) {
+                blocks.push(`【帖子：${String(t.title || '无标题')}】\n${matched.map(x => `${x.type}｜${x.author}${x.replyToAuthor ? ` → 回复 ${x.replyToAuthor}` : ''}\n${x.content}`).join('\n\n')}`);
+            }
+        }
+        return blocks.length ? blocks.join('\n\n').slice(0, 30000) : '当前聊天的论坛存档中没有找到该用户的发帖、评论或回复。';
+    }
+
     async function assessContactMoral(info) {
         const c = contactCfg();
         if (!contactApiBase()) throw new Error('请先在通讯录设置中配置 API');
         if (!c.model) throw new Error('请先在通讯录设置中选择模型');
-        const ctx = await buildContext();
-        const player = currentUserProfile();
-        let roleDb = '';
+        const name = String(info?.name || '匿名用户').trim();
+        const bio = String(info?.bio || '').trim();
+        const location = String(info?.location || '').trim();
+        const sourceText = String(info?.sourcePost?.content || info?.sourcePost?.text || '');
+        const forumEvidence = forumMoralEvidenceForUser(name);
+        let worldbook = '';
         try {
-            // 把已选择的世界书当作本地角色资料库：优先检索角色名/作品名相关条目。
-            roleDb = await getSelectedWorldbookText(`${name} ${bio} ${String(sourcePost?.content || sourcePost?.text || '')}`);
-        } catch (e) {
-            roleDb = '';
-        }
-        const prompt = `请为这个论坛用户建立稳定的人物道德倾向评分，用于之后决定其在论坛、私聊和剧情中的道德底线与隐私行为。
-
-【核心原则：论坛整体道德偏低】
-这是一个普通匿名论坛。不要把“没有明显恶行”“说话正常”“喜欢宝可梦”“没有被发现做坏事”当成高道德证据。普通论坛用户多数处于现实、偏利己或中性状态，道德评分的中心应在45～55附近。没有证据证明高道德，就保持中性偏低。
-
-【七阶段评分】
-0～15：危险型——底线极低，可能为利益、报复或威胁利用他人秘密。
-16～30：恶意/利己型——明显利己，容易八卦、添油加醋、利用信息交换利益。
-31～45：灰色自私型——不一定恶毒，但优先考虑自己，可能认为“没有义务替你保密”。
-46～60：普通人——有基本良知，也有现实利益；通常不主动泄密，但不是圣人。
-61～75：可靠型——有稳定边界感和善意，倾向保护隐私。
-76～90：高道德/守密型——原则感强，较少受利益和情绪影响，通常主动保护隐私。
-91～100：极高道德型——极少见，接近圣人级，需要长期、具体、跨场景的强证据；不得轻易使用。
-
-【评分规则】
-1. 实际发帖、评论、回复、对他人的具体行为 > 个人简介、自我宣称。
-2. 没有恶行证据不等于高道德。
-3. 单次友善、客套、正义口号不能大幅加分。
-4. 单次争吵、吐槽、粗口也不能单独判为低道德；看是否有伤害、欺骗、骚扰、操纵、报复等行为。
-5. 对隐私的尊重、是否利用秘密、是否为了利益伤害他人，是本次评分的重要证据。
-6. 评分是稳定人格倾向，不是对某一句话的即时情绪评分。
-7. 最终评分必须落在上述行为证据能支持的范围；证据不足时优先45～55。
-
-【动漫/游戏/漫画/小说/影视/同人账号】
-如果怀疑该用户是虚构角色或同人角色：
-- 优先检索下方“角色资料库（世界书）”中的角色资料、原作行为和阵营信息；有资料才使用，不能凭印象编造。
-- 原作角色道德倾向 与 论坛账号本人实际行为必须分开。
-- 角色是反派，不等于账号本人一定低道德；角色是正派，也不等于账号本人一定高道德。
-- 如果角色资料库没有可靠资料，标记为“角色资料未知”，不要虚构原作经历，继续依据论坛实际行为评分。
-
-【需要额外输出的行为倾向】
-除了score，请给出：
-- label：较低/一般/较高/很高
-- stage：七阶段名称
-- loyalty：0～100，对玩家的潜在忠诚/站队倾向；没有证据时50附近
-- affinity：0～100，与玩家的当前好感/亲近倾向；没有证据时50附近
-- reason：不超过100字，指出最关键证据
-
-只返回 JSON，不要 Markdown：{"score":50,"label":"一般","stage":"普通人","loyalty":50,"affinity":50,"reason":"..."}
-
-【论坛用户】
-昵称：${String(info.name||'匿名用户')}
-简介：${String(info.bio||'未提供')}
-IP属地：${String(info.location||'未知')}
-
-【当前正文与世界书】
-${ctx.slice(0,32000)}
-
-【角色资料库（世界书检索结果）】
-${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得自行编造原作信息）'}
-
-【玩家身份】
-玩家是当前聊天对象本人；论坛昵称可能为：${player.nickname||'旅行中的训练家'}。`;
-        const raw = await callContactAI([{role:'system',content:'你是稳定的人物设定评估器。'}, {role:'user',content:prompt}]);
+            // 道德检定专门读取当前已选择世界书中与该人物/论坛记录相关的角色设定。
+            worldbook = await getSelectedWorldbookText(`${name} ${bio} ${sourceText} ${forumEvidence.slice(0,12000)}`);
+        } catch (_) { worldbook = ''; }
+        const currentChat = getMainChatText(config.readDepth);
+        const player = currentUserProfile();
+        const prompt = `根据提供的角色设定与当前论坛实际行为，判断这个联系人的稳定道德倾向。\n\n【人物】\n昵称：${name}\n简介：${bio || '无'}\nIP属地：${location || '未知'}\n\n【正文世界书 / 角色设定】\n${worldbook ? worldbook.slice(0,22000) : '未检索到相关世界书条目。不得凭空补充原作经历。'}\n\n【当前正文】\n${currentChat ? currentChat.slice(0,12000) : '无'}\n\n【当前聊天论坛中检索到的该用户实际行为】\n${forumEvidence}\n\n【评分】\n0～15 危险型；16～30 恶意/利己型；31～45 灰色自私型；46～60 普通人；61～75 可靠型；76～90 高道德/守密型；91～100 极高道德型。\n\n只根据上面的证据判断。论坛实际行为优先；世界书用于人物背景和明确设定。没有论坛记录时，不得假装有论坛行为；没有世界书依据时，也不得编造原作经历。不要因为证据不足机械给50，也不要为了避免极端而统一压到中间区间。一次事件不能单独决定全部人格。\n\n只返回JSON，不要Markdown或额外文字：\n{"score":数值,"label":"较低/一般/较高/很高","stage":"七阶段之一","loyalty":数值,"affinity":数值,"reason":"不超过100字的关键依据"}`;
+        const raw = await callContactAI([{role:'system',content:'只做人物道德检定，严格依据给定资料，不编造。'}, {role:'user',content:prompt}]);
         const result = extractContactMoralResult(raw);
         if (!result) {
             console.warn('[pkmn-forum] contact moral AI returned unparseable result:', raw);
             throw new Error('AI 未返回有效的道德评分');
         }
         const n = Number(result.score);
+        if (!Number.isFinite(n) || n < 0 || n > 100) throw new Error('AI 返回的道德评分无效');
         const score = Math.max(0, Math.min(100, Math.round(n)));
         const label = String(result.label || (score < 46 ? '较低' : score < 76 ? '一般' : score < 91 ? '较高' : '很高'));
         const loyalty = Math.max(0, Math.min(100, Math.round(Number.isFinite(Number(result.loyalty)) ? Number(result.loyalty) : 50)));
         const affinity = Math.max(0, Math.min(100, Math.round(Number.isFinite(Number(result.affinity)) ? Number(result.affinity) : 50)));
         const behavior = moralBehaviorProfile(score);
-        return {score, label, stage:String(result.stage || behavior.stage), loyalty, affinity, reason:String(result.reason||'').slice(0,160)};
+        return {score, label, stage:String(result.stage || behavior.stage), loyalty, affinity, reason:String(result.reason||'').trim().slice(0,500)};
     }
 
     function openForumUserCard(author, sourcePost=null) {
@@ -5988,14 +5980,31 @@ ${roleDb ? roleDb.slice(0,18000) : '（未检索到可靠角色资料；不得�
         $('contact-add-inline').onclick = addContact;
     }
 
-    function addContact() {
-        const name = prompt('联系人昵称');
+    async function addContact() {
+        const nameInput = prompt('联系人昵称');
+        const name = String(nameInput || '').trim();
         if (!name) return;
-        const id = 'c_' + Date.now();
-        config.contacts.push({id,nickname:String(name).trim(),name:String(name).trim(),avatar:'👤',note:'',bio:'',location:'',linkForum:true,moralScore:50});
-        saveContactConfig();
-        renderContacts();
-        showToast('已添加联系人');
+        const existing = contactByNickname(name);
+        if (existing) { showToast('该联系人已存在'); return; }
+
+        try {
+            // 通讯录添加联系人也必须先读取当前角色卡聊天的论坛资料，再做世界书+论坛道德检定。
+            const forumEvidence = forumMoralEvidenceForUser(name);
+            const moral = await assessContactMoral({name, bio:'', location:'', sourcePost:null});
+            const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+            config.contacts.push({
+                id, nickname:name, name, avatar:'👤', note:'', bio:'', location:'', linkForum:true,
+                moralScore:moral.score, moralLabel:moral.label, moralStage:moral.stage,
+                moralLoyalty:moral.loyalty, moralAffinity:moral.affinity, moralReason:moral.reason,
+                moralEvidence:forumEvidence.slice(0,30000)
+            });
+            config.contactChats[id] = [];
+            saveContactConfig();
+            renderContacts();
+            showToast(`已添加联系人：${name}（AI道德倾向：${moral.label} · ${moral.score}）`);
+        } catch (e) {
+            showToast('添加联系人失败：' + (e?.message || e));
+        }
     }
 
     // ============================================================

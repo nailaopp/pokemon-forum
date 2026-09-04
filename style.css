@@ -1328,7 +1328,7 @@
 #pkmn-phone-panel .contact-settings-score b{margin-left:4px;color:#30373e}
 #pkmn-phone-panel .contact-settings-score span{margin:0 6px;color:#b0b5ba}
 #pkmn-phone-panel .contact-settings-score strong{color:#555e66;font-weight:650}
-#pkmn-phone-panel .contact-settings-reason{margin-top:8px;padding:9px 10px;border-radius:9px;background:#f7f8f9;color:#8b9298;font-size:11px;line-height:1.55}
+#pkmn-phone-panel .contact-settings-reason{margin-top:8px;padding:9px 10px;border-radius:9px;background:#f7f8f9;color:#8b9298;font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-height:none;overflow:visible}
 #pkmn-phone-panel .contact-settings-save{width:100%;height:48px;border:1px solid #bfe5c9;border-radius:13px;background:#f2fbf4;color:#17843d;font-size:15px;font-weight:700;box-shadow:0 2px 8px rgba(20,100,45,.05);cursor:pointer;margin:2px 0 4px}
 #pkmn-phone-panel .contact-settings-save:active{transform:scale(.985);background:#e7f7ea}
 #pkmn-phone-panel .contact-settings-delete{width:100%;height:44px;border:1px solid #f0caca;border-radius:12px;background:#fff6f6;color:#c83f3f;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(160,40,40,.04);cursor:pointer;margin:6px 0 2px}
@@ -1448,7 +1448,7 @@
 #pkmn-phone-panel .contact-settings-toggle-row input:checked+i:after{transform:translateX(18px)!important}
 #pkmn-phone-panel .contact-settings-persist{padding:8px 9px!important;font-size:10px!important;line-height:1.5!important;border-radius:9px!important}
 #pkmn-phone-panel .contact-settings-score{height:42px!important;padding:0 10px!important;font-size:13px!important}
-#pkmn-phone-panel .contact-settings-reason{margin-top:7px!important;padding:8px 9px!important;font-size:10px!important;line-height:1.5!important}
+#pkmn-phone-panel .contact-settings-reason{margin-top:7px!important;padding:8px 9px!important;font-size:10px!important;line-height:1.55!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;max-height:none!important;overflow:visible!important}
 #pkmn-phone-panel .contact-settings-save{height:43px!important;border-radius:11px!important;font-size:13px!important}
 #pkmn-phone-panel .contact-settings-save span{width:20px!important;height:20px!important;font-size:12px!important}
 
