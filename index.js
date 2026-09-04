@@ -5604,8 +5604,41 @@ ${blocks.join('\n\n')}
         return blocks.length ? blocks.join('\n\n').slice(0, 30000) : '当前聊天的论坛存档中没有找到该用户的发帖、评论或回复。';
     }
 
+    function showContactAddProgress(text='正在添加好友…') {
+        const old = topDoc.getElementById('pkmn-contact-add-progress');
+        if (old) old.remove();
+        const modal = topDoc.createElement('div');
+        modal.id = 'pkmn-contact-add-progress';
+        modal.className = 'pkmn-contact-add-progress';
+        modal.innerHTML = `
+<div class="pkmn-contact-add-progress-backdrop"></div>
+<div class="pkmn-contact-add-progress-box" role="status" aria-live="polite">
+  <div class="pkmn-contact-add-progress-spinner"></div>
+  <div class="pkmn-contact-add-progress-title">正在添加好友</div>
+  <div class="pkmn-contact-add-progress-text">${esc(text)}</div>
+  <div class="pkmn-contact-add-progress-hint">请稍候…</div>
+</div>`;
+        const host = topDoc.getElementById('pkmn-phone-panel') || topDoc.body;
+        host.appendChild(modal);
+        return modal;
+    }
+
+    function updateContactAddProgress(text) {
+        const modal = topDoc.getElementById('pkmn-contact-add-progress');
+        if (!modal) return;
+        const el = modal.querySelector('.pkmn-contact-add-progress-text');
+        if (el) el.textContent = String(text || '正在处理…');
+    }
+
+    function hideContactAddProgress() {
+        const modal = topDoc.getElementById('pkmn-contact-add-progress');
+        if (modal) modal.remove();
+    }
+
     async function assessContactMoral(info) {
         const c = contactCfg();
+        const progress = typeof info?.onProgress === 'function' ? info.onProgress : () => {};
+        progress('正在检查当前论坛记录…');
         if (!contactApiBase()) throw new Error('请先在通讯录设置中配置 API');
         if (!c.model) throw new Error('请先在通讯录设置中选择模型');
         const name = String(info?.name || '匿名用户').trim();
@@ -5613,15 +5646,19 @@ ${blocks.join('\n\n')}
         const location = String(info?.location || '').trim();
         const sourceText = String(info?.sourcePost?.content || info?.sourcePost?.text || '');
         const forumEvidence = forumMoralEvidenceForUser(name);
+        progress('正在读取世界书与角色设定…');
         let worldbook = '';
         try {
             // 道德检定专门读取当前已选择世界书中与该人物/论坛记录相关的角色设定。
             worldbook = await getSelectedWorldbookText(`${name} ${bio} ${sourceText} ${forumEvidence.slice(0,12000)}`);
         } catch (_) { worldbook = ''; }
         const currentChat = getMainChatText(config.readDepth);
+        progress('正在整理论坛与正文证据…');
         const player = currentUserProfile();
         const prompt = `根据提供的角色设定与当前论坛实际行为，判断这个联系人的稳定道德倾向。\n\n【人物】\n昵称：${name}\n简介：${bio || '无'}\nIP属地：${location || '未知'}\n\n【正文世界书 / 角色设定】\n${worldbook ? worldbook.slice(0,22000) : '未检索到相关世界书条目。不得凭空补充原作经历。'}\n\n【当前正文】\n${currentChat ? currentChat.slice(0,12000) : '无'}\n\n【当前聊天论坛中检索到的该用户实际行为】\n${forumEvidence}\n\n【评分】\n0～15 危险型；16～30 恶意/利己型；31～45 灰色自私型；46～60 普通人；61～75 可靠型；76～90 高道德/守密型；91～100 极高道德型。\n\n只根据上面的证据判断。论坛实际行为优先；世界书用于人物背景和明确设定。没有论坛记录时，不得假装有论坛行为；没有世界书依据时，也不得编造原作经历。不要因为证据不足机械给50，也不要为了避免极端而统一压到中间区间。一次事件不能单独决定全部人格。\n\n只返回JSON，不要Markdown或额外文字：\n{"score":数值,"label":"较低/一般/较高/很高","stage":"七阶段之一","loyalty":数值,"affinity":数值,"reason":"不超过100字的关键依据"}`;
+        progress('正在进行 AI 道德检定…');
         const raw = await callContactAI([{role:'system',content:'只做人物道德检定，严格依据给定资料，不编造。'}, {role:'user',content:prompt}]);
+        progress('正在解析检定结果…');
         const result = extractContactMoralResult(raw);
         if (!result) {
             console.warn('[pkmn-forum] contact moral AI returned unparseable result:', raw);
@@ -5670,15 +5707,18 @@ ${blocks.join('\n\n')}
         const addBtn = modal.querySelector('[data-user-card-add]');
         if (addBtn) addBtn.onclick = async () => {
             if (addBtn.disabled) return;
-            addBtn.disabled = true; addBtn.textContent = 'AI 正在判断…';
+            addBtn.disabled = true; addBtn.textContent = '正在添加…';
+            const progressModal = showContactAddProgress('正在检查当前论坛记录…');
             try {
-                const moral = await assessContactMoral({name, bio, location, sourcePost});
+                const moral = await assessContactMoral({name, bio, location, sourcePost, onProgress: updateContactAddProgress});
                 const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
                 config.contacts.push({id, nickname:name, name, avatar, note:'', bio, location, linkForum:true, moralScore:moral.score, moralLabel:moral.label, moralStage:moral.stage, moralLoyalty:moral.loyalty, moralAffinity:moral.affinity, moralReason:moral.reason});
                 config.contactChats[id] = [];
                 saveContactConfig(); close();
-                showToast(`已添加好友：${name}（AI道德倾向：${moral.label}）`);
+                hideContactAddProgress();
+                showToast(`已添加好友：${name}`);
             } catch(e) {
+                hideContactAddProgress();
                 addBtn.disabled = false; addBtn.textContent = '加为好友';
                 showToast('添加好友失败：'+(e?.message||e));
             }
@@ -5987,10 +6027,11 @@ ${blocks.join('\n\n')}
         const existing = contactByNickname(name);
         if (existing) { showToast('该联系人已存在'); return; }
 
+        const progressModal = showContactAddProgress('正在检查当前论坛记录…');
         try {
-            // 通讯录添加联系人也必须先读取当前角色卡聊天的论坛资料，再做世界书+论坛道德检定。
+            // 通讯录添加联系人：先读取当前角色卡聊天的论坛资料，再综合世界书、正文与论坛实际行为进行道德检定。
             const forumEvidence = forumMoralEvidenceForUser(name);
-            const moral = await assessContactMoral({name, bio:'', location:'', sourcePost:null});
+            const moral = await assessContactMoral({name, bio:'', location:'', sourcePost:null, onProgress: updateContactAddProgress});
             const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
             config.contacts.push({
                 id, nickname:name, name, avatar:'👤', note:'', bio:'', location:'', linkForum:true,
@@ -6001,8 +6042,10 @@ ${blocks.join('\n\n')}
             config.contactChats[id] = [];
             saveContactConfig();
             renderContacts();
-            showToast(`已添加联系人：${name}（AI道德倾向：${moral.label} · ${moral.score}）`);
+            hideContactAddProgress();
+            showToast(`已添加联系人：${name}`);
         } catch (e) {
+            hideContactAddProgress();
             showToast('添加联系人失败：' + (e?.message || e));
         }
     }

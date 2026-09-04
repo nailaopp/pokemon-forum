@@ -1525,3 +1525,14 @@
 #pkmn-phone-panel .contact-player-profile-card .pkmn-label{font-size:12px;font-weight:600;color:#4b535a}
 #pkmn-phone-panel .contact-player-profile-card .pkmn-input,
 #pkmn-phone-panel .contact-player-profile-card .pkmn-textarea{margin-top:5px}
+
+
+/* v0.13.13 · 联系人添加进度弹窗：阻止重复操作，同时不泄露道德评分 */
+#pkmn-phone-panel .pkmn-contact-add-progress{position:absolute;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+#pkmn-phone-panel .pkmn-contact-add-progress-backdrop{position:absolute;inset:0;background:rgba(18,24,30,.32);backdrop-filter:blur(2px)}
+#pkmn-phone-panel .pkmn-contact-add-progress-box{position:relative;width:min(320px,88%);box-sizing:border-box;padding:25px 22px 22px;border-radius:18px;background:#fff;box-shadow:0 16px 42px rgba(0,0,0,.2);text-align:center}
+#pkmn-phone-panel .pkmn-contact-add-progress-spinner{width:28px;height:28px;margin:0 auto 13px;border:3px solid #e7ebee;border-top-color:#07c160;border-radius:50%;animation:pkmnContactAddSpin .8s linear infinite}
+#pkmn-phone-panel .pkmn-contact-add-progress-title{font-size:17px;font-weight:750;color:#20262c}
+#pkmn-phone-panel .pkmn-contact-add-progress-text{margin-top:9px;font-size:13px;line-height:1.55;color:#5d666e;white-space:pre-wrap;word-break:break-word}
+#pkmn-phone-panel .pkmn-contact-add-progress-hint{margin-top:6px;font-size:11px;color:#a1a7ac}
+@keyframes pkmnContactAddSpin{to{transform:rotate(360deg)}}
