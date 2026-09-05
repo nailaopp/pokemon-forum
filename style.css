@@ -1527,7 +1527,7 @@
 #pkmn-phone-panel .contact-player-profile-card .pkmn-textarea{margin-top:5px}
 
 
-/* v0.13.17 · 联系人添加进度弹窗：阻止重复操作，同时不泄露道德评分 */
+/* v0.13.19 · 联系人添加进度弹窗：阻止重复操作，同时不泄露道德评分 */
 #pkmn-phone-panel .pkmn-contact-add-progress{position:absolute;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
 #pkmn-phone-panel .pkmn-contact-add-progress-backdrop{position:absolute;inset:0;background:rgba(18,24,30,.32);backdrop-filter:blur(2px)}
 #pkmn-phone-panel .pkmn-contact-add-progress-box{position:relative;width:min(320px,88%);box-sizing:border-box;padding:25px 22px 22px;border-radius:18px;background:#fff;box-shadow:0 16px 42px rgba(0,0,0,.2);text-align:center}
@@ -1537,7 +1537,7 @@
 #pkmn-phone-panel .pkmn-contact-add-progress-hint{margin-top:6px;font-size:11px;color:#a1a7ac}
 @keyframes pkmnContactAddSpin{to{transform:rotate(360deg)}}
 
-/* v0.13.17 · 单联系人正文注入 · 极简白色系 */
+/* v0.13.19 · 单联系人正文注入 · 极简白色系 */
 #pkmn-phone-panel .contact-settings-injection-card{
   border:1px solid #e4e4e7;
   background:#fff;
@@ -1616,4 +1616,17 @@
 @media (max-width:380px){
   #pkmn-phone-panel .contact-injection-buttons{gap:8px}
   #pkmn-phone-panel .contact-injection-btn{height:40px;font-size:13px}
+}
+
+/* v0.13.19 微信消息多选删除 */
+#pkmn-phone-panel .wechat-delete-toolbar{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:8px 10px;margin-bottom:8px;background:#fff;border-bottom:1px solid #eee;
+}
+#pkmn-phone-panel .wechat-delete-toolbar button{
+ border:1px solid #ddd;background:#fff;border-radius:8px;padding:6px 12px;color:#333;
+}
+#pkmn-phone-panel .wechat-msg-row.contact-msg-selected .wechat-bubble{
+ background:#eaf5ff!important;
+ border:1px solid #b9ddf7;
 }

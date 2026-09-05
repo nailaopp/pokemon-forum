@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.13.17)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.13.19)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.13.17"; // persist contact API independently
+    const VERSION = "0.13.19"; // persist contact API independently
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -1815,7 +1815,7 @@
   <defs>
     <linearGradient id="rotomPhoneBody" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ff7050"/>
-      <stop offset="0.13.17" stop-color="#f0443e"/>
+      <stop offset="0.13.19" stop-color="#f0443e"/>
       <stop offset="1" stop-color="#c92738"/>
     </linearGradient>
     <linearGradient id="rotomPhoneScreen" x1="0" y1="0" x2="0" y2="1">
@@ -2623,7 +2623,7 @@
 
     
 /* =========================================================
- * Contact -> Main AI injection (v0.13.17)
+ * Contact -> Main AI injection (v0.13.19)
  * Keeps contact-chat memory separate per Tavern chat.
  * ========================================================= */
 const CONTACT_INJECT_PROMPT_ID = 'pokemon_forum_contact_injection_v2';
@@ -2664,6 +2664,31 @@ function getContactInjectionChatState() {
     if (!all[key] || typeof all[key] !== 'object') all[key] = { contacts: {}, updatedAt: 0 };
     if (!all[key].contacts || typeof all[key].contacts !== 'object') all[key].contacts = {};
     return { all, key, state: all[key] };
+}
+
+
+function getContactPlayerInjectionName() {
+    const nickname = String(getContactPlayerDisplayName?.() || '').trim();
+    let realName = '';
+    try {
+        const ctx = getSTContext();
+        realName = String(
+            ctx?.name1 ||
+            ctx?.userName ||
+            ctx?.user_name ||
+            ctx?.persona?.name ||
+            ctx?.personaName ||
+            ''
+        ).trim();
+    } catch (_) {}
+    if (!realName) {
+        try {
+            realName = String(window.name1 || '').trim();
+        } catch (_) {}
+    }
+    if (!nickname) return realName || '主角';
+    if (!realName || nickname === realName) return nickname;
+    return `${nickname}（${realName}）`;
 }
 
 function getContactInjectionSettings(contactId) {
@@ -2707,7 +2732,7 @@ function getAllEnabledContactInjectionEntries() {
             entries.push({
                 contactId: String(id),
                 contactName: contactDisplayName(c),
-                speaker: m.role === 'user' ? getContactPlayerDisplayName() : contactDisplayName(c),
+                speaker: m.role === 'user' ? getContactPlayerInjectionName() : contactDisplayName(c),
                 content
             });
         });
@@ -2726,7 +2751,7 @@ function buildContactInjectionText() {
     const lines = [
         '【通讯录私聊记忆｜当前酒馆聊天】',
         '以下是被用户单独开启“注入正文”的通讯录私聊内容。它们属于私聊剧情记忆，不是公开论坛帖子。',
-        '请仅将其作为背景事实参考，不要擅自替用户发言，也不要把私聊内容伪装成论坛内容。'
+        '请仅将其作为背景事实参考。通讯录昵称后括号内为当前酒馆主角的正式姓名；不要将通讯录昵称误认为主角姓名。不要擅自替主角发言，也不要把私聊内容伪装成论坛内容。'
     ];
     for (const g of grouped.values()) {
         lines.push(`\n【联系人：${g.name}】`);
@@ -5938,7 +5963,73 @@ ${blocks.join('\n\n')}
         list.querySelectorAll('[data-contact]').forEach(el => el.onclick = () => openContact(el.dataset.contact));
     }
 
-    function renderChat() {
+    
+    let contactMultiDeleteMode = false;
+    let contactSelectedMessages = new Set();
+    let contactLongPressTimer = null;
+
+    function exitContactDeleteMode() {
+        contactMultiDeleteMode = false;
+        contactSelectedMessages.clear();
+        renderChat();
+    }
+
+    function deleteSelectedContactMessages() {
+        if (!contactSelectedMessages.size) {
+            showToast('请选择要删除的消息');
+            return;
+        }
+        const chat = config.contactChats[currentContactId] || [];
+        config.contactChats[currentContactId] = chat.filter((_, i) => !contactSelectedMessages.has(i));
+        saveContactConfig();
+        showToast(`已删除 ${contactSelectedMessages.size} 条消息`);
+        contactSelectedMessages.clear();
+        contactMultiDeleteMode = false;
+        renderChat();
+        autoRefreshContactInjection(currentContactId);
+    }
+
+    function bindContactMessageLongPress() {
+        const box = $('pkmn-chat-messages');
+        if (!box) return;
+
+        box.querySelectorAll('.wechat-msg-row[data-msg-index]').forEach(row => {
+            const index = Number(row.dataset.msgIndex);
+
+            const toggleSelect = () => {
+                if (!contactMultiDeleteMode) return;
+                if (contactSelectedMessages.has(index)) contactSelectedMessages.delete(index);
+                else contactSelectedMessages.add(index);
+                renderChat();
+            };
+
+            row.addEventListener('click', toggleSelect);
+
+            row.addEventListener('touchstart', () => {
+                contactLongPressTimer = setTimeout(() => {
+                    contactMultiDeleteMode = true;
+                    contactSelectedMessages.add(index);
+                    renderChat();
+                }, 550);
+            }, {passive:true});
+
+            row.addEventListener('touchend', () => clearTimeout(contactLongPressTimer));
+            row.addEventListener('touchmove', () => clearTimeout(contactLongPressTimer));
+
+            row.addEventListener('mousedown', () => {
+                contactLongPressTimer = setTimeout(() => {
+                    contactMultiDeleteMode = true;
+                    contactSelectedMessages.add(index);
+                    renderChat();
+                }, 550);
+            });
+
+            row.addEventListener('mouseup', () => clearTimeout(contactLongPressTimer));
+            row.addEventListener('mouseleave', () => clearTimeout(contactLongPressTimer));
+        });
+    }
+
+function renderChat() {
         const c = contactById(currentContactId);
         if (!c) return;
         const contactName = contactDisplayName(c);
@@ -5946,11 +6037,11 @@ ${blocks.join('\n\n')}
         $('pkmn-chat-title').textContent = contactName;
         const box = $('pkmn-chat-messages');
         const msgs = config.contactChats[currentContactId] || [];
-        box.innerHTML = msgs.map(m => {
+        box.innerHTML = (contactMultiDeleteMode ? `<div class="wechat-delete-toolbar"><button data-contact-cancel-delete>取消</button><span>已选择 ${contactSelectedMessages.size} 条</span><button data-contact-delete-selected>删除</button></div>` : '') + msgs.map((m, msgIndex) => {
             const mine = m.role === 'user';
             const displayName = mine ? playerName : contactName;
             const avatarText = mine ? playerName.slice(0, 1) : String(c.avatar || contactName || '👤').slice(0, 1);
-            return `<div class="wechat-msg-row ${mine?'mine':'theirs'}">
+            return `<div data-msg-index="${msgIndex}" class="wechat-msg-row ${mine?'mine':'theirs'} ${contactSelectedMessages.has(msgIndex)?'contact-msg-selected':''}">
                 ${mine ? '' : `<span class="wechat-avatar mini">${esc(avatarText)}</span>`}
                 <div class="wechat-msg-main">
                     <div class="wechat-msg-name">${esc(displayName)}</div>
@@ -5960,6 +6051,9 @@ ${blocks.join('\n\n')}
                 ${mine ? `<span class="wechat-avatar mini me">${esc(avatarText)}</span>` : ''}
             </div>`;
         }).join('') || `<div class="wechat-daytip">与 ${esc(contactName)} 的聊天</div>`;
+        box.querySelector('[data-contact-cancel-delete]')?.addEventListener('click', exitContactDeleteMode);
+        box.querySelector('[data-contact-delete-selected]')?.addEventListener('click', deleteSelectedContactMessages);
+        bindContactMessageLongPress();
         box.scrollTop = box.scrollHeight;
     }
 
@@ -6691,7 +6785,7 @@ ${blocks.join('\n\n')}
 
 
     // ============================================================
-    // v0.13.17：洛托姆悬浮按钮拖动引擎（彻底重写）
+    // v0.13.19：洛托姆悬浮按钮拖动引擎（彻底重写）
     // ============================================================
     // 旧版同时混用 mouse / pointer / touch，并在不同 window 上监听。
     // Android WebView 下很容易出现“能点但拖不动”。
@@ -7084,7 +7178,7 @@ ${blocks.join('\n\n')}
 
 })();
 
-/* v0.13.17: restore contact injection after Tavern chat switches */
+/* v0.13.19: restore contact injection after Tavern chat switches */
 if (!window.__pokemonForumContactInjectionHooked) {
     window.__pokemonForumContactInjectionHooked = true;
     try {
