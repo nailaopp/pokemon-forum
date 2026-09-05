@@ -7,7 +7,7 @@
   "js": "index.js",
   "css": "style.css",
   "author": "宝可梦论坛纯白怪力",
-  "version": "0.13.19",
+  "version": "0.14.0",
   "homePage": "",
   "auto_update": false,
   "minimum_client_version": "1.12.0"

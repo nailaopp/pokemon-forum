@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.13.19)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.14.0)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.13.19"; // persist contact API independently
+    const VERSION = "0.14.0"; // persist contact API independently
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -133,6 +133,10 @@
         return null;
     }
 
+    // 世界书运行时缓存：同一世界书在多个 AI 模块之间只解析一次。
+    // 注意：缓存只存在于本次扩展运行内，用户勾选状态仍保存在 config。
+    const worldbookRuntimeCache = new Map();
+
     const TH = {
         getChatMessages(range, options) {
             const ctx = getSTContext();
@@ -189,43 +193,70 @@
             return [...names];
         },
 
-        async getWorldbook(name) {
+        async getWorldbook(name, options = {}) {
             if (!name) return [];
+            const cacheKey = String(name);
+            const forceReload = !!options.forceReload;
+            if (config.worldbookCache !== false && !forceReload && worldbookRuntimeCache.has(cacheKey)) {
+                return worldbookRuntimeCache.get(cacheKey).map(e => ({ ...e, keys: [...(e.keys || [])], keywords: [...(e.keywords || [])], secondary_keys: [...(e.secondary_keys || [])], secondaryKeys: [...(e.secondaryKeys || [])] }));
+            }
+
             const normalizeEntries = (data) => {
                 if (!data) return [];
                 let list = [];
-                if (Array.isArray(data.entries)) list = data.entries;
-                else if (data.entries && typeof data.entries === 'object') list = Object.values(data.entries);
-                else if (Array.isArray(data)) list = data;
+                if (Array.isArray(data.entries)) {
+                    list = data.entries.map((e, i) => ({ sourceKey: i, value: e }));
+                } else if (data.entries && typeof data.entries === 'object') {
+                    list = Object.entries(data.entries).map(([sourceKey, value]) => ({ sourceKey, value }));
+                } else if (Array.isArray(data)) {
+                    list = data.map((e, i) => ({ sourceKey: i, value: e }));
+                }
                 return list
-                    .filter(e => e && (e.content || e.key || e.keys || e.comment))
-                    .map(e => {
+                    .filter(x => x.value && (x.value.content || x.value.key || x.value.keys || x.value.comment))
+                    .map((x, index) => {
+                        const e = x.value;
                         const keys = Array.isArray(e.key) ? e.key
                             : (Array.isArray(e.keys) ? e.keys
                             : (e.key ? [e.key] : []));
                         const secondary = Array.isArray(e.keysecondary) ? e.keysecondary
                             : (Array.isArray(e.secondary_keys) ? e.secondary_keys
                             : (Array.isArray(e.secondaryKeys) ? e.secondaryKeys : []));
+                        const uid = e.uid != null && String(e.uid) !== ''
+                            ? String(e.uid)
+                            : String(x.sourceKey != null ? x.sourceKey : index);
                         return {
-                            name: e.comment || keys[0] || '条目',
+                            name: e.comment || keys[0] || `条目 ${index + 1}`,
                             comment: e.comment || '',
                             key: keys[0] || '',
-                            keys,
-                            keywords: keys,
-                            secondary_keys: secondary,
-                            secondaryKeys: secondary,
-                            content: e.content || '',
+                            keys: keys.map(String),
+                            keywords: keys.map(String),
+                            secondary_keys: secondary.map(String),
+                            secondaryKeys: secondary.map(String),
+                            content: String(e.content || ''),
                             enabled: e.disable ? false : (e.enabled !== false),
-                            uid: e.uid
+                            uid,
+                            // 保留 ST 常见字段，便于 UI 展示/调试，不参与注入筛选。
+                            constant: !!e.constant,
+                            selective: !!e.selective,
+                            position: e.position,
+                            order: e.order,
+                            probability: e.probability,
+                            useProbability: e.useProbability,
+                            depth: e.depth,
+                            scanDepth: e.scanDepth
                         };
                     });
             };
+
+            let loaded = [];
             try {
                 const ctx = getSTContext();
                 if (ctx && typeof ctx.loadWorldInfo === 'function') {
-                    const data = await ctx.loadWorldInfo(name);
-                    const entries = normalizeEntries(data);
-                    if (entries.length) return entries;
+                    loaded = normalizeEntries(await ctx.loadWorldInfo(name));
+                    if (loaded.length) {
+                        if (config.worldbookCache !== false) worldbookRuntimeCache.set(cacheKey, loaded);
+                        return loaded.map(e => ({ ...e, keys: [...e.keys], keywords: [...e.keywords], secondary_keys: [...e.secondary_keys], secondaryKeys: [...e.secondaryKeys] }));
+                    }
                 }
             } catch (err) {
                 console.warn('[pkmn-forum] ctx.loadWorldInfo failed', err);
@@ -233,9 +264,11 @@
             try {
                 const mod = await import(/* webpackIgnore: true */ '/scripts/world-info.js');
                 if (mod && typeof mod.loadWorldInfo === 'function') {
-                    const data = await mod.loadWorldInfo(name);
-                    const entries = normalizeEntries(data);
-                    if (entries.length) return entries;
+                    loaded = normalizeEntries(await mod.loadWorldInfo(name));
+                    if (loaded.length) {
+                        if (config.worldbookCache !== false) worldbookRuntimeCache.set(cacheKey, loaded);
+                        return loaded.map(e => ({ ...e, keys: [...e.keys], keywords: [...e.keywords], secondary_keys: [...e.secondary_keys], secondaryKeys: [...e.secondaryKeys] }));
+                    }
                 }
             } catch (err) {
                 console.warn('[pkmn-forum] import loadWorldInfo failed', err);
@@ -251,15 +284,21 @@
                     body: JSON.stringify({ name })
                 });
                 if (res.ok) {
-                    const data = await res.json();
-                    return normalizeEntries(data);
+                    loaded = normalizeEntries(await res.json());
+                    if (config.worldbookCache !== false) worldbookRuntimeCache.set(cacheKey, loaded);
+                    return loaded.map(e => ({ ...e, keys: [...e.keys], keywords: [...e.keywords], secondary_keys: [...e.secondary_keys], secondaryKeys: [...e.secondaryKeys] }));
                 }
             } catch (err) {
                 console.warn('[pkmn-forum] /api/worldinfo/get failed', err);
             }
+            if (config.worldbookCache !== false) worldbookRuntimeCache.set(cacheKey, []);
             return [];
         },
 
+        clearWorldbookCache(name) {
+            if (name) worldbookRuntimeCache.delete(String(name));
+            else worldbookRuntimeCache.clear();
+        },
         getCharacterName() {
             const ctx = getSTContext();
             if (!ctx) return '';
@@ -485,12 +524,13 @@
 
         readDepth: 12,
 
-        // 世界书智能筛选：优先把与当前剧情相关的条目送给AI
-        worldbookSmartFilter: true,
-        worldbookMaxEntries: 36,
-        worldbookMaxChars: 26000,
-
+        // 世界书：改为逐条勾选；勾选条目对所有 AI 模块强制可用。
+        worldbookForceSelected: true,
+        worldbookCache: true,
+        worldbookLargeMode: true,
         worldbooks: [],
+        // { [worldbookName]: string[] }，保存用户勾选的 Entry UID。
+        worldbookSelections: {},
 
         refreshPosts: 3,
 
@@ -590,6 +630,11 @@
                 clone(DEFAULT_CONFIG.userProfiles.mature),
                 c.userProfiles.mature || {}
             );
+
+            c.worldbookSelections = (c.worldbookSelections && typeof c.worldbookSelections === 'object')
+                ? c.worldbookSelections
+                : {};
+            c.worldbooks = Array.isArray(c.worldbooks) ? c.worldbooks.map(String) : [];
 
             c.safeBoards =
                 SAFE_BOARDS.map(d =>
@@ -1138,155 +1183,85 @@
     // 世界书
     // ============================================================
 
-    // ============================================================
-    // 世界书智能读取
-    // ============================================================
+    // 世界书选择是“明确选择制”：不再用聊天关键词决定是否注入。
+    // 所有已勾选 Entry 都会进入统一上下文，并被所有 AI 模块复用。
 
-    function normalizeSearchText(s) {
-        return String(s || '')
-            .toLowerCase()
-            .replace(/[\s\u3000]+/g, ' ')
-            .trim();
+    function worldbookEntryId(entry, index = 0) {
+        return String(entry?.uid != null ? entry.uid : index);
     }
 
-    function extractContextKeywords(chat) {
-        const text = normalizeSearchText(chat);
-        if (!text) return [];
-
-        // 中文世界书通常没有天然空格，因此同时保留：
-        // 1) 连续中文片段
-        // 2) 英文/数字/角色名片段
-        // 3) 较长的词组
-        const tokens = new Set();
-
-        const cjk = text.match(/[\u3400-\u9fff]{2,12}/g) || [];
-        cjk.forEach(x => {
-            if (x.length >= 2) tokens.add(x);
-            // 长片段拆成2~4字窗口，提升“人物名/地点名”命中率
-            if (x.length >= 4) {
-                for (let n = 2; n <= 4; n++) {
-                    for (let i = 0; i + n <= x.length; i++) {
-                        tokens.add(x.slice(i, i + n));
-                    }
-                }
-            }
-        });
-
-        const latin = text.match(/[a-z0-9_\-]{2,30}/g) || [];
-        latin.forEach(x => tokens.add(x));
-
-        // 去掉极常见、信息量低的词
-        const stop = new Set([
-            '当前','正文','聊天','角色','玩家','说道','说道','然后','于是','一个','这个','那个',
-            '自己','已经','还是','就是','因为','所以','但是','如果','什么','怎么','可以','没有',
-            '进行','出现','看到','来到','今天','现在','刚刚','之后','他们','她们','我们','你们'
-        ]);
-
-        return [...tokens]
-            .filter(x => x.length >= 2 && !stop.has(x))
-            .slice(0, 180);
+    function worldbookCloneSelection(name) {
+        const arr = config.worldbookSelections?.[name];
+        return new Set(Array.isArray(arr) ? arr.map(String) : []);
     }
 
-    function worldbookEntryText(entry) {
-        const keys = [
-            entry?.name,
-            entry?.comment,
-            entry?.key,
-            entry?.keys,
-            entry?.keywords,
-            entry?.secondary_keys,
-            entry?.secondaryKeys,
-            entry?.content
-        ];
-
-        return keys
-            .flatMap(x => Array.isArray(x) ? x : [x])
-            .filter(Boolean)
-            .join(' ');
-    }
-
-    function scoreWorldbookEntry(entry, keywords) {
-        const hay = normalizeSearchText(worldbookEntryText(entry));
-        if (!hay) return 0;
-
-        let score = 0;
-        for (const kw of keywords) {
-            if (!kw || kw.length < 2) continue;
-            if (hay.includes(normalizeSearchText(kw))) {
-                score += kw.length >= 4 ? 5 : 2;
-            }
+    function setWorldbookSelection(name, set) {
+        if (!config.worldbookSelections || typeof config.worldbookSelections !== 'object') {
+            config.worldbookSelections = {};
         }
-
-        // 明确的世界书 key 命中额外加权
-        const keyText = normalizeSearchText([
-            entry?.key,
-            entry?.keys,
-            entry?.keywords,
-            entry?.secondary_keys,
-            entry?.secondaryKeys
-        ].flat().filter(Boolean).join(' '));
-
-        if (keyText && keywords.some(k => keyText.includes(normalizeSearchText(k)))) {
-            score += 8;
-        }
-
-        return score;
+        config.worldbookSelections[name] = [...set].map(String);
+        // worldbooks 仅作为“至少选择了一个条目的世界书”索引，保持旧配置兼容。
+        const books = new Set(Array.isArray(config.worldbooks) ? config.worldbooks.map(String) : []);
+        if (set.size) books.add(String(name));
+        else books.delete(String(name));
+        config.worldbooks = [...books];
     }
 
-    async function getSelectedWorldbookEntries(chatText) {
-        if (!config.worldbooks.length || !TH.getWorldbook) return [];
+    function worldbookEntryChars(entry) {
+        return String(entry?.content || '').length;
+    }
 
-        const keywords = extractContextKeywords(chatText);
+    function estimateWorldbookTokens(chars) {
+        // 中文世界书常以约 2～3 个汉字/token 波动；这里只用于 UI 提示，不参与截断。
+        return Math.max(0, Math.round(Number(chars || 0) / 2.3));
+    }
+
+    function formatWorldbookSize(chars) {
+        const n = Number(chars || 0);
+        if (!n) return '0 字符';
+        const tk = estimateWorldbookTokens(n);
+        return `${n.toLocaleString()} 字符 · 约 ${tk.toLocaleString()} TK（估算）`;
+    }
+
+    async function getSelectedWorldbookEntries() {
+        const selections = config.worldbookSelections && typeof config.worldbookSelections === 'object'
+            ? config.worldbookSelections
+            : {};
+        const names = [...new Set([
+            ...(Array.isArray(config.worldbooks) ? config.worldbooks : []),
+            ...Object.keys(selections)
+        ].map(String).filter(Boolean))];
+        if (!names.length || !TH.getWorldbook) return [];
+
         const all = [];
-
-        for (const name of config.worldbooks) {
+        for (const name of names) {
             try {
                 const entries = await TH.getWorldbook(name);
-                if (!Array.isArray(entries)) continue;
+                if (!Array.isArray(entries) || !entries.length) continue;
 
-                entries
-                    .filter(e => e && e.enabled !== false && e.content)
-                    .forEach((entry, index) => {
-                        all.push({
-                            book: name,
-                            entry,
-                            index,
-                            score: scoreWorldbookEntry(entry, keywords)
-                        });
-                    });
-            } catch (_) {}
+                let selected = worldbookCloneSelection(name);
+                // 兼容旧版：旧配置只记录“选中了整本世界书”。首次读取时，把当时可见的所有 Entry 转成逐条选择。
+                if (!Object.prototype.hasOwnProperty.call(selections, name)) {
+                    selected = new Set(entries.map((entry, index) => worldbookEntryId(entry, index)));
+                    setWorldbookSelection(name, selected);
+                }
+
+                entries.forEach((entry, index) => {
+                    const uid = worldbookEntryId(entry, index);
+                    // enabled=false 只作为原世界书状态展示；只要用户勾选，就必须读取。
+                    if (selected.has(uid) && entry.content) {
+                        all.push({ book: name, entry, index, uid });
+                    }
+                });
+            } catch (err) {
+                console.warn('[pkmn-forum] selected worldbook read failed:', name, err);
+            }
         }
-
-        // 没有关键词命中时，仍保留一小部分条目，避免世界书完全失效。
-        all.sort((a, b) => b.score - a.score);
-
-        const maxEntries = Math.max(1, Math.min(100, parseInt(config.worldbookMaxEntries) || 36));
-        const maxChars = Math.max(4000, Math.min(45000, parseInt(config.worldbookMaxChars) || 26000));
-
-        if (!config.worldbookSmartFilter) {
-            return all.slice(0, maxEntries);
-        }
-
-        const positive = all.filter(x => x.score > 0);
-        const fallback = all.filter(x => x.score === 0).slice(0, Math.min(8, maxEntries));
-        const selected = [...positive, ...fallback].slice(0, maxEntries);
-
-        // 字符预算，避免世界书把正文挤出去。
-        const result = [];
-        let used = 0;
-        for (const item of selected) {
-            const block = `[${item.entry.name || '条目'}]\n${item.entry.content}`;
-            if (used + block.length > maxChars && result.length) continue;
-            result.push(item);
-            used += block.length;
-            if (used >= maxChars) break;
-        }
-
-        return result;
+        return all;
     }
 
-    async function getSelectedWorldbookText(chatText) {
-        const selected = await getSelectedWorldbookEntries(chatText);
+    async function getSelectedWorldbookText() {
+        const selected = await getSelectedWorldbookEntries();
         if (!selected.length) return '';
 
         const byBook = new Map();
@@ -1299,11 +1274,9 @@
         for (const [book, items] of byBook.entries()) {
             pieces.push(`【世界书：${book}】`);
             items.forEach(item => {
-                const relevance = item.score > 0 ? `相关度 ${item.score}` : '基础条目';
-                pieces.push(`[${item.entry.name || '条目'} · ${relevance}]\n${item.entry.content}`);
+                pieces.push(`[${item.entry.name || '条目'}]\n${item.entry.content}`);
             });
         }
-
         return pieces.join('\n');
     }
 
@@ -1321,21 +1294,21 @@
 
     async function buildContext() {
         const chat = getMainChatText(config.readDepth);
-        const world = await getSelectedWorldbookText(chat);
+        const world = await getSelectedWorldbookText();
 
         let text = '';
         if (chat) {
             text += '【当前正文/聊天上下文 · 已发生事实】\n' + chat + '\n';
         }
         if (world) {
-            text += '\n【与当前剧情相关的世界书】\n' + world + '\n';
+            text += '\n【已选择的世界书条目 · 全部强制注入】\n' + world + '\n';
         }
 
         text += '\n' + buildWorldStateRules();
 
-        // 给正文保留更高优先级：正文最多20k，世界书最多26k，规则约2k。
-        // 最终再做一次总预算保护。
-        return text.slice(0, 48000);
+        // 不再对世界书做 26k/45k/48k 字符硬截断。
+        // 模型最终可接受的上下文大小由 API/模型本身决定；插件必须完整保留用户勾选的 Entry。
+        return text;
     }
 
     // ============================================================
@@ -4544,18 +4517,8 @@ ${buildLinkedContactMemory()}
         生成论坛内容时读取当前聊天最后 N 层正文。
     </div>
 
-    <label class="pkmn-check">
-        <input type="checkbox" id="set-wb-smart" ${config.worldbookSmartFilter ? 'checked' : ''}>
-        智能筛选与当前剧情相关的世界书条目
-    </label>
-
-    <div class="pkmn-row">
-        <input class="pkmn-input" id="set-wb-max" type="number" min="1" max="100" value="${config.worldbookMaxEntries}" title="最多世界书条目数">
-        <input class="pkmn-input" id="set-wb-chars" type="number" min="4000" max="45000" step="1000" value="${config.worldbookMaxChars}" title="世界书最大字符数">
-    </div>
-
     <div class="pkmn-small">
-        依次为：最多送入的世界书条目数 / 世界书字符预算。关闭智能筛选时按世界书条目顺序读取。
+        世界书改为逐条选择。你勾选的 Entry 会作为明确上下文提供给所有 AI 模块，不再根据聊天关键词二次过滤。
     </div>
 
 </div>
@@ -4746,25 +4709,62 @@ ${buildLinkedContactMemory()}
 </div>
 
 
-<!-- 世界书：折叠，避免世界书很多时把设置页拉得过长 -->
-<div class="pkmn-group pkmn-worldbook-group">
-    <details id="pkmn-worldbook-details">
-        <summary class="pkmn-worldbook-summary">
-            <span>📚 选择世界书</span>
-            <span id="pkmn-worldbook-count" class="pkmn-worldbook-count">已选 0 本</span>
-        </summary>
-        <div class="pkmn-worldbook-panel">
-            <div class="pkmn-small" style="margin-bottom:8px">可展开选择一个或多个世界书；世界书很多时不会继续拉长设置页面。</div>
-            <div id="worldbook-list">
-                <div class="pkmn-small">正在读取世界书列表…</div>
-            </div>
-            <button class="pkmn-btn pkmn-secondary" id="set-refresh-wb" style="margin-top:8px;width:100%">
-                🔄 刷新世界书列表
-            </button>
+<!-- 世界书：逐本展开 + Entry 独立勾选 -->
+<div class="pkmn-group pkmn-worldbook-group" id="pkmn-worldbook-section">
+    <div class="pkmn-worldbook-hero">
+        <div class="pkmn-worldbook-hero-title">📚 世界书注入</div>
+        <div class="pkmn-worldbook-hero-status" id="pkmn-worldbook-status">● 正在读取</div>
+        <div class="pkmn-worldbook-stats">
+            <div><b id="pkmn-worldbook-selected-count">0</b><span>已选择条目</span></div>
+            <div><b id="pkmn-worldbook-total-count">0</b><span>已加载条目</span></div>
+            <div><b id="pkmn-worldbook-selected-size">0</b><span>选中内容</span></div>
         </div>
-    </details>
-</div>
+        <div class="pkmn-worldbook-progress"><i id="pkmn-worldbook-progress-bar"></i></div>
+    </div>
 
+    <div class="pkmn-worldbook-toolbar">
+        <button class="pkmn-btn pkmn-secondary" id="pkmn-wb-select-all">全选</button>
+        <button class="pkmn-btn pkmn-secondary" id="pkmn-wb-unselect-all">取消全选</button>
+        <button class="pkmn-btn pkmn-secondary" id="set-refresh-wb">↻ 刷新</button>
+    </div>
+
+    <div class="pkmn-worldbook-note">
+        <span>✓</span> 已勾选条目 = 强制读取。世界书原本的“停用/关键词/常驻”状态只展示，不会阻止你手动选择。
+    </div>
+
+    <div class="pkmn-worldbook-search-wrap">
+        <span>⌕</span>
+        <input id="pkmn-wb-search" class="pkmn-input" placeholder="搜索世界书、条目名称、Key 或正文……" autocomplete="off">
+    </div>
+    <div class="pkmn-worldbook-filters" id="pkmn-wb-filters">
+        <button class="active" data-filter="all">全部</button>
+        <button data-filter="selected">已选</button>
+        <button data-filter="unselected">未选</button>
+        <button data-filter="enabled">启用</button>
+        <button data-filter="disabled">已停用</button>
+    </div>
+
+    <div id="worldbook-list" class="pkmn-worldbook-list">
+        <div class="pkmn-small">正在读取世界书列表…</div>
+    </div>
+
+    <div class="pkmn-worldbook-settings">
+        <div class="pkmn-worldbook-settings-title">⚙ 读取设置</div>
+        <label class="pkmn-check">
+            <input type="checkbox" id="set-wb-force" checked disabled>
+            <span class="pkmn-check-text"><b>所有勾选条目强制注入</b><small>固定启用：勾选即读取，不再被关键词智能筛选二次过滤。</small></span>
+        </label>
+        <label class="pkmn-check">
+            <input type="checkbox" id="set-wb-cache" ${config.worldbookCache !== false ? 'checked' : ''}>
+            <span class="pkmn-check-text"><b>启用世界书缓存</b><small>多个 AI 模块共享同一份解析结果，避免重复读取大型世界书。</small></span>
+        </label>
+        <label class="pkmn-check">
+            <input type="checkbox" id="set-wb-large" ${config.worldbookLargeMode !== false ? 'checked' : ''}>
+            <span class="pkmn-check-text"><b>大型世界书模式</b><small>针对 100,000+ TK 世界书使用 Entry 索引、缓存和按需展开。</small></span>
+        </label>
+        <div class="pkmn-worldbook-cache-status" id="pkmn-worldbook-cache-status">缓存：等待加载</div>
+    </div>
+</div>
 
 <!-- 玩家论坛身份 -->
 <div class="pkmn-group">
@@ -4876,20 +4876,17 @@ ${buildLinkedContactMemory()}
                     );
             };
 
-        $('set-wb-smart').onchange =
-            () => {
-                config.worldbookSmartFilter = $('set-wb-smart').checked;
-            };
-
-        $('set-wb-max').onchange =
-            () => {
-                config.worldbookMaxEntries = Math.max(1, Math.min(100, parseInt($('set-wb-max').value) || 36));
-            };
-
-        $('set-wb-chars').onchange =
-            () => {
-                config.worldbookMaxChars = Math.max(4000, Math.min(45000, parseInt($('set-wb-chars').value) || 26000));
-            };
+        config.worldbookForceSelected = true;
+        saveGlobalConfig();
+        if ($('set-wb-cache')) $('set-wb-cache').onchange = () => {
+            config.worldbookCache = $('set-wb-cache').checked;
+            if (!config.worldbookCache) TH.clearWorldbookCache();
+            saveGlobalConfig();
+        };
+        if ($('set-wb-large')) $('set-wb-large').onchange = () => {
+            config.worldbookLargeMode = $('set-wb-large').checked;
+            saveGlobalConfig();
+        };
 
         $('set-refresh').onchange =
             () => {
@@ -5117,8 +5114,51 @@ ${buildLinkedContactMemory()}
 
         // 世界书刷新
 
-        $('set-refresh-wb').onclick =
-            renderWorldbooks;
+        $('set-refresh-wb').onclick = () => renderWorldbooks(true);
+
+        $('pkmn-wb-select-all').onclick = async () => {
+            showToast('正在读取全部世界书条目并全选…');
+            for (const [name] of worldbookUiState.books.entries()) {
+                let entries = worldbookUiState.books.get(name);
+                if (!Array.isArray(entries)) entries = await TH.getWorldbook(name);
+                worldbookUiState.books.set(name, entries);
+                setWorldbookSelection(name, new Set(entries.map((e,i)=>worldbookEntryId(e,i))));
+            }
+            saveGlobalConfig(); renderWorldbookBooks(false);
+            showToast('全部世界书条目已选择');
+        };
+        $('pkmn-wb-unselect-all').onclick = () => {
+            for (const name of worldbookUiState.books.keys()) setWorldbookSelection(name, new Set());
+            saveGlobalConfig(); renderWorldbookBooks(false);
+        };
+        if ($('pkmn-wb-search')) $('pkmn-wb-search').oninput = async e => {
+            worldbookUiState.search = e.target.value.trim();
+            renderWorldbookBooks(false);
+            if (worldbookUiState.search.length >= 2) {
+                let loadedAny = false;
+                for (const [name] of worldbookUiState.books.entries()) {
+                    if (Array.isArray(worldbookUiState.books.get(name))) continue;
+                    try {
+                        worldbookUiState.loading.add(name);
+                        const entries = await TH.getWorldbook(name);
+                        worldbookUiState.books.set(name, entries);
+                        loadedAny = true;
+                    } catch (err) {
+                        console.warn('[pkmn-forum] search worldbook load failed:', name, err);
+                        worldbookUiState.books.set(name, []);
+                    } finally {
+                        worldbookUiState.loading.delete(name);
+                    }
+                }
+                if (loadedAny) renderWorldbookBooks(false);
+            }
+        };
+        topDoc.querySelectorAll('#pkmn-wb-filters button').forEach(btn => {
+            btn.onclick = () => {
+                topDoc.querySelectorAll('#pkmn-wb-filters button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active'); worldbookUiState.filter = btn.dataset.filter || 'all'; renderWorldbookBooks(false);
+            };
+        });
 
 
         // 保存全部
@@ -5226,134 +5266,291 @@ ${esc(b.prompt)}
     // 世界书
     // ============================================================
 
-    async function renderWorldbooks() {
+    const worldbookUiState = {
+        books: new Map(), // name -> entries | null（null=尚未按需读取）
+        filter: 'all',
+        search: '',
+        expanded: new Set(),
+        loading: new Set()
+    };
 
-        const box =
-            $('worldbook-list');
-
-        const countBox = topDoc.getElementById('pkmn-worldbook-count');
-        const updateWorldbookCount = () => {
-            if (countBox) countBox.textContent = `已选 ${config.worldbooks.length} 本`;
-        };
-        updateWorldbookCount();
-
-        if (!box) {
-            return;
-        }
-
-        let names = [];
-
-        try {
-
-            if (
-                TH.getWorldbookNames
-            ) {
-
-                names =
-                    TH.getWorldbookNames() ||
-                    [];
-            }
-
-        } catch (_) {}
-
-        if (!names.length) {
-
-            box.innerHTML =
-                `
-<div class="pkmn-small">
-未读取到世界书列表。请确认酒馆已加载世界书，或点「刷新世界书列表」。
-</div>
-`;
-
-            updateWorldbookCount();
-            return;
-        }
-
-        box.innerHTML =
-            '';
-
-        names
-            .map(name => String(name ?? '').trim())
-            // 世界书列表里有些版本会混入索引键/纯数字条目（0、1、2……），
-            // 这些不是用户真正需要选择的世界书名称，直接隐藏。
-            .filter(name => name && !/^\d+$/.test(name))
-            // 防止酒馆返回重复名称导致界面重复显示。
-            .filter((name, i, arr) => arr.indexOf(name) === i)
-            .forEach(
-            name => {
-
-                const label =
-                    topDoc.createElement(
-                        'label'
-                    );
-
-                label.className =
-                    'pkmn-check';
-
-                const checked =
-                    config.worldbooks
-                        .includes(
-                            name
-                        );
-
-                const input =
-                    topDoc.createElement('input');
-                input.type = 'checkbox';
-                input.value = name;
-                input.checked = checked;
-                input.setAttribute('aria-label', name);
-
-                const text =
-                    topDoc.createElement('span');
-                text.className = 'pkmn-check-text';
-                text.textContent = name;
-
-                // 明确使用 DOM 节点而不是 innerHTML，避免特殊世界书名称破坏结构。
-                label.appendChild(input);
-                label.appendChild(text);
-
-                input.onchange =
-                    e => {
-
-                        if (
-                            e.target
-                                .checked
-                        ) {
-
-                            if (
-                                !config.worldbooks
-                                    .includes(
-                                        name
-                                    )
-                            ) {
-
-                                config.worldbooks
-                                    .push(
-                                        name
-                                    );
-                            }
-
-                        } else {
-
-                            config.worldbooks =
-                                config.worldbooks
-                                    .filter(
-                                        x =>
-                                            x !==
-                                            name
-                                    );
-                        }
-
-                        saveGlobalConfig();
-                        updateWorldbookCount();
-                    };
-
-                box.appendChild(
-                    label
-                );
-            }
-        );
+    function worldbookMatchesFilter(entry, selected, filter) {
+        if (filter === 'selected') return selected;
+        if (filter === 'unselected') return !selected;
+        if (filter === 'enabled') return entry.enabled !== false;
+        if (filter === 'disabled') return entry.enabled === false;
+        return true;
     }
+
+    function worldbookEntryMatchesSearch(entry, q) {
+        if (!q) return true;
+        const hay = [entry.name, entry.comment, entry.key, ...(entry.keys || []), ...(entry.secondary_keys || []), entry.content]
+            .filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q.toLowerCase());
+    }
+
+    function updateWorldbookSummary() {
+        const selectedCount = topDoc.getElementById('pkmn-worldbook-selected-count');
+        const totalCount = topDoc.getElementById('pkmn-worldbook-total-count');
+        const selectedSize = topDoc.getElementById('pkmn-worldbook-selected-size');
+        const status = topDoc.getElementById('pkmn-worldbook-status');
+        const progress = topDoc.getElementById('pkmn-worldbook-progress-bar');
+        const cacheStatus = topDoc.getElementById('pkmn-worldbook-cache-status');
+
+        let selected = 0, total = 0, chars = 0;
+        for (const [name, entries] of worldbookUiState.books.entries()) {
+            const set = worldbookCloneSelection(name);
+            if (!Array.isArray(entries)) {
+                selected += set.size;
+                continue;
+            }
+            total += entries.length;
+            selected += set.size;
+            entries.forEach(e => { if (set.has(worldbookEntryId(e))) chars += worldbookEntryChars(e); });
+        }
+        if (selectedCount) selectedCount.textContent = selected.toLocaleString();
+        if (totalCount) totalCount.textContent = total.toLocaleString();
+        if (selectedSize) selectedSize.textContent = formatWorldbookSize(chars);
+        if (progress) progress.style.width = `${total ? Math.min(100, (selected / total) * 100) : 0}%`;
+        if (status) status.textContent = total ? `● 读取正常 · ${worldbookUiState.books.size} 本` : '● 暂无已加载世界书';
+        if (cacheStatus) cacheStatus.textContent = `缓存：${config.worldbookCache !== false ? '已启用 · 多模块共享' : '已关闭 · 每次按需读取'} · ${total.toLocaleString()} 条已加载`;
+    }
+
+    function makeWorldbookEntryNode(book, entry, index, selectedSet) {
+        const uid = worldbookEntryId(entry, index);
+        const row = topDoc.createElement('div');
+        row.className = 'pkmn-worldbook-entry';
+        row.dataset.uid = uid;
+
+        const match = worldbookMatchesFilter(entry, selectedSet.has(uid), worldbookUiState.filter)
+            && worldbookEntryMatchesSearch(entry, worldbookUiState.search);
+        if (!match) row.classList.add('is-filtered');
+
+        const head = topDoc.createElement('div');
+        head.className = 'pkmn-worldbook-entry-head';
+
+        const label = topDoc.createElement('label');
+        label.className = 'pkmn-worldbook-entry-check';
+        const input = topDoc.createElement('input');
+        input.type = 'checkbox';
+        input.checked = selectedSet.has(uid);
+        input.setAttribute('aria-label', `${book} / ${entry.name}`);
+        const checkText = topDoc.createElement('span');
+        checkText.className = 'pkmn-worldbook-entry-title';
+        checkText.textContent = entry.name || `条目 ${index + 1}`;
+        label.append(input, checkText);
+
+        const detailBtn = topDoc.createElement('button');
+        detailBtn.type = 'button';
+        detailBtn.className = 'pkmn-worldbook-entry-expand';
+        detailBtn.textContent = '⌄';
+        detailBtn.title = '查看条目详情';
+
+        head.append(label, detailBtn);
+
+        const meta = topDoc.createElement('div');
+        meta.className = 'pkmn-worldbook-entry-meta';
+        const state = entry.enabled === false ? '世界书内已停用' : (entry.constant ? '强制常驻' : (entry.selective ? '选择性条目' : '已启用'));
+        meta.textContent = `${worldbookEntryChars(entry).toLocaleString()} 字符 · ${state}`;
+        if (entry.key) {
+            const key = topDoc.createElement('span');
+            key.className = 'pkmn-worldbook-entry-key';
+            key.textContent = `Key: ${entry.key}`;
+            meta.appendChild(key);
+        }
+
+        const detail = topDoc.createElement('div');
+        detail.className = 'pkmn-worldbook-entry-detail';
+        detail.hidden = true;
+        detail.innerHTML = `
+            <div><b>插件选择：</b>${input.checked ? '✓ 已选择' : '未选择'}</div>
+            <div><b>世界书状态：</b>${entry.enabled === false ? '已停用' : '启用'}</div>
+            <div><b>UID：</b>${esc(uid)}</div>
+            <div><b>Key：</b>${esc((entry.keys || []).join(' / ') || '—')}</div>
+            <div><b>Secondary Key：</b>${esc((entry.secondary_keys || []).join(' / ') || '—')}</div>
+            <button type="button" class="pkmn-worldbook-content-btn">查看完整内容</button>
+        `;
+
+        input.onchange = () => {
+            const next = worldbookCloneSelection(book);
+            if (input.checked) next.add(uid); else next.delete(uid);
+            setWorldbookSelection(book, next);
+            saveGlobalConfig();
+            detail.querySelector('div') .innerHTML = `<b>插件选择：</b>${input.checked ? '✓ 已选择' : '未选择'}`;
+            meta.textContent = `${worldbookEntryChars(entry).toLocaleString()} 字符 · ${state}`;
+            if (entry.key) { const key = topDoc.createElement('span'); key.className='pkmn-worldbook-entry-key'; key.textContent=`Key: ${entry.key}`; meta.appendChild(key); }
+            updateWorldbookSummary();
+            renderWorldbookBooks(false);
+        };
+
+        detailBtn.onclick = () => {
+            detail.hidden = !detail.hidden;
+            detailBtn.textContent = detail.hidden ? '⌄' : '⌃';
+        };
+
+        const contentBtn = detail.querySelector('.pkmn-worldbook-content-btn');
+        contentBtn.onclick = () => openWorldbookContentModal(book, entry);
+
+        row.append(head, meta, detail);
+        return row;
+    }
+
+    function openWorldbookContentModal(book, entry) {
+        const modal = topDoc.createElement('div');
+        modal.className = 'pkmn-worldbook-content-modal';
+        modal.innerHTML = `
+            <div class="pkmn-worldbook-content-box">
+                <div class="pkmn-worldbook-content-head"><b>${esc(entry.name || '世界书条目')}</b><button type="button">×</button></div>
+                <div class="pkmn-worldbook-content-book">${esc(book)} · ${formatWorldbookSize(worldbookEntryChars(entry))}</div>
+                <pre>${esc(entry.content || '')}</pre>
+            </div>`;
+        const close = () => modal.remove();
+        modal.querySelector('button').onclick = close;
+        modal.onclick = e => { if (e.target === modal) close(); };
+        topDoc.body.appendChild(modal);
+    }
+
+    function renderWorldbookBooks(preserveScroll = true) {
+        const box = $('worldbook-list');
+        if (!box) return;
+        const oldScroll = preserveScroll ? box.scrollTop : 0;
+        box.innerHTML = '';
+
+        if (!worldbookUiState.books.size) {
+            box.innerHTML = '<div class="pkmn-small">未读取到世界书。请确认酒馆已加载世界书，或点击「刷新」。</div>';
+            updateWorldbookSummary();
+            return;
+        }
+
+        for (const [name, entries] of worldbookUiState.books.entries()) {
+            const selectedSet = worldbookCloneSelection(name);
+            const loaded = Array.isArray(entries);
+            const matching = loaded
+                ? entries.filter((e,i) => worldbookMatchesFilter(e, selectedSet.has(worldbookEntryId(e,i)), worldbookUiState.filter) && worldbookEntryMatchesSearch(e, worldbookUiState.search))
+                : [];
+            const section = topDoc.createElement('div');
+            section.className = 'pkmn-worldbook-book';
+            section.dataset.book = name;
+
+            const head = topDoc.createElement('div');
+            head.className = 'pkmn-worldbook-book-head';
+            const toggle = topDoc.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'pkmn-worldbook-book-toggle';
+            toggle.textContent = worldbookUiState.expanded.has(name) ? '▼' : '▶';
+            const title = topDoc.createElement('div');
+            title.className = 'pkmn-worldbook-book-title';
+            title.innerHTML = loaded
+                ? `<b>${esc(name)}</b><small>${selectedSet.size.toLocaleString()} / ${entries.length.toLocaleString()} 条 · ${formatWorldbookSize(entries.reduce((a,e)=>a+worldbookEntryChars(e),0))}</small>`
+                : `<b>${esc(name)}</b><small>${selectedSet.size.toLocaleString()} 条已选择 · 点击展开读取具体条目</small>`;
+            const actions = topDoc.createElement('div');
+            actions.className = 'pkmn-worldbook-book-actions';
+            const selectBtn = topDoc.createElement('button'); selectBtn.textContent='全选';
+            const clearBtn = topDoc.createElement('button'); clearBtn.textContent='取消全选';
+            actions.append(selectBtn, clearBtn);
+            head.append(toggle, title, actions);
+
+            const body = topDoc.createElement('div');
+            body.className = 'pkmn-worldbook-book-body';
+            body.hidden = !worldbookUiState.expanded.has(name);
+
+            if (!loaded && worldbookUiState.expanded.has(name)) {
+                const loading = topDoc.createElement('div'); loading.className='pkmn-worldbook-empty'; loading.textContent='正在按需读取这本世界书的全部条目…'; body.appendChild(loading);
+            } else if (loaded) {
+                const visibleEntries = matching;
+                if (!visibleEntries.length) {
+                    const empty = topDoc.createElement('div'); empty.className='pkmn-worldbook-empty'; empty.textContent='没有符合当前搜索/筛选条件的条目。'; body.appendChild(empty);
+                } else {
+                    visibleEntries.forEach(entry => {
+                        const idx = entries.indexOf(entry);
+                        body.appendChild(makeWorldbookEntryNode(name, entry, idx, selectedSet));
+                    });
+                }
+            }
+
+            toggle.onclick = async () => {
+                if (worldbookUiState.expanded.has(name)) {
+                    worldbookUiState.expanded.delete(name);
+                    renderWorldbookBooks(false);
+                    return;
+                }
+                worldbookUiState.expanded.add(name);
+                if (!Array.isArray(worldbookUiState.books.get(name))) {
+                    worldbookUiState.loading.add(name);
+                    renderWorldbookBooks(false);
+                    try {
+                        const loadedEntries = await TH.getWorldbook(name);
+                        worldbookUiState.books.set(name, loadedEntries);
+                        const hasSelection = Object.prototype.hasOwnProperty.call(config.worldbookSelections || {}, name);
+                        if (!hasSelection && config.worldbooks.includes(name)) {
+                            setWorldbookSelection(name, new Set(loadedEntries.map((e,i)=>worldbookEntryId(e,i))));
+                            saveGlobalConfig();
+                        }
+                    } catch (err) {
+                        console.warn('[pkmn-forum] lazy worldbook load failed:', name, err);
+                        worldbookUiState.books.set(name, []);
+                    } finally {
+                        worldbookUiState.loading.delete(name);
+                        renderWorldbookBooks(false);
+                    }
+                } else {
+                    renderWorldbookBooks(false);
+                }
+            };
+            selectBtn.onclick = async () => {
+                let bookEntries = worldbookUiState.books.get(name);
+                if (!Array.isArray(bookEntries)) {
+                    bookEntries = await TH.getWorldbook(name);
+                    worldbookUiState.books.set(name, bookEntries);
+                }
+                const next = new Set(bookEntries.map((e,i)=>worldbookEntryId(e,i)));
+                setWorldbookSelection(name, next); saveGlobalConfig(); renderWorldbookBooks(false);
+            };
+            clearBtn.onclick = () => {
+                setWorldbookSelection(name, new Set()); saveGlobalConfig(); renderWorldbookBooks(false);
+            };
+
+            section.append(head, body);
+            box.appendChild(section);
+        }
+        box.scrollTop = oldScroll;
+        updateWorldbookSummary();
+    }
+
+    async function renderWorldbooks(forceReload = false) {
+        const box = $('worldbook-list');
+        if (!box) return;
+        box.innerHTML = '<div class="pkmn-small">正在读取世界书列表…</div>';
+        try {
+            let names = TH.getWorldbookNames ? (TH.getWorldbookNames() || []) : [];
+            names = [...new Set(names.map(n => String(n ?? '').trim()).filter(n => n && !/^\d+$/.test(n)))];
+            if (!names.length) {
+                worldbookUiState.books.clear();
+                renderWorldbookBooks(false);
+                return;
+            }
+            if (forceReload) TH.clearWorldbookCache();
+            // 设置页只读取世界书名称，不在打开页面时把所有大型世界书全部展开/解析。
+            // 点击某一本世界书才按需读取其全部 Entry。这样 100,000+ TK 世界书也不会阻塞设置页。
+            const previous = worldbookUiState.books;
+            worldbookUiState.books = new Map();
+            for (const name of names) {
+                worldbookUiState.books.set(name, previous.has(name) && !forceReload ? previous.get(name) : null);
+            }
+            // 已被删除的世界书从选择索引中清理，避免旧配置污染上下文。
+            const known = new Set(names);
+            if (config.worldbookSelections && typeof config.worldbookSelections === 'object') {
+                Object.keys(config.worldbookSelections).forEach(name => { if (!known.has(name)) delete config.worldbookSelections[name]; });
+            }
+            config.worldbooks = (Array.isArray(config.worldbooks) ? config.worldbooks : []).filter(name => known.has(String(name)));
+            saveGlobalConfig();
+            renderWorldbookBooks(false);
+        } catch (err) {
+            console.error('[pkmn-forum] worldbook UI load failed', err);
+            box.innerHTML = '<div class="pkmn-small">世界书读取失败，请检查酒馆版本或控制台错误信息。</div>';
+        }
+    }
+
 
     // ============================================================
     // 保存全部设置
@@ -5872,7 +6069,7 @@ ${blocks.join('\n\n')}
         const currentChat = getMainChatText(config.readDepth);
         progress('正在整理论坛与正文证据…');
         const player = currentUserProfile();
-        const prompt = `根据提供的角色设定与当前论坛实际行为，判断这个联系人的稳定道德倾向。\n\n【人物】\n昵称：${name}\n简介：${bio || '无'}\nIP属地：${location || '未知'}\n\n【正文世界书 / 角色设定】\n${worldbook ? worldbook.slice(0,22000) : '未检索到相关世界书条目。不得凭空补充原作经历。'}\n\n【当前正文】\n${currentChat ? currentChat.slice(0,12000) : '无'}\n\n【当前聊天论坛中检索到的该用户实际行为】\n${forumEvidence}\n\n【评分】\n0～15 危险型；16～30 恶意/利己型；31～45 灰色自私型；46～60 普通人；61～75 可靠型；76～90 高道德/守密型；91～100 极高道德型。\n\n只根据上面的证据判断。论坛实际行为优先；世界书用于人物背景和明确设定。没有论坛记录时，不得假装有论坛行为；没有世界书依据时，也不得编造原作经历。不要因为证据不足机械给50，也不要为了避免极端而统一压到中间区间。一次事件不能单独决定全部人格。\n\n只返回JSON，不要Markdown或额外文字：\n{"score":数值,"label":"较低/一般/较高/很高","stage":"七阶段之一","loyalty":数值,"affinity":数值,"reason":"不超过100字的关键依据"}`;
+        const prompt = `根据提供的角色设定与当前论坛实际行为，判断这个联系人的稳定道德倾向。\n\n【人物】\n昵称：${name}\n简介：${bio || '无'}\nIP属地：${location || '未知'}\n\n【正文世界书 / 角色设定】\n${worldbook || '未检索到相关世界书条目。不得凭空补充原作经历。'}\n\n【当前正文】\n${currentChat ? currentChat.slice(0,12000) : '无'}\n\n【当前聊天论坛中检索到的该用户实际行为】\n${forumEvidence}\n\n【评分】\n0～15 危险型；16～30 恶意/利己型；31～45 灰色自私型；46～60 普通人；61～75 可靠型；76～90 高道德/守密型；91～100 极高道德型。\n\n只根据上面的证据判断。论坛实际行为优先；世界书用于人物背景和明确设定。没有论坛记录时，不得假装有论坛行为；没有世界书依据时，也不得编造原作经历。不要因为证据不足机械给50，也不要为了避免极端而统一压到中间区间。一次事件不能单独决定全部人格。\n\n只返回JSON，不要Markdown或额外文字：\n{"score":数值,"label":"较低/一般/较高/很高","stage":"七阶段之一","loyalty":数值,"affinity":数值,"reason":"不超过100字的关键依据"}`;
         progress('正在进行 AI 道德检定…');
         const raw = await callContactAI([{role:'system',content:'只做人物道德检定，严格依据给定资料，不编造。'}, {role:'user',content:prompt}]);
         progress('正在解析检定结果…');
@@ -6089,7 +6286,7 @@ function renderChat() {
             }
             const contactPlayerNickname = getContactPlayerDisplayName();
             const contactPlayerIdentity = getContactPlayerIdentity();
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n玩家昵称：${contactPlayerNickname}\n玩家身份：${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述昵称与身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context.slice(0,18000) : ''}${forumContext}`;
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n玩家昵称：${contactPlayerNickname}\n玩家身份：${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述昵称与身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
