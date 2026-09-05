@@ -137,6 +137,52 @@
     // 注意：缓存只存在于本次扩展运行内，用户勾选状态仍保存在 config。
     const worldbookRuntimeCache = new Map();
 
+    // 读取当前角色卡绑定的世界书。
+    // 注意：这里故意不使用全局世界书列表作为同步目标；
+    // “同步酒馆世界书栏目”只应同步当前角色卡实际绑定的世界书。
+    function getCurrentCharacterWorldbookNames() {
+        const names = new Set();
+        const add = (value) => {
+            if (Array.isArray(value)) {
+                value.forEach(add);
+                return;
+            }
+            if (value && typeof value === 'object') {
+                // 兼容部分版本/扩展用 { name: 'xxx' } 保存的辅助世界书。
+                add(value.name || value.world || value.worldName || value.lorebook);
+                return;
+            }
+            const name = String(value ?? '').trim();
+            if (name && name !== '---' && !/^select/i.test(name)) names.add(name);
+        };
+
+        try {
+            const ctx = getSTContext();
+            const character = ctx?.characters && ctx.characterId != null
+                ? ctx.characters[ctx.characterId]
+                : null;
+            const data = character?.data || character || {};
+            const ext = data?.extensions || character?.extensions || {};
+
+            // SillyTavern 角色卡的主世界书绑定。
+            add(ext.world);
+            add(data.world);
+            add(character?.world);
+
+            // 兼容可能存在的辅助世界书字段；不存在时不会产生任何额外结果。
+            add(ext.worlds);
+            add(ext.auxiliaryWorlds);
+            add(ext.auxWorlds);
+            add(ext.additionalWorlds);
+            add(data.auxiliaryWorlds);
+            add(character?.auxiliaryWorlds);
+        } catch (err) {
+            console.warn('[pkmn-forum] failed to read current character worldbooks:', err);
+        }
+
+        return [...names];
+    }
+
     const TH = {
         getChatMessages(range, options) {
             const ctx = getSTContext();
@@ -4724,7 +4770,7 @@ ${buildLinkedContactMemory()}
     </div>
 
     <div class="pkmn-worldbook-note">
-        <span>✓</span> 点击“同步酒馆世界书栏目”后，插件勾选状态会按酒馆当前 Entry 的勾选/启用状态同步；你之后仍可手动调整。🔵 蓝灯＝常驻，🟢 绿灯＝关键词触发，⚪ 灰灯＝停用。
+        <span>✓</span> 点击“同步酒馆世界书栏目”后，只同步<strong>当前角色卡绑定的世界书</strong>；其它世界书不会自动勾选。绑定世界书内的 Entry 再按酒馆当前启用状态同步。你之后仍可手动调整。🔵 蓝灯＝常驻，🟢 绿灯＝关键词触发，⚪ 灰灯＝停用。
     </div>
 
     <div class="pkmn-worldbook-search-wrap">
@@ -5110,10 +5156,11 @@ ${buildLinkedContactMemory()}
         // 世界书刷新
 
         $('set-refresh-wb').onclick = async () => {
-            showToast('正在同步酒馆世界书栏目…');
+            showToast('正在同步当前角色卡的酒馆世界书栏目…');
             await renderWorldbooks(true, true);
             renderWorldbookBooks(false);
-            showToast('酒馆世界书栏目同步完成');
+            const currentBooks = getCurrentCharacterWorldbookNames();
+            showToast(currentBooks.length ? `已同步当前角色卡的 ${currentBooks.length} 本世界书` : '当前角色卡没有绑定独立世界书');
         };
 
         $('pkmn-wb-select-all').onclick = async () => {
@@ -5554,27 +5601,43 @@ ${esc(b.prompt)}
             }
             if (syncEntries) {
                 const syncStatus = topDoc.getElementById('pkmn-worldbook-status');
-                if (syncStatus) syncStatus.textContent = '● 正在同步酒馆世界书栏目…';
+                const currentCharacterWorldbooks = getCurrentCharacterWorldbookNames();
+                const currentWorldbookSet = new Set(currentCharacterWorldbooks);
+                if (syncStatus) {
+                    const charName = TH.getCharacterName ? TH.getCharacterName() : '';
+                    syncStatus.textContent = currentCharacterWorldbooks.length
+                        ? `● 正在同步当前角色卡：${charName || '当前角色'} · ${currentCharacterWorldbooks.length} 本世界书…`
+                        : `● 当前角色卡未绑定独立世界书：${charName || '当前角色'}…`;
+                }
+
+                // 关键：同步按钮只认“当前角色卡绑定的世界书”。
+                // 其它全局世界书/其它角色的世界书全部清空插件勾选，
+                // 但仍保留在列表中供用户查看和手动选择。
                 for (const name of names) {
                     try {
                         worldbookUiState.loading.add(name);
                         const entries = await TH.getWorldbook(name, { forceReload: true });
                         const normalizedEntries = Array.isArray(entries) ? entries : [];
                         worldbookUiState.books.set(name, normalizedEntries);
-                        if (syncEntries) {
-                            // 关键：同步时严格镜像酒馆 Entry 的“启用/勾选”状态。
+
+                        if (currentWorldbookSet.has(name)) {
+                            // 当前角色卡绑定的世界书：镜像酒馆 Entry 的实际启用状态。
                             // enabled=true => 插件勾选；enabled=false => 插件不勾选。
-                            // 不再把整本世界书的所有 Entry 自动加入选择集合。
                             const selectedFromTavern = new Set(
                                 normalizedEntries
                                     .filter(entry => entry && entry.enabled !== false)
                                     .map((entry, index) => worldbookEntryId(entry, index))
                             );
                             setWorldbookSelection(name, selectedFromTavern);
+                        } else {
+                            // 不属于当前角色卡的世界书：同步后不自动勾选任何条目。
+                            setWorldbookSelection(name, new Set());
                         }
                     } catch (err) {
                         console.warn('[pkmn-forum] worldbook sync failed:', name, err);
                         worldbookUiState.books.set(name, []);
+                        // 读取失败也不能把旧选择留在非当前角色世界书里。
+                        if (!currentWorldbookSet.has(name)) setWorldbookSelection(name, new Set());
                     } finally {
                         worldbookUiState.loading.delete(name);
                     }
