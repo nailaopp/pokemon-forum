@@ -137,52 +137,6 @@
     // 注意：缓存只存在于本次扩展运行内，用户勾选状态仍保存在 config。
     const worldbookRuntimeCache = new Map();
 
-    // 读取当前角色卡绑定的世界书。
-    // 注意：这里故意不使用全局世界书列表作为同步目标；
-    // “同步酒馆世界书栏目”只应同步当前角色卡实际绑定的世界书。
-    function getCurrentCharacterWorldbookNames() {
-        const names = new Set();
-        const add = (value) => {
-            if (Array.isArray(value)) {
-                value.forEach(add);
-                return;
-            }
-            if (value && typeof value === 'object') {
-                // 兼容部分版本/扩展用 { name: 'xxx' } 保存的辅助世界书。
-                add(value.name || value.world || value.worldName || value.lorebook);
-                return;
-            }
-            const name = String(value ?? '').trim();
-            if (name && name !== '---' && !/^select/i.test(name)) names.add(name);
-        };
-
-        try {
-            const ctx = getSTContext();
-            const character = ctx?.characters && ctx.characterId != null
-                ? ctx.characters[ctx.characterId]
-                : null;
-            const data = character?.data || character || {};
-            const ext = data?.extensions || character?.extensions || {};
-
-            // SillyTavern 角色卡的主世界书绑定。
-            add(ext.world);
-            add(data.world);
-            add(character?.world);
-
-            // 兼容可能存在的辅助世界书字段；不存在时不会产生任何额外结果。
-            add(ext.worlds);
-            add(ext.auxiliaryWorlds);
-            add(ext.auxWorlds);
-            add(ext.additionalWorlds);
-            add(data.auxiliaryWorlds);
-            add(character?.auxiliaryWorlds);
-        } catch (err) {
-            console.warn('[pkmn-forum] failed to read current character worldbooks:', err);
-        }
-
-        return [...names];
-    }
-
     const TH = {
         getChatMessages(range, options) {
             const ctx = getSTContext();
@@ -1285,11 +1239,16 @@
                 const entries = await TH.getWorldbook(name);
                 if (!Array.isArray(entries) || !entries.length) continue;
 
-                const selected = worldbookCloneSelection(name);
+                let selected = worldbookCloneSelection(name);
+                // 兼容旧版：旧配置只记录“选中了整本世界书”。首次读取时，把当时可见的所有 Entry 转成逐条选择。
+                if (!Object.prototype.hasOwnProperty.call(selections, name)) {
+                    selected = new Set(entries.map((entry, index) => worldbookEntryId(entry, index)));
+                    setWorldbookSelection(name, selected);
+                }
 
                 entries.forEach((entry, index) => {
                     const uid = worldbookEntryId(entry, index);
-                    // 插件勾选状态与酒馆世界书的启用状态分开保存；只有明确同步时才从酒馆状态重建选择。
+                    // enabled=false 只作为原世界书状态展示；只要用户勾选，就必须读取。
                     if (selected.has(uid) && entry.content) {
                         all.push({ book: name, entry, index, uid });
                     }
@@ -2910,13 +2869,13 @@ const FORUM_INJECT_PROMPT_ID = 'pkmn-forum-thread-injection';
             const isMainCharacter = Boolean(p.isUser || (i === 0 && t.isUserThread));
             const tag = isMainCharacter ? '【主角本人】' : '【论坛网友】';
             const bio = p.authorBio ? `（简介：${p.authorBio}）` : '';
-            const ip = p.ipLocation || p.location || '关都 · 真新镇';
+            const ip = String(p.ipLocation || p.location || '未知地区').trim() || '未知地区';
             lines.push(`${i + 1}楼 ${tag} ${p.author || '匿名用户'}（IP属地：${ip}）${bio}：${p.content || ''}`);
             const nested = Array.isArray(p.replies) ? p.replies : [];
             nested.forEach((r, ri) => {
                 const rTag = r.isUser ? '【主角本人】' : '【论坛网友】';
                 const rBio = r.authorBio ? `（简介：${r.authorBio}）` : '';
-                const rip = r.ipLocation || r.location || '关都 · 真新镇';
+                const rip = String(r.ipLocation || r.location || '未知地区').trim() || '未知地区';
                 lines.push(`  └ 回复${ri + 1} ${rTag} ${r.author || '匿名用户'}（IP属地：${rip}）${rBio}：${r.content || ''}`);
             });
         });
@@ -3105,14 +3064,11 @@ const FORUM_INJECT_PROMPT_ID = 'pkmn-forum-thread-injection';
 
     // 地区修复：旧帖子没有地区时补全宝可梦地区，避免一直显示空地区
     function ensureThreadRegion(t) {
-        if (!t || currentForum === 'mature') return '未知地区';
+        if (!t || currentForum === 'mature') return '';
         const first = Array.isArray(t.posts) ? t.posts[0] : null;
         if (!first) return '未知地区';
-        let region = first.ipLocation || first.location || '';
-        if (!region) {
-            return '关都 · 真新镇';
-        }
-        return region;
+        const region = String(first.ipLocation || first.location || '').trim();
+        return region || '未知地区';
     }
 
     // ============================================================
@@ -3165,7 +3121,7 @@ const FORUM_INJECT_PROMPT_ID = 'pkmn-forum-thread-injection';
 <div class="pkmn-thread-avatar">${esc(avatarName)}</div>
 <div class="pkmn-thread-body">
     <div class="pkmn-thread-user">${forumUserProfileHTML(t.author || '匿名用户')}${t.isUserThread ? '<span class="pkmn-user-badge">我的帖子</span>' : '<span class="pkmn-topic-badge">讨论</span>'}</div>
-    <div class="pkmn-thread-location">🌐 ${esc(listLocation)}</div>
+    ${currentForum === 'mature' ? '' : `<div class="pkmn-thread-location">🌐 ${esc(listLocation)}</div>`}
     <div class="pkmn-thread-title">${esc(t.title || '无标题')}</div>
     <div class="pkmn-thread-snippet">${esc(snippet)}</div>
     ${renderTagHtml(threadTags(t))}
@@ -3295,7 +3251,7 @@ font-size:12px
         const rootPost=t.posts[rootIndex]; if(rootIndex===0){showToast('楼主正文请使用底部评论框回复');return;}
         const composer=$('pkmn-posts')?.querySelector(`.pkmn-nested-composer[data-root-index="${rootIndex}"]`); const input=composer?.querySelector('.pkmn-nested-input'); const text=input?.value.trim(); if(!text)return;
         targetIndex=Number(composer?.dataset.targetIndex ?? targetIndex); const profile=currentUserProfile(); const replies=ensureNestedReplies(rootPost); const target=targetIndex>=0?replies[targetIndex]:null;
-        replies.push({author:profile.nickname,authorBio:profile.bio,isUser:true,content:text,time:'刚刚',replyToId:target?.id||null,replyToAuthor:target?.author||rootPost.author||'匿名网友'});
+        replies.push({author:profile.nickname,authorBio:profile.bio,ipLocation:String(profile.ipLocation||profile.location||'未知地区').trim()||'未知地区',isUser:true,content:text,time:'刚刚',replyToId:target?.id||null,replyToAuthor:target?.author||rootPost.author||'匿名网友'});
         input.value=''; composer.classList.remove('show'); saveChatState(); openThread(t.id);
         const n=Math.max(0,Math.min(20,parseInt(config.userReplies)||0)); if(n>0){showToast('正在生成评论下的回复…');await generateNestedReplies(t,rootPost,text,n,target);openThread(t.id);}
     }
@@ -3326,15 +3282,15 @@ ${targetContent}
 ${boardPrompt()}
 ${matureRule}
 请生成 ${count} 条自然的楼中回复。所有回应继续归入这条评论下面；如果回应某位楼中回复者，请返回 replyToAuthor。
-返回JSON数组，每项包含 author、content，可选 replyToAuthor。`;
+返回JSON数组，每项包含 author、ipLocation、content，可选 replyToAuthor。ipLocation必须独立判断，不能继承楼主或其他回复者；同一网友再次出现时尽量保持既有IP，除非剧情明确移动。使用“地区 · 城市/城镇”格式，不确定时用“未知地区”。`;
             const raw=await callAI([{role:'system',content:prompt},{role:'user',content:'生成评论下的楼中回复。'}],0.9); let arr=parseJSON(raw); if(!Array.isArray(arr))arr=arr?[arr]:[];
-            arr=arr.slice(0,count).filter(x=>x&&x.author&&x.content); const replies=ensureNestedReplies(rootPost); arr.forEach(x=>replies.push({author:x.author,content:x.content,time:'刚刚',replyToAuthor:x.replyToAuthor||null,isUser:false})); saveChatState(); if(currentThreadId===targetThread.id)openThread(targetThread.id); return arr.length;
+            arr=arr.slice(0,count).filter(x=>x&&x.author&&x.content); const replies=ensureNestedReplies(rootPost); arr.forEach(x=>replies.push({author:x.author,ipLocation:String(x.ipLocation||x.location||'未知地区').trim()||'未知地区',content:x.content,time:'刚刚',replyToAuthor:x.replyToAuthor||null,isUser:false})); saveChatState(); if(currentThreadId===targetThread.id)openThread(targetThread.id); return arr.length;
         }catch(e){showToast('楼中回复生成失败：'+(e?.message||e));return 0;}
     }
 
     function renderNestedReplies(rootPost, rootIndex) {
         const nested=ensureNestedReplies(rootPost); if(!nested.length)return '';
-        return `<div class="pkmn-nested-replies" data-root-index="${rootIndex}">${nested.map((r,idx)=>{const isUser=!!r.isUser;const name=String(r.author||'匿名网友');const target=r.replyToAuthor?`<span class="pkmn-nested-target">回复 @${esc(r.replyToAuthor)}</span>`:'';return `<div class="pkmn-nested-msg${isUser?' is-user':''}"><div class="pkmn-nested-main"><div class="pkmn-nested-bubble"><span class="pkmn-nested-name">${forumUserProfileHTML(name)}</span>${target}<span class="pkmn-nested-text">${esc(r.content||'')}</span></div><button class="pkmn-comment-reply-btn pkmn-nested-reply-btn" type="button" data-reply-root="${rootIndex}" data-reply-target="${idx}">回复</button></div></div>`;}).join('')}</div>`;
+        return `<div class="pkmn-nested-replies" data-root-index="${rootIndex}">${nested.map((r,idx)=>{const isUser=!!r.isUser;const name=String(r.author||'匿名网友');const target=r.replyToAuthor?`<span class="pkmn-nested-target">回复 @${esc(r.replyToAuthor)}</span>`:'';const ip=currentForum==='mature'?'':`<span class="pkmn-nested-ip">IP属地：${esc(String(r.ipLocation||r.location||'未知地区'))}</span>`;return `<div class="pkmn-nested-msg${isUser?' is-user':''}"><div class="pkmn-nested-main"><div class="pkmn-nested-bubble"><span class="pkmn-nested-name">${forumUserProfileHTML(name)}</span>${ip}${target}<span class="pkmn-nested-text">${esc(r.content||'')}</span></div><button class="pkmn-comment-reply-btn pkmn-nested-reply-btn" type="button" data-reply-root="${rootIndex}" data-reply-target="${idx}">回复</button></div></div>`;}).join('')}</div>`;
     }
     function renderCommentReplyComposer(rootIndex) { return `<div class="pkmn-nested-composer" data-root-index="${rootIndex}" data-target-index="-1"><input class="pkmn-nested-input" placeholder="回复这条评论..."><button class="pkmn-nested-send" type="button">发送</button></div>`; }
 
@@ -3351,7 +3307,7 @@ ${matureRule}
             const nested = replies.slice(-4).map(r =>
                 `    ↳ ${r.author || '匿名网友'} 回复 @${r.replyToAuthor || p.author || '匿名网友'}：${r.content || ''}`
             ).join('\n');
-            return `${i + 1}楼 ${p.author || '匿名网友'}：${p.content || ''}${nested ? '\n' + nested : ''}`;
+            return `${i + 1}楼 ${p.author || '匿名网友'}（IP属地：${p.ipLocation || p.location || '未知地区'}）：${p.content || ''}${nested ? '\n' + nested : ''}`;
         }).join('\n');
 
         const userProfile = currentUserProfile();
@@ -3387,10 +3343,13 @@ ${history}
 [
   {
     "author":"匿名昵称",
+    "ipLocation":"地区 · 城市/城镇",
     "content":"回复内容",
     "replyToFloor": 2
   }
 ]
+
+每个新网友都必须独立判断自己的 IP 属地，不得继承楼主或其他网友；同一网友再次出现时尽量保持已有 IP，除非剧情明确移动。
 
 replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有顶层评论；如果希望发表新的顶层评论，使用 0。
 `;
@@ -3411,12 +3370,13 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
             if (target) {
                 ensureNestedReplies(target).push({
                     author: String(x.author),
+                    ipLocation: String(x.ipLocation || x.location || '未知地区').trim() || '未知地区',
                     content: String(x.content),
                     replyToId: target.id || null,
                     replyToAuthor: target.author || '匿名网友'
                 });
             } else {
-                t.posts.push({ author: String(x.author), content: String(x.content), replies: [] });
+                t.posts.push({ author: String(x.author), ipLocation: String(x.ipLocation || x.location || '未知地区').trim() || '未知地区', content: String(x.content), replies: [] });
                 if (!Array.isArray(t.tags) || t.tags.length < 3) t.tags = normalizePostTags(t.tags, t.title, t.posts[0]?.content || '');
             }
             added++;
@@ -3460,7 +3420,7 @@ replyToFloor 使用 2~${Math.max(2, t.posts.length)} 表示回复对应的已有
     <div class="pkmn-post-avatar">${esc(mainAvatar)}</div>
     <div class="pkmn-post-user">
         <div class="pkmn-post-author">${forumUserProfileHTML(first.author || '匿名用户')}</div>
-        <div class="pkmn-post-time">${esc(t.time || '刚刚')} · ${esc(mainLocation)}</div>
+        ${currentForum === 'mature' ? `<div class="pkmn-post-time">${esc(t.time || '刚刚')}</div>` : `<div class="pkmn-post-time">${esc(t.time || '刚刚')} · ${esc(mainLocation)}</div>`}
     </div>
 </div>
 <div class="pkmn-post-floor">${esc(mainForum)} · 主题详情</div>
@@ -3529,7 +3489,7 @@ ${renderTagHtml(threadTags(t), 'pkmn-post-tags')}
         ${isUser ? '<span style="margin-left:4px;color:#55a348">· 我</span>' : ''}
     </div>
     <div class="pkmn-reply-bubble">${esc(p.content)}</div>
-    <div class="pkmn-reply-meta">${rootIndex + 1}楼${p.time ? ' · ' + esc(p.time) : ''}</div>
+    ${currentForum === 'mature' ? `<div class="pkmn-reply-meta">${rootIndex + 1}楼${p.time ? ' · ' + esc(p.time) : ''}</div>` : `<div class="pkmn-reply-meta">${rootIndex + 1}楼${p.time ? ' · ' + esc(p.time) : ''} · IP属地：${esc(String(p.ipLocation || p.location || '未知地区'))}</div>`}
     <div class="pkmn-comment-actions">
         <button class="pkmn-comment-reply-btn" type="button" data-reply-root="${rootIndex}">回复</button>
     </div>
@@ -3872,7 +3832,7 @@ ${buildLinkedContactMemory()}
                                 x.author,
 
                             ipLocation:
-                                x.ipLocation || x.location || '关都 · 真新镇',
+                                String(x.ipLocation || x.location || '未知地区').trim() || '未知地区',
 
                             time:
                                 '刚刚',
@@ -3884,7 +3844,7 @@ ${buildLinkedContactMemory()}
                                             x.author,
 
                                         ipLocation:
-                                            x.ipLocation || x.location || '关都 · 真新镇',
+                                            String(x.ipLocation || x.location || '未知地区').trim() || '未知地区',
 
                                         content:
                                             x.content
@@ -3963,7 +3923,7 @@ ${buildLinkedContactMemory()}
                     .slice(-12)
                     .map(
                         (p, i) =>
-                            `${i + 1}楼 ${p.author}：${p.content}`
+                            `${i + 1}楼 ${p.author}（IP属地：${p.ipLocation || p.location || '未知地区'}）：${p.content}`
                     )
                     .join('\n');
 
@@ -4012,11 +3972,20 @@ ${targetContent}
 
 禁止把所有人写成同一种说话方式。
 
+每个回复者必须拥有独立的 ipLocation：
+- 根据该网友的人物身份、当前剧情、所在地、旅行路线和上下文判断。
+- 不得继承楼主或其他网友的 IP 属地。
+- 同一个 NPC 如果之前已经出现过，应尽量沿用其已有 IP，除非剧情明确发生移动。
+- 禁止使用现实世界城市或国家。
+- 使用“地区 · 城市/城镇”格式。
+- 不确定时返回“未知地区”，不要擅自使用楼主的地区。
+
 返回JSON数组：
 
 [
     {
         "author":"匿名昵称",
+        "ipLocation":"地区 · 城市/城镇",
         "content":"回复"
     }
 ]
@@ -4077,7 +4046,7 @@ ${targetContent}
                                 x.author,
 
                             ipLocation:
-                                x.ipLocation || x.location || '关都 · 真新镇',
+                                String(x.ipLocation || x.location || '未知地区').trim() || '未知地区',
 
                             content:
                                 x.content
@@ -4118,6 +4087,25 @@ ${targetContent}
     async function npcTalk(
         count
     ) {
+
+        count = Math.max(0, parseInt(count) || 0);
+        if (count <= 0) {
+            showToast('NPC互聊数量为 0，请先在设置中调整');
+            return 0;
+        }
+
+        if (generating) {
+            return 0;
+        }
+
+        const npcBtn = $('pkmn-npc-talk');
+        const npcOldText = npcBtn ? npcBtn.textContent : '';
+        generating = true;
+        if (npcBtn) {
+            npcBtn.disabled = true;
+            npcBtn.dataset.oldText = npcOldText;
+            npcBtn.textContent = '生成中…';
+        }
 
         const target =
             threads().filter(
@@ -4194,11 +4182,15 @@ ${
 
 [
     {
-        "threadId":"已有帖子的唯一ID","threadTitle":"已有帖子标题",
+        "threadId":"已有帖子的唯一ID","threadTitle":"已有帖子标题","threadIndex":1,
         "author":"NPC昵称",
+        "ipLocation":"地区 · 城市/城镇",
         "content":"NPC回复"
     }
 ]
+
+每个NPC必须独立拥有自己的 ipLocation。不得继承楼主、其他NPC或当前帖子的IP；同一NPC再次出现时尽量保持既有IP，除非剧情明确移动。
+threadId、threadTitle、threadIndex 至少提供一种正确的目标帖子定位信息；threadIndex 为上方帖子列表中的序号。
 
 ${history}
 
@@ -4252,21 +4244,42 @@ ${buildLinkedContactMemory()}
                 .forEach(
                     x => {
 
-                        const t =
-            target.find(
-                t =>
-                    (x.threadId && String(t.id) === String(x.threadId)) ||
-                    (!x.threadId && x.threadTitle && t.title === x.threadTitle)
-            );
+                        // 优先使用唯一 ID，其次标题，最后使用 AI 返回的帖子序号。
+                        // 不做随机归属，避免把 NPC 回复错误塞进其他帖子。
+                        const requestedIndex = Number.isInteger(Number(x.threadIndex))
+                            ? Number(x.threadIndex)
+                            : null;
 
-        // Never randomly assign an AI reply to another thread.
-        if (!t) {
-            console.warn('[论坛] 丢弃无法精确绑定帖子的 AI 回复', {
-                threadId: x.threadId,
-                threadTitle: x.threadTitle
-            });
-            return;
-        }
+                        let t = null;
+
+                        if (x.threadId) {
+                            t = target.find(
+                                item => String(item.id) === String(x.threadId)
+                            );
+                        }
+
+                        if (!t && x.threadTitle) {
+                            t = target.find(
+                                item => String(item.title).trim() === String(x.threadTitle).trim()
+                            );
+                        }
+
+                        if (!t && requestedIndex !== null) {
+                            // 兼容 0/1 起始的帖子序号
+                            const idx = requestedIndex >= 1
+                                ? requestedIndex - 1
+                                : requestedIndex;
+                            t = target[idx] || null;
+                        }
+
+                        if (!t) {
+                            console.warn('[论坛] 丢弃无法绑定帖子的 AI 回复', {
+                                threadId: x.threadId,
+                                threadTitle: x.threadTitle,
+                                threadIndex: x.threadIndex
+                            });
+                            return;
+                        }
 
                         if (
                             t &&
@@ -4278,6 +4291,9 @@ ${buildLinkedContactMemory()}
                                 {
                                     author:
                                         x.author,
+
+                                    ipLocation:
+                                        String(x.ipLocation || x.location || '未知地区').trim() || '未知地区',
 
                                     content:
                                         x.content,
@@ -4351,11 +4367,13 @@ ${buildLinkedContactMemory()}
             tags: normalizePostTags([], title, content),
             author: profile.nickname,
             authorBio: profile.bio,
+            ipLocation: String(profile.ipLocation || profile.location || '未知地区').trim() || '未知地区',
             isUserThread: true,
             time: '刚刚',
             posts: [{
                 author: profile.nickname,
                 authorBio: profile.bio,
+                ipLocation: String(profile.ipLocation || profile.location || '未知地区').trim() || '未知地区',
                 isUser: true,
                 content,
                 replies: []
@@ -4388,9 +4406,17 @@ ${buildLinkedContactMemory()}
         const fixThread = (t) => {
             if (!t || typeof t !== 'object') return t;
             if (!Array.isArray(t.posts)) t.posts = [];
+            // 兼容旧数据：历史帖子把IP保存在帖子级时，仅迁移给楼主，不复制给其他楼层。
+            if (t.posts[0] && !t.posts[0].ipLocation && (t.ipLocation || t.location)) {
+                t.posts[0].ipLocation = String(t.ipLocation || t.location).trim();
+            }
             t.posts.forEach(p => {
                 if (!p || typeof p !== 'object') return;
                 if (!Array.isArray(p.replies)) p.replies = [];
+                if (!p.ipLocation && !p.location) p.ipLocation = '未知地区';
+                p.replies.forEach(r => {
+                    if (r && !r.ipLocation && !r.location) r.ipLocation = '未知地区';
+                });
             });
             try {
                 const firstContent = (t.posts[0] && t.posts[0].content) || '';
@@ -4420,11 +4446,25 @@ ${buildLinkedContactMemory()}
                 changed = true;
             }
 
+            if (t.posts[0] && !t.posts[0].ipLocation && (t.ipLocation || t.location)) {
+                t.posts[0].ipLocation = String(t.ipLocation || t.location).trim();
+                changed = true;
+            }
             t.posts.forEach(p => {
                 if (!Array.isArray(p.replies)) {
                     p.replies = [];
                     changed = true;
                 }
+                if (!p.ipLocation && !p.location) {
+                    p.ipLocation = '未知地区';
+                    changed = true;
+                }
+                p.replies.forEach(r => {
+                    if (r && !r.ipLocation && !r.location) {
+                        r.ipLocation = '未知地区';
+                        changed = true;
+                    }
+                });
             });
 
             const firstContent = t.posts[0]?.content || '';
@@ -4476,6 +4516,9 @@ ${buildLinkedContactMemory()}
 
                 authorBio:
                     replyProfile.bio,
+
+                ipLocation:
+                    String(replyProfile.ipLocation || replyProfile.location || '未知地区').trim() || '未知地区',
 
                 isUser: true,
 
@@ -4766,11 +4809,11 @@ ${buildLinkedContactMemory()}
     <div class="pkmn-worldbook-toolbar">
         <button class="pkmn-btn pkmn-secondary" id="pkmn-wb-select-all">全选</button>
         <button class="pkmn-btn pkmn-secondary" id="pkmn-wb-unselect-all">取消全选</button>
-        <button class="pkmn-btn pkmn-secondary pkmn-worldbook-sync-btn" id="set-refresh-wb">↻ 同步酒馆世界书栏目</button>
+        <button class="pkmn-btn pkmn-secondary" id="set-refresh-wb">↻ 刷新</button>
     </div>
 
     <div class="pkmn-worldbook-note">
-        <span>✓</span> 点击“同步酒馆世界书栏目”后，只同步<strong>当前角色卡绑定的世界书</strong>；其它世界书不会自动勾选。绑定世界书内的 Entry 再按酒馆当前启用状态同步。你之后仍可手动调整。🔵 蓝灯＝常驻，🟢 绿灯＝关键词触发，⚪ 灰灯＝停用。
+        <span>✓</span> 已勾选条目 = 强制读取。世界书原本的“停用/关键词/常驻”状态只展示，不会阻止你手动选择。
     </div>
 
     <div class="pkmn-worldbook-search-wrap">
@@ -5155,13 +5198,7 @@ ${buildLinkedContactMemory()}
 
         // 世界书刷新
 
-        $('set-refresh-wb').onclick = async () => {
-            showToast('正在同步当前角色卡的酒馆世界书栏目…');
-            await renderWorldbooks(true, true);
-            renderWorldbookBooks(false);
-            const currentBooks = getCurrentCharacterWorldbookNames();
-            showToast(currentBooks.length ? `已同步当前角色卡的 ${currentBooks.length} 本世界书` : '当前角色卡没有绑定独立世界书');
-        };
+        $('set-refresh-wb').onclick = () => renderWorldbooks(true);
 
         $('pkmn-wb-select-all').onclick = async () => {
             showToast('正在读取全部世界书条目并全选…');
@@ -5329,15 +5366,6 @@ ${esc(b.prompt)}
         return true;
     }
 
-    function getWorldbookEntryLight(entry) {
-        if (!entry || entry.enabled === false) return { icon: '⚪', label: '已关闭', className: 'is-disabled' };
-        const keys = Array.isArray(entry.keys) ? entry.keys.filter(Boolean) : [];
-        const key = String(entry.key || '').trim();
-        if (entry.constant === true) return { icon: '🔵', label: '常驻', className: 'is-constant' };
-        if (keys.length || key) return { icon: '🟢', label: '关键词触发', className: 'is-keyword' };
-        return { icon: '⚪', label: '已启用但未设置关键词', className: 'is-other' };
-    }
-
     function worldbookEntryMatchesSearch(entry, q) {
         if (!q) return true;
         const hay = [entry.name, entry.comment, entry.key, ...(entry.keys || []), ...(entry.secondary_keys || []), entry.content]
@@ -5406,18 +5434,12 @@ ${esc(b.prompt)}
 
         const meta = topDoc.createElement('div');
         meta.className = 'pkmn-worldbook-entry-meta';
-        const light = getWorldbookEntryLight(entry);
-        meta.innerHTML = `<span class="pkmn-worldbook-light ${light.className}">${light.icon}</span><b class="pkmn-worldbook-light-label ${light.className}">${light.label}</b><span class="pkmn-worldbook-meta-size"> · ${worldbookEntryChars(entry).toLocaleString()} 字符</span>`;
-        const keys = Array.isArray(entry.keys) ? entry.keys.filter(Boolean) : [];
-        if (keys.length) {
+        const state = entry.enabled === false ? '世界书内已停用' : (entry.constant ? '强制常驻' : (entry.selective ? '选择性条目' : '已启用'));
+        meta.textContent = `${worldbookEntryChars(entry).toLocaleString()} 字符 · ${state}`;
+        if (entry.key) {
             const key = topDoc.createElement('span');
             key.className = 'pkmn-worldbook-entry-key';
-            key.textContent = `关键词：${keys.join('、')}`;
-            meta.appendChild(key);
-        } else if (entry.key) {
-            const key = topDoc.createElement('span');
-            key.className = 'pkmn-worldbook-entry-key';
-            key.textContent = `关键词：${entry.key}`;
+            key.textContent = `Key: ${entry.key}`;
             meta.appendChild(key);
         }
 
@@ -5426,7 +5448,6 @@ ${esc(b.prompt)}
         detail.hidden = true;
         detail.innerHTML = `
             <div><b>插件选择：</b>${input.checked ? '✓ 已选择' : '未选择'}</div>
-            <div><b>触发方式：</b>${esc(getWorldbookEntryLight(entry).icon)} ${esc(getWorldbookEntryLight(entry).label)}</div>
             <div><b>世界书状态：</b>${entry.enabled === false ? '已停用' : '启用'}</div>
             <div><b>UID：</b>${esc(uid)}</div>
             <div><b>Key：</b>${esc((entry.keys || []).join(' / ') || '—')}</div>
@@ -5440,10 +5461,8 @@ ${esc(b.prompt)}
             setWorldbookSelection(book, next);
             saveGlobalConfig();
             detail.querySelector('div') .innerHTML = `<b>插件选择：</b>${input.checked ? '✓ 已选择' : '未选择'}`;
-            const nextLight = getWorldbookEntryLight(entry);
-            meta.innerHTML = `<span class="pkmn-worldbook-light ${nextLight.className}">${nextLight.icon}</span><b class="pkmn-worldbook-light-label ${nextLight.className}">${nextLight.label}</b><span class="pkmn-worldbook-meta-size"> · ${worldbookEntryChars(entry).toLocaleString()} 字符</span>`;
-            const nextKeys = Array.isArray(entry.keys) ? entry.keys.filter(Boolean) : [];
-            if (nextKeys.length || entry.key) { const key = topDoc.createElement('span'); key.className='pkmn-worldbook-entry-key'; key.textContent=`关键词：${(nextKeys.length ? nextKeys : [entry.key]).join('、')}`; meta.appendChild(key); }
+            meta.textContent = `${worldbookEntryChars(entry).toLocaleString()} 字符 · ${state}`;
+            if (entry.key) { const key = topDoc.createElement('span'); key.className='pkmn-worldbook-entry-key'; key.textContent=`Key: ${entry.key}`; meta.appendChild(key); }
             updateWorldbookSummary();
             renderWorldbookBooks(false);
         };
@@ -5546,8 +5565,11 @@ ${esc(b.prompt)}
                     try {
                         const loadedEntries = await TH.getWorldbook(name);
                         worldbookUiState.books.set(name, loadedEntries);
-                        // 懒加载只负责读取条目，不再因为“这本世界书已存在于旧配置”而自动全选。
-                        // 真正的酒馆勾选状态同步只在“同步酒馆世界书栏目”按钮中执行。
+                        const hasSelection = Object.prototype.hasOwnProperty.call(config.worldbookSelections || {}, name);
+                        if (!hasSelection && config.worldbooks.includes(name)) {
+                            setWorldbookSelection(name, new Set(loadedEntries.map((e,i)=>worldbookEntryId(e,i))));
+                            saveGlobalConfig();
+                        }
                     } catch (err) {
                         console.warn('[pkmn-forum] lazy worldbook load failed:', name, err);
                         worldbookUiState.books.set(name, []);
@@ -5579,7 +5601,7 @@ ${esc(b.prompt)}
         updateWorldbookSummary();
     }
 
-    async function renderWorldbooks(forceReload = false, syncEntries = false) {
+    async function renderWorldbooks(forceReload = false) {
         const box = $('worldbook-list');
         if (!box) return;
         box.innerHTML = '<div class="pkmn-small">正在读取世界书列表…</div>';
@@ -5598,50 +5620,6 @@ ${esc(b.prompt)}
             worldbookUiState.books = new Map();
             for (const name of names) {
                 worldbookUiState.books.set(name, previous.has(name) && !forceReload ? previous.get(name) : null);
-            }
-            if (syncEntries) {
-                const syncStatus = topDoc.getElementById('pkmn-worldbook-status');
-                const currentCharacterWorldbooks = getCurrentCharacterWorldbookNames();
-                const currentWorldbookSet = new Set(currentCharacterWorldbooks);
-                if (syncStatus) {
-                    const charName = TH.getCharacterName ? TH.getCharacterName() : '';
-                    syncStatus.textContent = currentCharacterWorldbooks.length
-                        ? `● 正在同步当前角色卡：${charName || '当前角色'} · ${currentCharacterWorldbooks.length} 本世界书…`
-                        : `● 当前角色卡未绑定独立世界书：${charName || '当前角色'}…`;
-                }
-
-                // 关键：同步按钮只认“当前角色卡绑定的世界书”。
-                // 其它全局世界书/其它角色的世界书全部清空插件勾选，
-                // 但仍保留在列表中供用户查看和手动选择。
-                for (const name of names) {
-                    try {
-                        worldbookUiState.loading.add(name);
-                        const entries = await TH.getWorldbook(name, { forceReload: true });
-                        const normalizedEntries = Array.isArray(entries) ? entries : [];
-                        worldbookUiState.books.set(name, normalizedEntries);
-
-                        if (currentWorldbookSet.has(name)) {
-                            // 当前角色卡绑定的世界书：镜像酒馆 Entry 的实际启用状态。
-                            // enabled=true => 插件勾选；enabled=false => 插件不勾选。
-                            const selectedFromTavern = new Set(
-                                normalizedEntries
-                                    .filter(entry => entry && entry.enabled !== false)
-                                    .map((entry, index) => worldbookEntryId(entry, index))
-                            );
-                            setWorldbookSelection(name, selectedFromTavern);
-                        } else {
-                            // 不属于当前角色卡的世界书：同步后不自动勾选任何条目。
-                            setWorldbookSelection(name, new Set());
-                        }
-                    } catch (err) {
-                        console.warn('[pkmn-forum] worldbook sync failed:', name, err);
-                        worldbookUiState.books.set(name, []);
-                        // 读取失败也不能把旧选择留在非当前角色世界书里。
-                        if (!currentWorldbookSet.has(name)) setWorldbookSelection(name, new Set());
-                    } finally {
-                        worldbookUiState.loading.delete(name);
-                    }
-                }
             }
             // 已被删除的世界书从选择索引中清理，避免旧配置污染上下文。
             const known = new Set(names);
@@ -6005,10 +5983,22 @@ ${esc(b.prompt)}
         return config.contacts.find(x => x.id === id);
     }
 
-    function contactByNickname(nickname) {
-        const n = String(nickname || '').trim();
+    function normalizeSearchText(text) {
+        return String(text == null ? '' : text)
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '');
+    }
+
+function contactByNickname(nickname) {
+        const n = normalizeSearchText(nickname);
         if (!n) return null;
-        return config.contacts.find(c => String(c.nickname || c.name || '').trim() === n) || null;
+        return config.contacts.find(c => {
+            const candidates = [
+                c && c.nickname, c && c.name, c && c.note, c && c.displayName
+            ];
+            return candidates.some(v => normalizeSearchText(v) === n);
+        }) || null;
     }
 
     function contactDisplayName(c) {
@@ -6085,7 +6075,7 @@ ${blocks.join('\n\n')}
             e.preventDefault();
             e.stopPropagation();
             const author = userEl.dataset.forumUser || userEl.textContent || '匿名用户';
-            openForumUserCard(author, null);
+            openForumUserCard(author, findForumUserSourcePost(author));
         }, true);
     }
 
@@ -6211,7 +6201,7 @@ ${blocks.join('\n\n')}
   <div class="pkmn-user-card-avatar">${esc(avatar)}</div>
   <div class="pkmn-user-card-name">${esc(name)}</div>
   <div class="pkmn-user-card-sub">论坛用户</div>
-  ${location ? `<div class="pkmn-user-card-line">IP属地：${esc(location)}</div>` : ''}
+  ${location && currentForum !== 'mature' ? `<div class="pkmn-user-card-line">IP属地：${esc(location)}</div>` : ''}
   ${bio ? `<div class="pkmn-user-card-line">${esc(bio)}</div>` : ''}
   <div class="pkmn-user-card-actions">
     ${existing ? `<button class="pkmn-btn pkmn-primary" data-user-card-chat>发消息</button>` : `<button class="pkmn-btn pkmn-primary" data-user-card-add>加为好友</button>`}
@@ -6685,6 +6675,26 @@ function renderChat() {
         $('contact-add-inline').onclick = addContact;
     }
 
+    function findForumUserSourcePost(name) {
+        const target = normalizeSearchText(name);
+        if (!target) return null;
+        const threads = [];
+        for (const list of [chatState?.safeThreads, chatState?.matureThreads]) {
+            if (Array.isArray(list)) threads.push(...list);
+        }
+        for (const thread of threads) {
+            if (!thread || !Array.isArray(thread.posts)) continue;
+            for (const post of thread.posts) {
+                if (!post) continue;
+                if (normalizeSearchText(post.author) === target) return post;
+                for (const reply of (Array.isArray(post.replies) ? post.replies : [])) {
+                    if (reply && normalizeSearchText(reply.author) === target) return reply;
+                }
+            }
+        }
+        return null;
+    }
+
     async function addContact() {
         const nameInput = prompt('联系人昵称');
         const name = String(nameInput || '').trim();
@@ -6694,9 +6704,18 @@ function renderChat() {
 
         const progressModal = showContactAddProgress('正在检查当前论坛记录…');
         try {
-            // 通讯录添加联系人：先读取当前角色卡聊天的论坛资料，再综合世界书、正文与论坛实际行为进行道德检定。
+            // 通讯录入口同样检查论坛：若论坛已有该用户，取其楼层资料作为道德检定的身份依据。
+            const sourcePost = findForumUserSourcePost(name);
             const forumEvidence = forumMoralEvidenceForUser(name);
-            const moral = await assessContactMoral({name, bio:'', location:'', sourcePost:null, onProgress: updateContactAddProgress});
+            const sourceBio = sourcePost ? String(sourcePost.authorBio || sourcePost.bio || '') : '';
+            const sourceLocation = sourcePost ? String(sourcePost.ipLocation || sourcePost.location || '') : '';
+            const moral = await assessContactMoral({
+                name,
+                bio: sourceBio,
+                location: sourceLocation,
+                sourcePost: sourcePost || null,
+                onProgress: updateContactAddProgress
+            });
             const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
             config.contacts.push({
                 id, nickname:name, name, avatar:'👤', note:'', bio:'', location:'', linkForum:true,
