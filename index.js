@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.13.16)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.13.17)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.13.16"; // persist contact API independently
+    const VERSION = "0.13.17"; // persist contact API independently
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -1815,7 +1815,7 @@
   <defs>
     <linearGradient id="rotomPhoneBody" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ff7050"/>
-      <stop offset="0.13.16" stop-color="#f0443e"/>
+      <stop offset="0.13.17" stop-color="#f0443e"/>
       <stop offset="1" stop-color="#c92738"/>
     </linearGradient>
     <linearGradient id="rotomPhoneScreen" x1="0" y1="0" x2="0" y2="1">
@@ -2623,7 +2623,7 @@
 
     
 /* =========================================================
- * Contact -> Main AI injection (v0.13.16)
+ * Contact -> Main AI injection (v0.13.17)
  * Keeps contact-chat memory separate per Tavern chat.
  * ========================================================= */
 const CONTACT_INJECT_PROMPT_ID = 'pokemon_forum_contact_injection_v2';
@@ -6055,26 +6055,9 @@ ${blocks.join('\n\n')}
                 <div class="contact-settings-section-title">
                     <span class="contact-settings-icon">↗</span> 正文注入
                 </div>
-                <div class="contact-settings-injection-desc">
-                    将此联系人的最近私聊内容注入到当前酒馆 AI 的扩展提示词中。与其他联系人独立控制，切换聊天自动恢复各自设置。
-                </div>
-                <div class="contact-settings-injection-grid">
-                    <div class="contact-settings-injection-box">
-                        <div class="contact-settings-injection-label">手动注入</div>
-                        <div class="contact-settings-injection-action">
-                            <button type="button" class="contact-injection-btn" id="contact-injection-toggle">注入正文</button>
-                            <span class="contact-injection-status" id="contact-injection-status"></span>
-                        </div>
-                        <div class="contact-settings-hint">点击一次注入，再点一次取消注入。</div>
-                    </div>
-                    <div class="contact-settings-injection-box">
-                        <div class="contact-settings-injection-label">自动注入</div>
-                        <label class="contact-settings-toggle-row contact-injection-auto-row" for="contact-injection-auto">
-                            <span><b>新消息自动注入</b><small>此联系人产生新私聊后，自动更新主 AI 的注入内容。</small></span>
-                            <input type="checkbox" id="contact-injection-auto">
-                            <i aria-hidden="true"></i>
-                        </label>
-                    </div>
+                <div class="contact-injection-buttons">
+                    <button type="button" class="contact-injection-btn" id="contact-injection-toggle" aria-pressed="false">手动注入</button>
+                    <button type="button" class="contact-injection-btn" id="contact-injection-auto" aria-pressed="false">自动注入</button>
                 </div>
                 <div class="contact-settings-injection-limit">
                     <span>注入最近消息</span>
@@ -6112,7 +6095,6 @@ ${blocks.join('\n\n')}
         };
 
         const injectionToggle = $('contact-injection-toggle');
-        const injectionStatus = $('contact-injection-status');
         const injectionAuto = $('contact-injection-auto');
         const injectionLimit = $('contact-injection-limit');
         const injectionMinus = $('contact-injection-minus');
@@ -6121,12 +6103,14 @@ ${blocks.join('\n\n')}
         function syncContactInjectionUI() {
             const s = getContactInjectionSettings(c.id);
             if (injectionToggle) {
-                injectionToggle.textContent = s.enabled ? '取消注入' : '注入正文';
+                injectionToggle.textContent = s.enabled ? '已注入' : '手动注入';
                 injectionToggle.classList.toggle('is-active', s.enabled);
                 injectionToggle.setAttribute('aria-pressed', s.enabled ? 'true' : 'false');
             }
-            if (injectionStatus) injectionStatus.textContent = s.enabled ? '当前状态：已注入' : '当前状态：未注入';
-            if (injectionAuto) injectionAuto.checked = !!s.auto;
+            if (injectionAuto) {
+                injectionAuto.classList.toggle('is-active', s.auto);
+                injectionAuto.setAttribute('aria-pressed', s.auto ? 'true' : 'false');
+            }
             if (injectionLimit) injectionLimit.textContent = String(s.limit);
         }
         syncContactInjectionUI();
@@ -6138,9 +6122,10 @@ ${blocks.join('\n\n')}
             syncContactInjectionUI();
         });
 
-        injectionAuto?.addEventListener('change', async (e) => {
-            const on = !!e.target.checked;
-            await setContactAutoInjection(c.id, on, getContactInjectionSettings(c.id).limit);
+        injectionAuto?.addEventListener('click', async () => {
+            const s = getContactInjectionSettings(c.id);
+            const on = !s.auto;
+            await setContactAutoInjection(c.id, on, s.limit);
             if (on) {
                 setContactInjectionSettings(c.id, {enabled: true});
                 await applyContactInjectionToMainAI();
@@ -6706,7 +6691,7 @@ ${blocks.join('\n\n')}
 
 
     // ============================================================
-    // v0.13.16：洛托姆悬浮按钮拖动引擎（彻底重写）
+    // v0.13.17：洛托姆悬浮按钮拖动引擎（彻底重写）
     // ============================================================
     // 旧版同时混用 mouse / pointer / touch，并在不同 window 上监听。
     // Android WebView 下很容易出现“能点但拖不动”。
@@ -7099,7 +7084,7 @@ ${blocks.join('\n\n')}
 
 })();
 
-/* v0.13.16: restore contact injection after Tavern chat switches */
+/* v0.13.17: restore contact injection after Tavern chat switches */
 if (!window.__pokemonForumContactInjectionHooked) {
     window.__pokemonForumContactInjectionHooked = true;
     try {
