@@ -1527,7 +1527,7 @@
 #pkmn-phone-panel .contact-player-profile-card .pkmn-textarea{margin-top:5px}
 
 
-/* v0.13.13 · 联系人添加进度弹窗：阻止重复操作，同时不泄露道德评分 */
+/* v0.13.16 · 联系人添加进度弹窗：阻止重复操作，同时不泄露道德评分 */
 #pkmn-phone-panel .pkmn-contact-add-progress{position:absolute;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
 #pkmn-phone-panel .pkmn-contact-add-progress-backdrop{position:absolute;inset:0;background:rgba(18,24,30,.32);backdrop-filter:blur(2px)}
 #pkmn-phone-panel .pkmn-contact-add-progress-box{position:relative;width:min(320px,88%);box-sizing:border-box;padding:25px 22px 22px;border-radius:18px;background:#fff;box-shadow:0 16px 42px rgba(0,0,0,.2);text-align:center}
@@ -1536,3 +1536,28 @@
 #pkmn-phone-panel .pkmn-contact-add-progress-text{margin-top:9px;font-size:13px;line-height:1.55;color:#5d666e;white-space:pre-wrap;word-break:break-word}
 #pkmn-phone-panel .pkmn-contact-add-progress-hint{margin-top:6px;font-size:11px;color:#a1a7ac}
 @keyframes pkmnContactAddSpin{to{transform:rotate(360deg)}}
+
+/* v0.13.16 · 单联系人正文注入 */
+#pkmn-phone-panel .contact-settings-injection-card{
+  border:1px solid rgba(125,74,190,.22);
+  background:linear-gradient(180deg,#fff,#fcf9ff);
+  box-shadow:0 3px 14px rgba(92,52,145,.07);
+}
+#pkmn-phone-panel .contact-settings-injection-card .contact-settings-section-title{color:#6d3fb0}
+#pkmn-phone-panel .contact-settings-injection-card .contact-settings-icon{background:#f0e7fb;color:#7543b7}
+#pkmn-phone-panel .contact-settings-injection-desc{font-size:12px;line-height:1.65;color:#85808d;margin:-3px 0 12px}
+#pkmn-phone-panel .contact-settings-injection-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+#pkmn-phone-panel .contact-settings-injection-box{min-width:0;border:1px solid #eee7f5;border-radius:12px;background:#fff;padding:11px}
+#pkmn-phone-panel .contact-settings-injection-label{font-size:13px;font-weight:700;color:#3a3442;margin-bottom:9px}
+#pkmn-phone-panel .contact-settings-injection-action{display:flex;align-items:center;gap:8px}
+#pkmn-phone-panel .contact-injection-btn{flex:1;min-width:0;height:38px;border:1px solid #b98ae7;border-radius:10px;background:#fff;color:#7139a8;font-size:13px;font-weight:700;cursor:pointer}
+#pkmn-phone-panel .contact-injection-btn.is-active{background:#7b43ba;color:#fff;border-color:#7b43ba;box-shadow:0 3px 8px rgba(123,67,186,.18)}
+#pkmn-phone-panel .contact-settings-injection-card .contact-settings-hint{margin-top:7px;font-size:11px}
+#pkmn-phone-panel .contact-injection-status{white-space:nowrap;font-size:11px;color:#7b43ba}
+#pkmn-phone-panel .contact-injection-auto-row{padding:0!important}
+#pkmn-phone-panel .contact-settings-injection-limit{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #f0edf3;font-size:12px;color:#68616f}
+#pkmn-phone-panel .contact-injection-stepper{margin-left:auto;display:flex;align-items:center;border:1px solid #e2dce9;border-radius:9px;overflow:hidden;background:#fff}
+#pkmn-phone-panel .contact-injection-stepper button{width:30px;height:28px;border:0;background:#faf8fc;color:#7040a4;font-size:17px;cursor:pointer}
+#pkmn-phone-panel .contact-injection-stepper b{min-width:30px;text-align:center;font-size:12px;color:#44384d}
+#pkmn-phone-panel .contact-settings-injection-limit>small{color:#a19aa7;font-size:10px}
+@media (max-width:380px){#pkmn-phone-panel .contact-settings-injection-grid{grid-template-columns:1fr}}
