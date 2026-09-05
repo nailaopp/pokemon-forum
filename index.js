@@ -4725,7 +4725,7 @@ ${buildLinkedContactMemory()}
     <div class="pkmn-worldbook-toolbar">
         <button class="pkmn-btn pkmn-secondary" id="pkmn-wb-select-all">全选</button>
         <button class="pkmn-btn pkmn-secondary" id="pkmn-wb-unselect-all">取消全选</button>
-        <button class="pkmn-btn pkmn-secondary" id="set-refresh-wb">↻ 刷新</button>
+        <button class="pkmn-btn pkmn-secondary pkmn-worldbook-sync-btn" id="set-refresh-wb">↻ 同步酒馆世界书栏目</button>
     </div>
 
     <div class="pkmn-worldbook-note">
@@ -5114,7 +5114,12 @@ ${buildLinkedContactMemory()}
 
         // 世界书刷新
 
-        $('set-refresh-wb').onclick = () => renderWorldbooks(true);
+        $('set-refresh-wb').onclick = async () => {
+            showToast('正在同步酒馆世界书栏目…');
+            await renderWorldbooks(true, true);
+            renderWorldbookBooks(false);
+            showToast('酒馆世界书栏目同步完成');
+        };
 
         $('pkmn-wb-select-all').onclick = async () => {
             showToast('正在读取全部世界书条目并全选…');
@@ -5282,6 +5287,15 @@ ${esc(b.prompt)}
         return true;
     }
 
+    function getWorldbookEntryLight(entry) {
+        if (!entry || entry.enabled === false) return { icon: '⚪', label: '已关闭', className: 'is-disabled' };
+        const keys = Array.isArray(entry.keys) ? entry.keys.filter(Boolean) : [];
+        const key = String(entry.key || '').trim();
+        if (entry.constant === true) return { icon: '🔵', label: '常驻', className: 'is-constant' };
+        if (keys.length || key) return { icon: '🟢', label: '关键词触发', className: 'is-keyword' };
+        return { icon: '⚪', label: '已启用但未设置关键词', className: 'is-other' };
+    }
+
     function worldbookEntryMatchesSearch(entry, q) {
         if (!q) return true;
         const hay = [entry.name, entry.comment, entry.key, ...(entry.keys || []), ...(entry.secondary_keys || []), entry.content]
@@ -5350,12 +5364,18 @@ ${esc(b.prompt)}
 
         const meta = topDoc.createElement('div');
         meta.className = 'pkmn-worldbook-entry-meta';
-        const state = entry.enabled === false ? '世界书内已停用' : (entry.constant ? '强制常驻' : (entry.selective ? '选择性条目' : '已启用'));
-        meta.textContent = `${worldbookEntryChars(entry).toLocaleString()} 字符 · ${state}`;
-        if (entry.key) {
+        const light = getWorldbookEntryLight(entry);
+        meta.innerHTML = `<span class="pkmn-worldbook-light ${light.className}">${light.icon}</span><b class="pkmn-worldbook-light-label ${light.className}">${light.label}</b><span class="pkmn-worldbook-meta-size"> · ${worldbookEntryChars(entry).toLocaleString()} 字符</span>`;
+        const keys = Array.isArray(entry.keys) ? entry.keys.filter(Boolean) : [];
+        if (keys.length) {
             const key = topDoc.createElement('span');
             key.className = 'pkmn-worldbook-entry-key';
-            key.textContent = `Key: ${entry.key}`;
+            key.textContent = `关键词：${keys.join('、')}`;
+            meta.appendChild(key);
+        } else if (entry.key) {
+            const key = topDoc.createElement('span');
+            key.className = 'pkmn-worldbook-entry-key';
+            key.textContent = `关键词：${entry.key}`;
             meta.appendChild(key);
         }
 
@@ -5364,6 +5384,7 @@ ${esc(b.prompt)}
         detail.hidden = true;
         detail.innerHTML = `
             <div><b>插件选择：</b>${input.checked ? '✓ 已选择' : '未选择'}</div>
+            <div><b>触发方式：</b>${esc(getWorldbookEntryLight(entry).icon)} ${esc(getWorldbookEntryLight(entry).label)}</div>
             <div><b>世界书状态：</b>${entry.enabled === false ? '已停用' : '启用'}</div>
             <div><b>UID：</b>${esc(uid)}</div>
             <div><b>Key：</b>${esc((entry.keys || []).join(' / ') || '—')}</div>
@@ -5377,8 +5398,10 @@ ${esc(b.prompt)}
             setWorldbookSelection(book, next);
             saveGlobalConfig();
             detail.querySelector('div') .innerHTML = `<b>插件选择：</b>${input.checked ? '✓ 已选择' : '未选择'}`;
-            meta.textContent = `${worldbookEntryChars(entry).toLocaleString()} 字符 · ${state}`;
-            if (entry.key) { const key = topDoc.createElement('span'); key.className='pkmn-worldbook-entry-key'; key.textContent=`Key: ${entry.key}`; meta.appendChild(key); }
+            const nextLight = getWorldbookEntryLight(entry);
+            meta.innerHTML = `<span class="pkmn-worldbook-light ${nextLight.className}">${nextLight.icon}</span><b class="pkmn-worldbook-light-label ${nextLight.className}">${nextLight.label}</b><span class="pkmn-worldbook-meta-size"> · ${worldbookEntryChars(entry).toLocaleString()} 字符</span>`;
+            const nextKeys = Array.isArray(entry.keys) ? entry.keys.filter(Boolean) : [];
+            if (nextKeys.length || entry.key) { const key = topDoc.createElement('span'); key.className='pkmn-worldbook-entry-key'; key.textContent=`关键词：${(nextKeys.length ? nextKeys : [entry.key]).join('、')}`; meta.appendChild(key); }
             updateWorldbookSummary();
             renderWorldbookBooks(false);
         };
@@ -5517,7 +5540,7 @@ ${esc(b.prompt)}
         updateWorldbookSummary();
     }
 
-    async function renderWorldbooks(forceReload = false) {
+    async function renderWorldbooks(forceReload = false, syncEntries = false) {
         const box = $('worldbook-list');
         if (!box) return;
         box.innerHTML = '<div class="pkmn-small">正在读取世界书列表…</div>';
@@ -5536,6 +5559,22 @@ ${esc(b.prompt)}
             worldbookUiState.books = new Map();
             for (const name of names) {
                 worldbookUiState.books.set(name, previous.has(name) && !forceReload ? previous.get(name) : null);
+            }
+            if (syncEntries) {
+                const syncStatus = topDoc.getElementById('pkmn-worldbook-status');
+                if (syncStatus) syncStatus.textContent = '● 正在同步酒馆世界书栏目…';
+                for (const name of names) {
+                    try {
+                        worldbookUiState.loading.add(name);
+                        const entries = await TH.getWorldbook(name, { forceReload: true });
+                        worldbookUiState.books.set(name, Array.isArray(entries) ? entries : []);
+                    } catch (err) {
+                        console.warn('[pkmn-forum] worldbook sync failed:', name, err);
+                        worldbookUiState.books.set(name, []);
+                    } finally {
+                        worldbookUiState.loading.delete(name);
+                    }
+                }
             }
             // 已被删除的世界书从选择索引中清理，避免旧配置污染上下文。
             const known = new Set(names);

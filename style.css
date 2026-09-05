@@ -1930,6 +1930,23 @@
   font-size:9px!important;
   line-height:1.45!important;
 }
+#pkmn-phone-panel .pkmn-worldbook-light{
+  display:inline-block!important;
+  margin-right:3px!important;
+  font-size:10px!important;
+  vertical-align:middle!important;
+}
+#pkmn-phone-panel .pkmn-worldbook-light-label{font-size:9px!important;font-weight:800!important}
+#pkmn-phone-panel .pkmn-worldbook-light-label.is-constant{color:#3f82c4!important}
+#pkmn-phone-panel .pkmn-worldbook-light-label.is-keyword{color:#3e9b75!important}
+#pkmn-phone-panel .pkmn-worldbook-light-label.is-disabled{color:#929997!important}
+#pkmn-phone-panel .pkmn-worldbook-light-label.is-other{color:#7b8784!important}
+#pkmn-phone-panel .pkmn-worldbook-meta-size{color:#9aa4a1!important}
+#pkmn-phone-panel .pkmn-worldbook-sync-btn{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  white-space:nowrap!important;
+}
 #pkmn-phone-panel .pkmn-worldbook-entry-key{
   display:block!important;
   margin-top:2px!important;
