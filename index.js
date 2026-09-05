@@ -1239,16 +1239,11 @@
                 const entries = await TH.getWorldbook(name);
                 if (!Array.isArray(entries) || !entries.length) continue;
 
-                let selected = worldbookCloneSelection(name);
-                // 兼容旧版：旧配置只记录“选中了整本世界书”。首次读取时，把当时可见的所有 Entry 转成逐条选择。
-                if (!Object.prototype.hasOwnProperty.call(selections, name)) {
-                    selected = new Set(entries.map((entry, index) => worldbookEntryId(entry, index)));
-                    setWorldbookSelection(name, selected);
-                }
+                const selected = worldbookCloneSelection(name);
 
                 entries.forEach((entry, index) => {
                     const uid = worldbookEntryId(entry, index);
-                    // enabled=false 只作为原世界书状态展示；只要用户勾选，就必须读取。
+                    // 插件勾选状态与酒馆世界书的启用状态分开保存；只有明确同步时才从酒馆状态重建选择。
                     if (selected.has(uid) && entry.content) {
                         all.push({ book: name, entry, index, uid });
                     }
@@ -4729,7 +4724,7 @@ ${buildLinkedContactMemory()}
     </div>
 
     <div class="pkmn-worldbook-note">
-        <span>✓</span> 已勾选条目 = 强制读取。世界书原本的“停用/关键词/常驻”状态只展示，不会阻止你手动选择。
+        <span>✓</span> 点击“同步酒馆世界书栏目”后，插件勾选状态会按酒馆当前 Entry 的勾选/启用状态同步；你之后仍可手动调整。🔵 蓝灯＝常驻，🟢 绿灯＝关键词触发，⚪ 灰灯＝停用。
     </div>
 
     <div class="pkmn-worldbook-search-wrap">
@@ -5504,11 +5499,8 @@ ${esc(b.prompt)}
                     try {
                         const loadedEntries = await TH.getWorldbook(name);
                         worldbookUiState.books.set(name, loadedEntries);
-                        const hasSelection = Object.prototype.hasOwnProperty.call(config.worldbookSelections || {}, name);
-                        if (!hasSelection && config.worldbooks.includes(name)) {
-                            setWorldbookSelection(name, new Set(loadedEntries.map((e,i)=>worldbookEntryId(e,i))));
-                            saveGlobalConfig();
-                        }
+                        // 懒加载只负责读取条目，不再因为“这本世界书已存在于旧配置”而自动全选。
+                        // 真正的酒馆勾选状态同步只在“同步酒馆世界书栏目”按钮中执行。
                     } catch (err) {
                         console.warn('[pkmn-forum] lazy worldbook load failed:', name, err);
                         worldbookUiState.books.set(name, []);
@@ -5567,7 +5559,19 @@ ${esc(b.prompt)}
                     try {
                         worldbookUiState.loading.add(name);
                         const entries = await TH.getWorldbook(name, { forceReload: true });
-                        worldbookUiState.books.set(name, Array.isArray(entries) ? entries : []);
+                        const normalizedEntries = Array.isArray(entries) ? entries : [];
+                        worldbookUiState.books.set(name, normalizedEntries);
+                        if (syncEntries) {
+                            // 关键：同步时严格镜像酒馆 Entry 的“启用/勾选”状态。
+                            // enabled=true => 插件勾选；enabled=false => 插件不勾选。
+                            // 不再把整本世界书的所有 Entry 自动加入选择集合。
+                            const selectedFromTavern = new Set(
+                                normalizedEntries
+                                    .filter(entry => entry && entry.enabled !== false)
+                                    .map((entry, index) => worldbookEntryId(entry, index))
+                            );
+                            setWorldbookSelection(name, selectedFromTavern);
+                        }
                     } catch (err) {
                         console.warn('[pkmn-forum] worldbook sync failed:', name, err);
                         worldbookUiState.books.set(name, []);
