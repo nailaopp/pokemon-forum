@@ -524,6 +524,9 @@
 
         readDepth: 12,
 
+        // 主题：light=当前普通模式，dark=夜间模式。
+        theme: 'light',
+
         // 世界书：改为逐条勾选；勾选条目对所有 AI 模块强制可用。
         worldbookForceSelected: true,
         worldbookCache: true,
@@ -592,6 +595,8 @@
                     clone(DEFAULT_CONFIG),
                     JSON.parse(raw)
                 );
+
+            c.theme = c.theme === 'dark' ? 'dark' : 'light';
 
             c.api =
                 Object.assign(
@@ -676,6 +681,14 @@
             JSON.stringify(config)
         );
 
+    }
+
+    function applyForumTheme() {
+        try {
+            if (!panel) return;
+            panel.classList.toggle('pkmn-theme-night', config.theme === 'dark');
+            panel.setAttribute('data-theme', config.theme === 'dark' ? 'dark' : 'light');
+        } catch (_) {}
     }
 
     // ============================================================
@@ -2082,6 +2095,8 @@
     topDoc.body.appendChild(
         panel
     );
+
+    applyForumTheme();
 
     // ============================================================
     // DOM快捷方式
@@ -4582,6 +4597,23 @@ ${buildLinkedContactMemory()}
         body.innerHTML =
             `
 
+<div class="pkmn-group pkmn-theme-setting-group">
+
+    <div class="pkmn-label">
+        主题模式
+    </div>
+
+    <label class="pkmn-theme-toggle-row">
+        <span class="pkmn-theme-toggle-text">
+            <b id="pkmn-theme-label">${config.theme === 'dark' ? '🌙 夜间模式' : '☀️ 普通模式'}</b>
+            <small>切换论坛整体界面主题，设置会自动保存。</small>
+        </span>
+        <input type="checkbox" id="set-theme-night" class="pkmn-theme-switch" ${config.theme === 'dark' ? 'checked' : ''}>
+        <span class="pkmn-theme-switch-ui" aria-hidden="true"></span>
+    </label>
+
+</div>
+
 <div class="pkmn-group">
 
     <div class="pkmn-label">
@@ -4924,6 +4956,17 @@ ${buildLinkedContactMemory()}
 </div>
 
 `;
+
+        const themeSwitch = $('set-theme-night');
+        if (themeSwitch) {
+            themeSwitch.onchange = () => {
+                config.theme = themeSwitch.checked ? 'dark' : 'light';
+                saveGlobalConfig();
+                applyForumTheme();
+                const label = $('pkmn-theme-label');
+                if (label) label.textContent = themeSwitch.checked ? '🌙 夜间模式' : '☀️ 普通模式';
+            };
+        }
 
         // 板块设置
 

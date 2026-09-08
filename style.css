@@ -2065,3 +2065,283 @@
   font-size:11px!important;
   line-height:1.65!important;
 }
+
+
+/* ============================================================
+   夜间主题：仅作用于宝可梦小手机论坛，不影响 Tavern 其它界面
+   ============================================================ */
+
+#pkmn-phone-panel.pkmn-theme-night{
+  --forum-bg:#111827!important;
+  --forum-paper:#172033!important;
+  --forum-paper-2:#1d2739!important;
+  --forum-line:#2d3a50!important;
+  --forum-line-2:#394860!important;
+  --forum-text:#edf3ff!important;
+  --forum-text-2:#b6c2d6!important;
+  --forum-text-3:#7f8da6!important;
+  --forum-blue:#82aef5!important;
+  --forum-blue-dark:#5d86c9!important;
+  --forum-orange:#e4a34d!important;
+  --forum-orange-soft:#3a2d1b!important;
+  --forum-phone:#090e18!important;
+  background:#111827!important;
+  color:#edf3ff!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-app,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-view,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-settings,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-list,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-posts,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-list{
+  background:#111827!important;
+  color:#edf3ff!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-head,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-status,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-bottom,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-footer,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-homebar{
+  background:#151e2d!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-head{
+  box-shadow:0 1px 0 rgba(0,0,0,.35)!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-head button,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-status-icons,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-time,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-label,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-small,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-time,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-floor,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-meta,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-meta{
+  color:#b6c2d6!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-group,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-card,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-card,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-reply-card,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-board-card,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-group,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-item,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-entry,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-user-card,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-modal-box{
+  background:#172033!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-card,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-card{
+  box-shadow:0 2px 10px rgba(0,0,0,.22)!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-content,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-title,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-author,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-title,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-entry-title,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-hero-title{
+  color:#edf3ff!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night input,
+#pkmn-phone-panel.pkmn-theme-night textarea,
+#pkmn-phone-panel.pkmn-theme-night select,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-input,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-textarea,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-select{
+  background:#0f1726!important;
+  color:#edf3ff!important;
+  border-color:#35445c!important;
+  caret-color:#edf3ff!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night input::placeholder,
+#pkmn-phone-panel.pkmn-theme-night textarea::placeholder{
+  color:#71809a!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-btn,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-check,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-tabs button,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-filters button,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-toolbar button{
+  border-color:#35445c!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-btn.pkmn-secondary,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-tabs button,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-filters button{
+  background:#1d293d!important;
+  color:#cbd6e8!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-btn.pkmn-secondary:hover,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-tabs button:hover,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-filters button:hover{
+  background:#263650!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-btn.pkmn-primary{
+  background:#3b67a3!important;
+  color:#fff!important;
+  border-color:#5d86c9!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-btn.pkmn-danger{
+  background:#6f3340!important;
+  color:#fff!important;
+  border-color:#a54d5d!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-tools,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-post-tool,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-divider,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-board-divider,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-note,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-settings{
+  border-color:#2d3a50!important;
+  color:#8f9db4!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-reply{
+  background:#151e2d!important;
+  border-color:#2d3a50!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-reply input{
+  background:#0f1726!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-home-apps{
+  background:#111827!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-app-icon{
+  color:#edf3ff!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-app-image,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-app-icon>div:first-child{
+  background:#172033!important;
+  border-color:#2d3a50!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-hero{
+  background:linear-gradient(135deg,#172033,#202d45)!important;
+  border-color:#35445c!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-progress{
+  background:#0c1422!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-search-wrap{
+  background:#0f1726!important;
+  border-color:#35445c!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-search-wrap span{
+  color:#8290a7!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-entry-content,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-entry-key,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-entry-meta{
+  color:#aebbd0!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-theme-setting-group{
+  background:#172033!important;
+}
+
+/* 主题切换开关 */
+#pkmn-phone-panel .pkmn-theme-toggle-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  padding:12px 13px!important;
+  border:1px solid var(--forum-line)!important;
+  border-radius:12px!important;
+  background:var(--forum-paper-2)!important;
+  cursor:pointer!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-toggle-text{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  color:var(--forum-text)!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-toggle-text b{
+  font-size:14px!important;
+  color:var(--forum-text)!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-toggle-text small{
+  color:var(--forum-text-3)!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-switch{
+  position:absolute!important;
+  opacity:0!important;
+  width:1px!important;
+  height:1px!important;
+  pointer-events:none!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-switch-ui{
+  position:relative!important;
+  flex:0 0 48px!important;
+  width:48px!important;
+  height:28px!important;
+  border-radius:999px!important;
+  background:#cbd3dc!important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)!important;
+  transition:background .18s ease,box-shadow .18s ease!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-switch-ui:after{
+  content:''!important;
+  position:absolute!important;
+  top:3px!important;
+  left:3px!important;
+  width:22px!important;
+  height:22px!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  box-shadow:0 2px 5px rgba(0,0,0,.18)!important;
+  transition:transform .18s ease!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-switch:checked + .pkmn-theme-switch-ui{
+  background:#5d86c9!important;
+}
+
+#pkmn-phone-panel .pkmn-theme-switch:checked + .pkmn-theme-switch-ui:after{
+  transform:translateX(20px)!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-theme-switch-ui{
+  background:#35445c!important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-theme-switch:checked + .pkmn-theme-switch-ui{
+  background:#8b68d8!important;
+}
