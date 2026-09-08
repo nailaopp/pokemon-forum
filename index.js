@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.14.4)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.15.0)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.14.4"; // persist contact API independently
+    const VERSION = "0.15.0"; // persist contact API independently
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -1918,12 +1918,13 @@
                 <div><b>得文商店</b><small>DEVON SHOP</small></div>
             </div>
             <button id="pkmn-devon-cart" class="devon-cart" aria-label="购物车">🛒<i id="pkmn-devon-cart-count">0</i></button>
+            <button id="pkmn-devon-settings" class="devon-cart" aria-label="商店设置">⚙</button>
         </div>
         <div class="devon-shop-scroll">
             <div class="devon-search"><span>⌕</span><input id="pkmn-devon-search" placeholder="搜索道具、商品…"></div>
-            <div class="devon-hero">
+            <div class="devon-hero" id="pkmn-devon-hero">
                 <div><small>DEVON CORPORATION</small><strong>训练家装备<br>研发与配送中心</strong><span>得文科技 · 正品保障 · 快速配送</span></div>
-                <div class="devon-hero-orb">D</div>
+                <div class="devon-hero-right"><span class="devon-member-badge">🥇 黄金会员</span><div class="devon-hero-orb">D</div></div>
             </div>
             <div class="devon-shop-section-head"><b>商品分类</b><div class="devon-head-actions"><button id="pkmn-devon-sync">同步百科</button><button id="pkmn-devon-orders">我的订单</button></div></div>
             <div class="devon-categories" id="pkmn-devon-categories"></div>
@@ -1940,6 +1941,11 @@
     <div id="pkmn-devon-orders-view" class="pkmn-view pkmn-devon-shop-view">
         <div class="devon-detail-top"><button id="pkmn-devon-orders-back">‹</button><b>我的订单</b><span></span></div>
         <div class="devon-orders-scroll" id="pkmn-devon-orders-body"></div>
+    </div>
+
+    <div id="pkmn-devon-settings-view" class="pkmn-view pkmn-devon-shop-view">
+        <div class="devon-detail-top"><button id="pkmn-devon-settings-back">‹</button><b>商店设置</b><span></span></div>
+        <div class="devon-orders-scroll" id="pkmn-devon-settings-body"></div>
     </div>
 
 
@@ -2557,7 +2563,8 @@
             contactPersonSettings: which === 'contactPersonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             devonShop: which === 'devonShop' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             devonDetail: which === 'devonDetail' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
-            devonOrders: which === 'devonOrders' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
+            devonOrders: which === 'devonOrders' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            devonSettings: which === 'devonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
         };
 
         home.style.transform = positions.home;
@@ -2572,6 +2579,7 @@
         const devonShop = $('pkmn-devon-shop');
         const devonDetail = $('pkmn-devon-detail');
         const devonOrders = $('pkmn-devon-orders-view');
+        const devonSettings = $('pkmn-devon-settings-view');
         if (contacts) contacts.style.transform = positions.contacts;
         if (chat) chat.style.transform = positions.chat;
         if (contactSettings) contactSettings.style.transform = positions.contactSettings;
@@ -2579,6 +2587,7 @@
         if (devonShop) devonShop.style.transform = positions.devonShop;
         if (devonDetail) devonDetail.style.transform = positions.devonDetail;
         if (devonOrders) devonOrders.style.transform = positions.devonOrders;
+        if (devonSettings) devonSettings.style.transform = positions.devonSettings;
     }
 
     // ============================================================
@@ -6917,8 +6926,31 @@ function renderChat() {
     ];
     let DEVON_PRODUCTS = DEVON_FALLBACK_PRODUCTS.map(x=>({...x,cats:[x.cat],priceSource:'official'}));
     let devonWikiStatus = '等待同步';
-    let devonState = { category:'all', query:'', page:1, cart:{}, orders:[], balance:100000, selected:null };
+    // ===== v0.15.0 会员体系与道具稀有度（常量需在 devonState 初始化前定义）=====
+    const DEVON_TIERS={gold:1,platinum:2,blackgold:3,machamp:4};
+    const DEVON_TIER_NAMES={gold:'🥇 黄金会员',platinum:'🥈 白金会员',blackgold:'🥉 黑金会员',machamp:'💥 怪力卡'};
+    const DEVON_TIER_SLOGANS={gold:'得文黄金会员 · 日常装备应有尽有',platinum:'白金专柜 · 进阶训练家的选择',blackgold:'黑金俱乐部 · 难得之物静候识货人',machamp:'怪力卡专区 · 传说中的库存'};
+    const DEVON_TIER_HERO={gold:'训练家装备<br>研发与配送中心',platinum:'白金专柜<br>进阶训练家的选择',blackgold:'黑金俱乐部<br>稀有道具直供',machamp:'怪力卡专区<br>传说中的库存'};
+    // 分类基础 tier（越级商品对低会员完全隐藏）
+    const DEVON_CAT_TIER={balls:2,medicine:1,battle:1,held:2,berries:1,evolution:2,training:2,tms:2,megaz:3,treasure:3,field:1,misc:1};
+    // 名单覆盖：从上到下优先命中
+    const DEVON_TIER_OVERRIDES=[
+        {t:4,kw:['大师球','究极球']},
+        {t:3,kw:['讲究','专爱','气势披带','吃剩的东西','剩饭','生命宝珠','突击背心','弱点保险','金珠','星星碎片','大珍珠','彗星','龙之牙','龙之鳞片','灵界之符','深海之牙','深海鳞片','破坏光线','剑舞','龙之舞','龙之波动','暴风','流星群','大字爆炎','打雷','暴风雪','水炮','日光烈焰','真气弹','恶之波动','精神强念','大地之力','逆鳞','近身战','闪焰冲锋','冰冻光束','暗影球','冲浪']},
+        {t:1,kw:['精灵球','超级球','高级球','火之石','水之石','雷之石','叶之石']}
+    ];
+    function devonAssignTier(p){
+        const cat=p.cat||(p.cats&&p.cats[0])||'misc';
+        let t=DEVON_CAT_TIER[cat]??2;
+        const hay=(p.name||'')+'|'+(p.en||'')+'|'+(p.desc||'');
+        for(const o of DEVON_TIER_OVERRIDES){ if(o.kw.some(k=>hay.includes(k))){t=o.t;break;} }
+        p.tier=t; return p;
+    }
+    function devonMemberTier(){ const m=DEVON_TIERS[devonState.membership]; return m||1; }
+    let devonState = { category:'all', query:'', page:1, cart:{}, orders:[], balance:100000, selected:null, membership:'gold' };
     try { const raw=localStorage.getItem(DEVON_STORE_KEY); if(raw) devonState={...devonState,...JSON.parse(raw)}; } catch(_){ }
+    if(!DEVON_TIERS[devonState.membership]) devonState.membership='gold'; // v0.15.0 旧存档兼容
+    DEVON_PRODUCTS.forEach(devonAssignTier); // v0.15.0 兜底道具补算稀有度（需在常量定义后执行）
     function saveDevonStore(){ try{localStorage.setItem(DEVON_STORE_KEY,JSON.stringify(devonState));}catch(_){} }
     function devonMoney(n){ return n==null ? '价格待核实' : '₽ ' + Number(n||0).toLocaleString('zh-CN'); }
     function devonCartCount(){ return Object.values(devonState.cart||{}).reduce((a,b)=>a+Number(b||0),0); }
@@ -7014,8 +7046,8 @@ function renderChat() {
         p.priceSource='ref';
         return p;
     }
-    function devonSlug(s){ return String(s||'item').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70)||('item-'+Math.random().toString(36).slice(2,8)); }
     function devonNormalizeText(s){ return String(s||'').replace(/\[[^\]]*\]/g,'').replace(/\*/g,'').replace(/\s+/g,' ').trim(); }
+    function devonSlug(s){ return String(s||'item').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70)||('item-'+Math.random().toString(36).slice(2,8)); }
     function devonFindFallback(name,en){ return DEVON_FALLBACK_PRODUCTS.find(x=>x.name===name||x.en===en); }
     function devonSetStatus(text){ devonWikiStatus=text; const el=$('pkmn-devon-sync'); if(el)el.textContent=text==='同步中…'?'同步中…':'同步百科'; }
     function renderDevonCategories(){
@@ -7031,11 +7063,25 @@ function renderChat() {
         }
         return `<span class="${cls}">${esc(fallback)}</span>`;
     }
+    // v0.15.0：会员横幅（颜色/标语/徽章随会员等级变化）
+    function renderDevonHero(){
+        const hero=$('pkmn-devon-hero'); if(!hero)return;
+        const m=devonState.membership||'gold';
+        hero.className='devon-hero devon-hero-'+m;
+        const strong=hero.querySelector('strong'); if(strong)strong.innerHTML=DEVON_TIER_HERO[m]||DEVON_TIER_HERO.gold;
+        const span=hero.querySelector('span'); if(span)span.textContent=DEVON_TIER_SLOGANS[m]||DEVON_TIER_SLOGANS.gold;
+        const badge=hero.querySelector('.devon-member-badge');
+        const txt=DEVON_TIER_NAMES[m]||DEVON_TIER_NAMES.gold;
+        if(badge)badge.textContent=txt;
+    }
     function renderDevonShop(){
         renderDevonCategories();
+        renderDevonHero();
         const q=(devonState.query||'').trim().toLowerCase();
+        const mt=devonMemberTier();
         let list=DEVON_PRODUCTS.filter(p=>{
             const cats=p.cats||[p.cat];
+            if((p.tier??1)>mt)return false; // v0.15.0 越级商品完全隐藏
             return (devonState.category==='all'||cats.includes(devonState.category)) && (!q||[p.name,p.en,p.ja,p.desc,p.tag].join(' ').toLowerCase().includes(q));
         });
         const title=$('pkmn-devon-section-title'); if(title) title.textContent=devonState.category==='all'?(q?'搜索结果':'全部道具'):(DEVON_CATEGORIES.find(x=>x[0]===devonState.category)?.[1]||'商品');
@@ -7084,6 +7130,56 @@ function renderChat() {
         const el=$('pkmn-devon-orders-body');if(!el)return;
         el.innerHTML=`<div class="devon-wallet">可用余额 <b>${devonMoney(devonState.balance)}</b></div>`+(devonState.orders.length?devonState.orders.map(o=>`<div class="devon-order"><div><b>${esc(o.id)}</b><span>${esc(o.status)}</span></div><small>${esc(o.time)}</small><p>${esc(o.items.map(x=>`${x.name} × ${x.q}`).join('、'))}</p><strong>${devonMoney(o.total)}</strong></div>`).join(''):'<div class="devon-empty">暂无订单</div>');
     }
+    // v0.14.5：商店设置页渲染（数据概览 + 同步 + 清缓存）
+    function renderDevonSettings(){
+        const el=$('pkmn-devon-settings-body');if(!el)return;
+        let cacheInfo='暂无本地缓存';
+        try{
+            const c=JSON.parse(localStorage.getItem(DEVON_CACHE_KEY)||'null');
+            if(c&&Array.isArray(c.items)) cacheInfo=`本地缓存 ${c.items.length} 件道具 · 更新于 ${new Date(c.time).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+        }catch(_){ }
+        el.innerHTML=`
+            <div class="devon-wallet">数据概览：${esc(cacheInfo)}</div>
+            <div class="devon-set-head">💳 会员卡包 <small>点击卡片切换体验（升级功能暂未开放）</small></div>
+            <div class="devon-vip-cards">${Object.keys(DEVON_TIERS).map(k=>`
+                <div class="devon-vip-card devon-vip-${k} ${devonState.membership===k?'devon-vip-active':''}" data-devon-vip="${k}">
+                    ${devonState.membership===k?'<i class="devon-vip-cur">✔ 使用中</i>':''}
+                    <small>DEVON ${k.toUpperCase()}</small>
+                    <b>${esc(DEVON_TIER_NAMES[k])}</b>
+                    <p>${esc(DEVON_TIER_SLOGANS[k])}</p>
+                    <span>开放 Tier ${DEVON_TIERS[k]} 商品</span>
+                </div>`).join('')}
+            </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">🔄</div>
+                <div class="devon-set-info"><b>同步百科</b><p>从 52Poké 百科重新拉取全量道具，重建分类与价格，约需数秒。</p></div>
+                <button class="devon-set-btn" id="pkmn-devon-settings-sync">同步</button>
+            </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">🧹</div>
+                <div class="devon-set-info"><b>清空百科缓存</b><p>删除本地缓存并立即重新同步。道具显示异常时使用。</p></div>
+                <button class="devon-set-btn devon-set-danger" id="pkmn-devon-settings-clear">清空重同步</button>
+            </div>
+            <div class="devon-set-note">道具与图片数据来源：52Poké 百科《道具列表》《招式学习器》。价格策略：朱紫官方价 → 其他世代官方价 → 分类参考估值。</div>`;
+        el.querySelectorAll('[data-devon-vip]').forEach(c=>c.onclick=()=>{
+            const k=c.dataset.devonVip; if(!DEVON_TIERS[k]||devonState.membership===k)return;
+            devonState.membership=k; saveDevonStore(); renderDevonSettings(); renderDevonShop();
+            showToast(`已切换为${DEVON_TIER_NAMES[k].replace(/^\S+\s/,'')}`);
+        });
+        $('pkmn-devon-settings-sync')?.addEventListener('click',async e=>{
+            const b=e.currentTarget; b.disabled=true; b.textContent='同步中…';
+            await syncDevonFrom52Poke(true);
+            renderDevonSettings();
+        });
+        $('pkmn-devon-settings-clear')?.addEventListener('click',async e=>{
+            const b=e.currentTarget; b.disabled=true; b.textContent='处理中…';
+            try{ localStorage.removeItem(DEVON_CACHE_KEY); }catch(_){ }
+            try{ localStorage.removeItem(DEVON_SYNC_FAIL_KEY); }catch(_){ }
+            showToast('已清空百科缓存，开始重新同步');
+            await syncDevonFrom52Poke(true);
+            renderDevonSettings();
+        });
+    }
     const DEVON_SYNC_FAIL_KEY='pkmn_devon_sync_fail_v1';
     function devonRecentSyncFail(){
         try{const t=Number(localStorage.getItem(DEVON_SYNC_FAIL_KEY)||0);return t&&Date.now()-t<5*60*1000;}catch(_){return false;}
@@ -7102,7 +7198,7 @@ function renderChat() {
             try{
                 const cache=JSON.parse(localStorage.getItem(DEVON_CACHE_KEY)||'null');
                 // v0.14.4：有效缓存阈值从 100 降到 40，避免部分同步永远不生效而反复请求
-                if(cache&&Array.isArray(cache.items)&&cache.items.length>=40){DEVON_PRODUCTS=cache.items;devonSetStatus('同步完成');renderDevonShop();return true;}
+                if(cache&&Array.isArray(cache.items)&&cache.items.length>=40){DEVON_PRODUCTS=cache.items;cache.items.forEach(devonAssignTier);devonSetStatus('同步完成');renderDevonShop();return true;}
             }catch(_){ }
             // 5 分钟内刚失败过则跳过自动同步，防止每次打开商店都重复请求
             if(devonRecentSyncFail()){devonSetStatus('同步失败');return false;}
@@ -7159,6 +7255,32 @@ function renderChat() {
                     items.set(key,{id:'wiki-'+devonSlug(en||name),name,en,ja,desc,cat:current,cats:[current],icon,source,price:null,sell:null,priceSource:null});
                 });
             });
+            // v0.15.0：追加全量招式学习器（道具列表页仅有概览 3 件，完整名单取自《招式学习器》页列表段最大表 = 第九世代）
+            try{
+                const tmRes=await fetch('https://wiki.52poke.com/api.php?action=parse&page=%E6%8B%9B%E5%BC%8F%E5%AD%A6%E4%B9%A0%E5%99%A8&prop=text&format=json&origin=*',{cache:'no-store'});
+                if(tmRes.ok){
+                    const tmData=await tmRes.json(); const tmHtml=tmData?.parse?.text?.['*'];
+                    if(tmHtml){
+                        const tmDoc=new DOMParser().parseFromString(tmHtml,'text/html');
+                        const h2s=[...tmDoc.body.querySelectorAll('h2')];
+                        const mHead=h2s.find(h=>devonNormalizeText(h.textContent).includes('招式学习器列表'));
+                        let tmTable=null;
+                        if(mHead){ let node=mHead.nextElementSibling;
+                            while(node&&node.tagName!=='H2'){ if(node.tagName==='TABLE')tmTable=tmTable&&tmTable.querySelectorAll('tr').length>=node.querySelectorAll('tr').length?tmTable:node; node=node.nextElementSibling; }
+                        }
+                        if(tmTable){
+                            [...tmTable.querySelectorAll('tr')].slice(1).forEach(tr=>{
+                                const cells=[...tr.querySelectorAll('th,td')]; if(cells.length<2)return;
+                                const numRaw=devonNormalizeText(cells[0].textContent); const mv=devonNormalizeText(cells[1].textContent);
+                                const num=parseInt(numRaw,10); if(!num||!mv)return;
+                                const name=`招式学习器${String(num).padStart(3,'0')}`;
+                                const key=name.toLowerCase(); if(items.has(key))return;
+                                items.set(key,{id:'wiki-'+devonSlug(name),name,en:'TM'+num,ja:'',desc:`可教授招式：${mv}`,cat:'tms',cats:['tms'],icon:'',source:DEVON_WIKI_URL,price:null,sell:null,priceSource:null});
+                            });
+                        }
+                    }else{ console.warn('[得文商店] 招式学习器页返回为空'); }
+                }else{ console.warn('[得文商店] 招式学习器列表拉取失败：HTTP '+tmRes.status); }
+            }catch(tmErr){ console.warn('[得文商店] 招式学习器同步异常（已忽略）',tmErr); }
             let list=[...items.values()];
             // 仅当几乎解析不到任何道具时才判定失败；能解析到则尽量采用
             if(list.length<40)throw new Error('解析到的道具数量异常：'+list.length);
@@ -7167,6 +7289,7 @@ function renderChat() {
             // v0.14.4：source 只保留站内地址；按价格策略补全所有道具的价格
             list.forEach(p=>{
                 if(typeof p.source==='string'){ if(p.source.startsWith('https://wiki.52poke.com/')||p.source.startsWith('/wiki/')) p.source=p.source.startsWith('/')?'https://wiki.52poke.com'+p.source:p.source; else p.source=DEVON_WIKI_URL; }
+                devonAssignTier(p);
                 devonAssignPrice(p);
             });
             DEVON_PRODUCTS=list; localStorage.setItem(DEVON_CACHE_KEY,JSON.stringify({time:Date.now(),items:list}));devonClearSyncFail();devonSetStatus('同步完成');devonState.page=1;saveDevonStore();renderDevonShop();showToast(`已同步 52Poké：${list.length} 件道具`);return true;
@@ -7183,6 +7306,9 @@ function renderChat() {
         $('pkmn-devon-orders')?.addEventListener('click',()=>{renderDevonOrders();openView('devonOrders');});
         $('pkmn-devon-orders-back')?.addEventListener('click',()=>openView('devonShop'));
         $('pkmn-devon-sync')?.addEventListener('click',()=>syncDevonFrom52Poke(true));
+        // v0.14.5：商店设置页（同步百科 / 清空缓存重新同步），独立视图仿论坛/通讯录
+        $('pkmn-devon-settings')?.addEventListener('click',()=>{renderDevonSettings();openView('devonSettings');});
+        $('pkmn-devon-settings-back')?.addEventListener('click',()=>openView('devonShop'));
         renderDevonShop(); syncDevonFrom52Poke(false);
     }
     initDevonShop();
