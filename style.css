@@ -135,6 +135,9 @@
 #pkmn-phone-panel #pkmn-chat,
 #pkmn-phone-panel #pkmn-contact-settings-view,
 #pkmn-phone-panel #pkmn-contact-person-settings-view{transform:translate3d(100%,0,0)}
+#pkmn-phone-panel #pkmn-devon-shop,
+#pkmn-phone-panel #pkmn-devon-detail,
+#pkmn-phone-panel #pkmn-devon-orders-view{transform:translate3d(100%,0,0)}
 #pkmn-phone-panel .pkmn-view{
   will-change:transform;
   backface-visibility:hidden;
@@ -2345,3 +2348,103 @@
 #pkmn-phone-panel.pkmn-theme-night .pkmn-theme-switch:checked + .pkmn-theme-switch-ui{
   background:#8b68d8!important;
 }
+
+/* ============================================================
+   v0.14.1 · 得文商店（Devon Shop）
+   ============================================================ */
+#pkmn-phone-panel #pkmn-devon-shop,
+#pkmn-phone-panel #pkmn-devon-detail,
+#pkmn-phone-panel #pkmn-devon-orders-view{transform:translate3d(100%,0,0);background:#f6f8fb!important;color:#18202a!important}
+#pkmn-phone-panel .pkmn-devon-app-icon .pkmn-devon-logo{background:linear-gradient(145deg,#233b62,#557db6)!important;color:#fff!important;font-weight:900!important;font-size:30px!important;border-radius:16px!important;box-shadow:0 6px 16px rgba(44,73,118,.22)!important}
+#pkmn-phone-panel .devon-shop-top{height:62px;min-height:62px;display:flex;align-items:center;gap:8px;padding:5px 10px 0;background:#fff;border-bottom:1px solid #dfe5ec;z-index:5}
+#pkmn-phone-panel .devon-back{width:40px;height:44px;border:0;background:transparent;font-size:34px;line-height:40px;color:#253243}
+#pkmn-phone-panel .devon-brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+#pkmn-phone-panel .devon-brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#263e66,#5f85bc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;box-shadow:0 3px 8px rgba(35,62,100,.2)}
+#pkmn-phone-panel .devon-brand b{display:block;font-size:16px;line-height:18px}
+#pkmn-phone-panel .devon-brand small{display:block;font-size:9px;letter-spacing:1.5px;color:#8290a0;font-weight:700}
+#pkmn-phone-panel .devon-cart{position:relative;width:42px;height:42px;border:0;border-radius:12px;background:#f1f4f8;font-size:19px}
+#pkmn-phone-panel .devon-cart i{position:absolute;right:-2px;top:-2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#d84f5a;color:#fff;font-style:normal;font-size:10px;line-height:17px}
+#pkmn-phone-panel .devon-shop-scroll,#pkmn-phone-panel .devon-detail-scroll,#pkmn-phone-panel .devon-orders-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+#pkmn-phone-panel .devon-shop-scroll{padding:12px 12px 24px}
+#pkmn-phone-panel .devon-search{height:40px;display:flex;align-items:center;gap:7px;padding:0 12px;border:1px solid #dbe2ea;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(38,55,76,.04)}
+#pkmn-phone-panel .devon-search span{font-size:20px;color:#8190a1}
+#pkmn-phone-panel .devon-search input{flex:1;border:0;outline:0;background:transparent;font-size:13px;color:#24303e;min-width:0}
+#pkmn-phone-panel .devon-hero{margin-top:12px;border-radius:16px;padding:15px 15px;min-height:108px;background:linear-gradient(120deg,#243b61,#5477a9);color:#fff;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative;box-shadow:0 8px 20px rgba(39,67,105,.18)}
+#pkmn-phone-panel .devon-hero:after{content:'';position:absolute;width:130px;height:130px;border-radius:50%;right:34px;top:-52px;border:1px solid rgba(255,255,255,.13);box-shadow:0 0 0 20px rgba(255,255,255,.03),0 0 0 40px rgba(255,255,255,.025)}
+#pkmn-phone-panel .devon-hero small{display:block;font-size:8px;letter-spacing:1.5px;opacity:.72;margin-bottom:4px}
+#pkmn-phone-panel .devon-hero strong{display:block;font-size:20px;line-height:25px;letter-spacing:.2px}
+#pkmn-phone-panel .devon-hero span{display:block;margin-top:6px;font-size:10px;opacity:.76}
+#pkmn-phone-panel .devon-hero-orb{width:58px;height:58px;flex:none;border:2px solid rgba(255,255,255,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;position:relative;z-index:2;margin-right:4px}
+#pkmn-phone-panel .devon-shop-section-head{display:flex;align-items:center;justify-content:space-between;margin:17px 2px 9px}
+#pkmn-phone-panel .devon-shop-section-head b{font-size:15px}
+#pkmn-phone-panel .devon-shop-section-head span{font-size:10px;color:#8b97a5}
+#pkmn-phone-panel .devon-shop-section-head button{border:0;background:transparent;color:#5076ad;font-size:11px;font-weight:700}
+#pkmn-phone-panel .devon-categories{display:flex;gap:8px;overflow:auto;padding:1px 1px 4px;scrollbar-width:none}
+#pkmn-phone-panel .devon-categories::-webkit-scrollbar{display:none}
+#pkmn-phone-panel .devon-cat{flex:none;min-width:62px;height:55px;border:1px solid #dfe5ec;border-radius:12px;background:#fff;color:#536170;font-size:10px;padding:6px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+#pkmn-phone-panel .devon-cat span{font-size:16px;line-height:17px}
+#pkmn-phone-panel .devon-cat.active{background:#eaf1fb;border-color:#8ea9cb;color:#315b91;box-shadow:inset 0 0 0 1px rgba(67,103,150,.08)}
+#pkmn-phone-panel .devon-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#pkmn-phone-panel .devon-product{background:#fff;border:1px solid #e0e6ed;border-radius:14px;padding:9px;min-width:0;box-shadow:0 2px 9px rgba(42,57,75,.04);cursor:pointer;transition:transform .12s ease}
+#pkmn-phone-panel .devon-product:active{transform:scale(.985)}
+#pkmn-phone-panel .devon-product-pic{height:104px;border-radius:11px;background:#f4f6f9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#pkmn-phone-panel .devon-product-pic:after{content:'';position:absolute;width:70px;height:70px;border-radius:50%;border:1px solid rgba(77,100,130,.07)}
+#pkmn-phone-panel .devon-product-pic span{font-size:45px;position:relative;z-index:1}
+#pkmn-phone-panel .devon-product-pic em{position:absolute;left:6px;top:6px;background:#263f66;color:#fff;border-radius:5px;padding:3px 5px;font-size:8px;font-style:normal;z-index:2}
+#pkmn-phone-panel .devon-product-name{font-weight:800;font-size:13px;line-height:18px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .devon-product-en{font-size:9px;color:#8994a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#pkmn-phone-panel .devon-product-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+#pkmn-phone-panel .devon-product-bottom b{font-size:13px;color:#1e3f70}
+#pkmn-phone-panel .devon-product-bottom button{width:27px;height:27px;border:0;border-radius:9px;background:#315d95;color:#fff;font-size:20px;line-height:25px}
+#pkmn-phone-panel .devon-empty{text-align:center;padding:45px 15px;color:#8994a0;font-size:12px;grid-column:1/-1}
+#pkmn-phone-panel .devon-detail-top{height:58px;min-height:58px;display:flex;align-items:center;justify-content:space-between;padding:5px 9px 0;background:#fff;border-bottom:1px solid #dfe5ec;font-size:16px}
+#pkmn-phone-panel .devon-detail-top button{width:42px;height:42px;border:0;background:transparent;font-size:31px;color:#243344;border-radius:10px}
+#pkmn-phone-panel .devon-detail-top button:last-child{font-size:18px;background:#f1f4f8}
+#pkmn-phone-panel .devon-detail-card{padding:15px 14px 25px}
+#pkmn-phone-panel .devon-detail-pic{height:210px;border-radius:18px;background:#f0f3f7;display:flex;align-items:center;justify-content:center;font-size:100px;box-shadow:inset 0 0 0 1px #e0e6ed}
+#pkmn-phone-panel .devon-detail-tag{display:inline-block;margin-top:13px;background:#eaf1fb;color:#3c6395;padding:4px 7px;border-radius:6px;font-size:9px;font-weight:700}
+#pkmn-phone-panel .devon-detail-card h1{font-size:23px;margin:8px 0 2px;color:#1e2a38}
+#pkmn-phone-panel .devon-detail-en{font-size:11px;color:#8b96a3}
+#pkmn-phone-panel .devon-detail-price{font-size:22px;font-weight:900;color:#254e82;margin-top:12px}
+#pkmn-phone-panel .devon-detail-card p{font-size:12px;line-height:20px;color:#596575;margin:12px 0}
+#pkmn-phone-panel .devon-detail-meta{display:flex;gap:6px;flex-wrap:wrap}
+#pkmn-phone-panel .devon-detail-meta span{background:#f3f5f8;color:#778391;border-radius:7px;padding:5px 7px;font-size:9px}
+#pkmn-phone-panel .devon-buy-row{display:flex;align-items:center;justify-content:center;gap:20px;margin:17px 0 10px}
+#pkmn-phone-panel .devon-buy-row button{width:34px;height:34px;border:1px solid #d9e0e8;background:#fff;border-radius:10px;font-size:20px;color:#355477}
+#pkmn-phone-panel .devon-buy-row b{min-width:20px;text-align:center;font-size:15px}
+#pkmn-phone-panel .devon-buy{width:100%;height:43px;border:0;border-radius:12px;background:#e8edf3;color:#3e4e60;font-size:13px;font-weight:800;margin-top:8px}
+#pkmn-phone-panel .devon-buy-main{background:#315d95;color:#fff;box-shadow:0 5px 13px rgba(49,93,149,.2)}
+#pkmn-phone-panel .devon-buy:disabled{opacity:.45}
+#pkmn-phone-panel .devon-cart-page{padding:13px}
+#pkmn-phone-panel .devon-wallet{padding:13px 14px;background:#fff;border:1px solid #dfe5ec;border-radius:13px;color:#788493;font-size:11px;margin-bottom:10px}
+#pkmn-phone-panel .devon-wallet b{float:right;color:#284f80;font-size:14px}
+#pkmn-phone-panel .devon-cart-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e0e6ed;border-radius:13px;padding:9px;margin-bottom:8px}
+#pkmn-phone-panel .devon-cart-pic{width:48px;height:48px;border-radius:10px;background:#f3f5f8;display:flex;align-items:center;justify-content:center;font-size:25px;flex:none}
+#pkmn-phone-panel .devon-cart-info{min-width:0;flex:1}.devon-cart-info b{display:block;font-size:12px}.devon-cart-info small{display:block;color:#8994a0;font-size:10px;margin-top:4px}
+#pkmn-phone-panel .devon-cart-controls{display:flex;align-items:center;gap:5px}.devon-cart-controls button{width:24px;height:24px;border:1px solid #d9e0e8;background:#fff;border-radius:7px}.devon-cart-controls b{font-size:11px;min-width:12px;text-align:center}
+#pkmn-phone-panel .devon-cart-total{display:flex;justify-content:space-between;align-items:center;margin:15px 2px 4px;font-size:12px}.devon-cart-total b{font-size:19px;color:#284f80}
+#pkmn-phone-panel .devon-orders-scroll{padding:13px}
+#pkmn-phone-panel .devon-order{background:#fff;border:1px solid #e0e6ed;border-radius:13px;padding:12px;margin-bottom:9px}.devon-order>div{display:flex;justify-content:space-between;font-size:12px}.devon-order>div span{color:#3e6ea4}.devon-order small{display:block;color:#939da8;margin-top:5px;font-size:9px}.devon-order p{font-size:11px;line-height:18px;color:#566271;margin:9px 0}.devon-order strong{font-size:14px;color:#284f80}
+
+#pkmn-phone-panel.pkmn-theme-night #pkmn-devon-shop,
+#pkmn-phone-panel.pkmn-theme-night #pkmn-devon-detail,
+#pkmn-phone-panel.pkmn-theme-night #pkmn-devon-orders-view{background:#10151d!important;color:#e8edf4!important}
+#pkmn-phone-panel.pkmn-theme-night .devon-shop-top,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-top,
+#pkmn-phone-panel.pkmn-theme-night .devon-product,
+#pkmn-phone-panel.pkmn-theme-night .devon-search,
+#pkmn-phone-panel.pkmn-theme-night .devon-wallet,
+#pkmn-phone-panel.pkmn-theme-night .devon-cart-item,
+#pkmn-phone-panel.pkmn-theme-night .devon-order{background:#171e28!important;border-color:#2c3745!important;color:#e8edf4!important}
+#pkmn-phone-panel.pkmn-theme-night .devon-search input,
+#pkmn-phone-panel.pkmn-theme-night .devon-product-name,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-card h1{color:#e8edf4!important}
+#pkmn-phone-panel.pkmn-theme-night .devon-product-en,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-en,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-card p,
+#pkmn-phone-panel.pkmn-theme-night .devon-shop-section-head span{color:#aab4c0!important}
+#pkmn-phone-panel.pkmn-theme-night .devon-cat{background:#171e28!important;border-color:#2c3745!important;color:#b8c2ce!important}
+#pkmn-phone-panel.pkmn-theme-night .devon-cat.active{background:#253852!important;border-color:#4f719c!important;color:#dbe7f7!important}
+#pkmn-phone-panel.pkmn-theme-night .devon-product-pic,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-pic,
+#pkmn-phone-panel.pkmn-theme-night .devon-cart-pic{background:#111820!important}

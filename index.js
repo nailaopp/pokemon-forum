@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.14.0)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.14.1)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -1896,8 +1896,50 @@
                 设置
             </div>
 
+            <div
+                class="pkmn-app-icon pkmn-devon-app-icon"
+                id="pkmn-open-devon-shop"
+            >
+                <div class="pkmn-devon-logo">D</div>
+                得文商店
+            </div>
+
         </div>
 
+    </div>
+
+
+    <!-- 得文商店 -->
+    <div id="pkmn-devon-shop" class="pkmn-view pkmn-devon-shop-view">
+        <div class="devon-shop-top">
+            <button id="pkmn-devon-back" class="devon-back" aria-label="返回">‹</button>
+            <div class="devon-brand">
+                <div class="devon-brand-mark">D</div>
+                <div><b>得文商店</b><small>DEVON SHOP</small></div>
+            </div>
+            <button id="pkmn-devon-cart" class="devon-cart" aria-label="购物车">🛒<i id="pkmn-devon-cart-count">0</i></button>
+        </div>
+        <div class="devon-shop-scroll">
+            <div class="devon-search"><span>⌕</span><input id="pkmn-devon-search" placeholder="搜索道具、商品…"></div>
+            <div class="devon-hero">
+                <div><small>DEVON CORPORATION</small><strong>训练家装备<br>研发与配送中心</strong><span>得文科技 · 正品保障 · 快速配送</span></div>
+                <div class="devon-hero-orb">D</div>
+            </div>
+            <div class="devon-shop-section-head"><b>商品分类</b><button id="pkmn-devon-orders">我的订单</button></div>
+            <div class="devon-categories" id="pkmn-devon-categories"></div>
+            <div class="devon-shop-section-head"><b id="pkmn-devon-section-title">热销商品</b><span id="pkmn-devon-result-count"></span></div>
+            <div class="devon-products" id="pkmn-devon-products"></div>
+        </div>
+    </div>
+
+    <div id="pkmn-devon-detail" class="pkmn-view pkmn-devon-shop-view">
+        <div class="devon-detail-top"><button id="pkmn-devon-detail-back">‹</button><b>商品详情</b><button id="pkmn-devon-detail-cart">🛒</button></div>
+        <div class="devon-detail-scroll" id="pkmn-devon-detail-body"></div>
+    </div>
+
+    <div id="pkmn-devon-orders-view" class="pkmn-view pkmn-devon-shop-view">
+        <div class="devon-detail-top"><button id="pkmn-devon-orders-back">‹</button><b>我的订单</b><span></span></div>
+        <div class="devon-orders-scroll" id="pkmn-devon-orders-body"></div>
     </div>
 
 
@@ -2512,7 +2554,10 @@
             contacts: which === 'contacts' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             chat: which === 'chat' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             contactSettings: which === 'contactSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
-            contactPersonSettings: which === 'contactPersonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
+            contactPersonSettings: which === 'contactPersonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            devonShop: which === 'devonShop' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            devonDetail: which === 'devonDetail' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            devonOrders: which === 'devonOrders' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
         };
 
         home.style.transform = positions.home;
@@ -2524,10 +2569,16 @@
         const chat = $('pkmn-chat');
         const contactSettings = $('pkmn-contact-settings-view');
         const contactPersonSettings = $('pkmn-contact-person-settings-view');
+        const devonShop = $('pkmn-devon-shop');
+        const devonDetail = $('pkmn-devon-detail');
+        const devonOrders = $('pkmn-devon-orders-view');
         if (contacts) contacts.style.transform = positions.contacts;
         if (chat) chat.style.transform = positions.chat;
         if (contactSettings) contactSettings.style.transform = positions.contactSettings;
         if (contactPersonSettings) contactPersonSettings.style.transform = positions.contactPersonSettings;
+        if (devonShop) devonShop.style.transform = positions.devonShop;
+        if (devonDetail) devonDetail.style.transform = positions.devonDetail;
+        if (devonOrders) devonOrders.style.transform = positions.devonOrders;
     }
 
     // ============================================================
@@ -6778,9 +6829,119 @@ function renderChat() {
     }
 
     // ============================================================
+    // 得文商店：基于神奇宝贝百科道具分类与《朱／紫》购买价
+    // ============================================================
+    const DEVON_STORE_KEY = 'pkmn_devon_shop_v1';
+    const DEVON_CATEGORIES = [
+        ['all','全部','▦'],['balls','精灵球','●'],['medicine','回复道具','✚'],
+        ['battle','战斗道具','⚔'],['evolution','进化道具','◆'],['field','野外使用','⌁'],
+        ['berries','树果','●'],['held','携带物品','◇']
+    ];
+    // 价格统一采用52Poké各道具页面“朱紫”购买价；未列入商店的特殊/不可购买道具不展示。
+    const DEVON_PRODUCTS = [
+        {id:'poke-ball',name:'精灵球',en:'Poké Ball',cat:'balls',price:200,sell:50,icon:'🔴',tag:'训练家必备',desc:'用于投向野生宝可梦并将其捕捉的球。它是胶囊样式的。'},
+        {id:'great-ball',name:'超级球',en:'Great Ball',cat:'balls',price:600,sell:150,icon:'🔵',tag:'热销',desc:'比起精灵球来更容易捉到宝可梦的，性能还算不错的球。'},
+        {id:'ultra-ball',name:'高级球',en:'Ultra Ball',cat:'balls',price:800,sell:200,icon:'🟡',tag:'推荐',desc:'性能优秀的球。比起超级球更容易捉到宝可梦。'},
+        {id:'premier-ball',name:'纪念球',en:'Premier Ball',cat:'balls',price:200,sell:100,icon:'⚪',tag:'限定',desc:'作为活动纪念品赠送的有点珍贵的球。'},
+        {id:'heal-ball',name:'治愈球',en:'Heal Ball',cat:'balls',price:300,sell:150,icon:'🩷',tag:'舒适',desc:'能治愈被捕捉的宝可梦，并恢复其体力与状态。'},
+        {id:'potion',name:'伤药',en:'Potion',cat:'medicine',price:200,sell:50,icon:'🧴',tag:'常备',desc:'喷雾式伤药。能让1只宝可梦回复20HP。'},
+        {id:'super-potion',name:'好伤药',en:'Super Potion',cat:'medicine',price:700,sell:175,icon:'💊',tag:'常备',desc:'喷雾式伤药。能让1只宝可梦回复60HP。'},
+        {id:'hyper-potion',name:'超级伤药',en:'Hyper Potion',cat:'medicine',price:1500,sell:375,icon:'🧪',tag:'高效',desc:'喷雾式伤药。能让1只宝可梦回复120HP。'},
+        {id:'full-heal',name:'万灵药',en:'Full Heal',cat:'medicine',price:400,sell:100,icon:'✨',tag:'状态回复',desc:'喷雾式药水。能治愈1只宝可梦的所有异常状态。'},
+        {id:'paralyze-heal',name:'解麻药',en:'Paralyze Heal',cat:'medicine',price:200,sell:50,icon:'⚡',tag:'状态回复',desc:'喷雾式药水。能治愈1只宝可梦的麻痹状态。'},
+        {id:'awakening',name:'解眠药',en:'Awakening',cat:'medicine',price:200,sell:50,icon:'💤',tag:'状态回复',desc:'喷雾式药水。能治愈1只宝可梦的睡眠状态。'},
+        {id:'antidote',name:'解毒药',en:'Antidote',cat:'medicine',price:200,sell:50,icon:'🟢',tag:'状态回复',desc:'喷雾式药水。能治愈1只宝可梦的中毒状态。'},
+        {id:'revive',name:'活力碎片',en:'Revive',cat:'medicine',price:2000,sell:500,icon:'💎',tag:'重要',desc:'能让陷入濒死状态的宝可梦复苏，并恢复一半HP。'},
+        {id:'repel',name:'除虫喷雾',en:'Repel',cat:'field',price:400,sell:200,icon:'🌫️',tag:'野外',desc:'使用后，在较短的一段时间内，弱小的野生宝可梦将完全不会出现。'},
+        {id:'super-repel',name:'白银喷雾',en:'Super Repel',cat:'field',price:700,sell:350,icon:'🌁',tag:'野外',desc:'弱小的野生宝可梦将完全不会出现。效果比除虫喷雾更持久。'},
+        {id:'max-repel',name:'黄金喷雾',en:'Max Repel',cat:'field',price:900,sell:450,icon:'✨',tag:'野外',desc:'弱小的野生宝可梦将完全不会出现。效果比白银喷雾更持久。'},
+        {id:'escape-rope',name:'离洞绳',en:'Escape Rope',cat:'field',price:550,sell:275,icon:'🪢',tag:'探险',desc:'在洞窟等地方使用，可以迅速回到入口。'},
+        {id:'fire-stone',name:'火之石',en:'Fire Stone',cat:'evolution',price:3000,sell:750,icon:'🔥',tag:'进化',desc:'能让某些特定宝可梦进化的神奇石头。看上去是橙黄色的。'},
+        {id:'water-stone',name:'水之石',en:'Water Stone',cat:'evolution',price:3000,sell:750,icon:'💧',tag:'进化',desc:'能让某些特定宝可梦进化的神奇石头。看上去是澄蓝色的。'},
+        {id:'thunder-stone',name:'雷之石',en:'Thunder Stone',cat:'evolution',price:3000,sell:750,icon:'⚡',tag:'进化',desc:'能让某些特定宝可梦进化的神奇石头。看上去是黄色的。'},
+        {id:'leaf-stone',name:'叶之石',en:'Leaf Stone',cat:'evolution',price:3000,sell:750,icon:'🍃',tag:'进化',desc:'能让某些特定宝可梦进化的神奇石头。有着叶子般的花纹。'},
+        {id:'moon-stone',name:'月之石',en:'Moon Stone',cat:'evolution',price:3000,sell:750,icon:'🌙',tag:'进化',desc:'能让某些特定宝可梦进化的神奇石头。像月亮一样闪耀。'},
+        {id:'x-attack',name:'力量强化',en:'X Attack',cat:'battle',price:1000,sell:500,icon:'⚔️',tag:'对战',desc:'使用后，在对战中提升宝可梦的攻击。'},
+        {id:'x-defense',name:'防御强化',en:'X Defense',cat:'battle',price:2000,sell:1000,icon:'🛡️',tag:'对战',desc:'使用后，在对战中提升宝可梦的防御。'},
+        {id:'x-speed',name:'速度强化',en:'X Speed',cat:'battle',price:1000,sell:500,icon:'💨',tag:'对战',desc:'使用后，在对战中提升宝可梦的速度。'},
+        {id:'guard-spec',name:'守住强化',en:'Guard Spec.',cat:'battle',price:1500,sell:750,icon:'🔰',tag:'对战',desc:'使用后，在对战中防止能力被降低。'},
+        {id:'dire-hit',name:'要害攻击',en:'Dire Hit',cat:'battle',price:1000,sell:500,icon:'🎯',tag:'对战',desc:'使用后，在对战中更容易击中要害。'},
+        {id:'oran-berry',name:'橙橙果',en:'Oran Berry',cat:'berries',price:80,sell:40,icon:'🟠',tag:'树果',desc:'宝可梦携带后，HP降低时会食用并回复少量HP。'},
+        {id:'sitrus-berry',name:'文柚果',en:'Sitrus Berry',cat:'berries',price:250,sell:125,icon:'🍋',tag:'树果',desc:'宝可梦携带后，HP降低时会食用并回复一定HP。'},
+        {id:'sitrus-berry-plus',name:'文柚果礼盒',en:'Devon Berry Pack',cat:'held',price:1200,sell:600,icon:'🎁',tag:'得文精选',desc:'得文公司特别包装的训练家补给礼盒，适合长途旅行。'}
+    ];
+    let devonState = { category:'all', query:'', cart:{}, orders:[], balance:100000, selected:null };
+    try { const raw=localStorage.getItem(DEVON_STORE_KEY); if(raw) devonState={...devonState,...JSON.parse(raw)}; } catch(_){ }
+    function saveDevonStore(){ try{localStorage.setItem(DEVON_STORE_KEY,JSON.stringify(devonState));}catch(_){} }
+    function devonMoney(n){ return '₽ ' + Number(n||0).toLocaleString('zh-CN'); }
+    function devonCartCount(){ return Object.values(devonState.cart||{}).reduce((a,b)=>a+Number(b||0),0); }
+    function devonCartTotal(){ return Object.entries(devonState.cart||{}).reduce((sum,[id,q])=>sum+(DEVON_PRODUCTS.find(p=>p.id===id)?.price||0)*q,0); }
+    function renderDevonCategories(){
+        const el=$('pkmn-devon-categories'); if(!el)return;
+        el.innerHTML=DEVON_CATEGORIES.map(([id,n,ic])=>`<button class="devon-cat ${devonState.category===id?'active':''}" data-devon-cat="${id}"><span>${ic}</span>${n}</button>`).join('');
+        el.querySelectorAll('[data-devon-cat]').forEach(b=>b.onclick=()=>{devonState.category=b.dataset.devonCat;renderDevonShop();});
+    }
+    function renderDevonShop(){
+        renderDevonCategories();
+        const q=(devonState.query||'').trim().toLowerCase();
+        let list=DEVON_PRODUCTS.filter(p=>(devonState.category==='all'||p.cat===devonState.category)&&(!q||[p.name,p.en,p.desc,p.tag].join(' ').toLowerCase().includes(q)));
+        const title=$('pkmn-devon-section-title'); if(title) title.textContent=devonState.category==='all'?(q?'搜索结果':'热销商品'):(DEVON_CATEGORIES.find(x=>x[0]===devonState.category)?.[1]||'商品');
+        const rc=$('pkmn-devon-result-count'); if(rc)rc.textContent=`${list.length} 件商品`;
+        const out=$('pkmn-devon-products'); if(!out)return;
+        out.innerHTML=list.map(p=>`<article class="devon-product" data-devon-product="${p.id}"><div class="devon-product-pic"><span>${p.icon}</span><em>${p.tag}</em></div><div class="devon-product-name">${p.name}</div><div class="devon-product-en">${p.en}</div><div class="devon-product-bottom"><b>${devonMoney(p.price)}</b><button data-devon-add="${p.id}" aria-label="加入购物车">＋</button></div></article>`).join('')||'<div class="devon-empty">没有找到符合条件的商品</div>';
+        out.querySelectorAll('[data-devon-product]').forEach(c=>c.onclick=e=>{if(e.target.closest('[data-devon-add]'))return;openDevonDetail(c.dataset.devonProduct);});
+        out.querySelectorAll('[data-devon-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();addDevonCart(b.dataset.devonAdd);});
+        const cc=$('pkmn-devon-cart-count');if(cc)cc.textContent=devonCartCount();
+    }
+    function addDevonCart(id){ devonState.cart[id]=(devonState.cart[id]||0)+1;saveDevonStore();renderDevonShop();showToast('已加入得文商店购物车'); }
+    function openDevonDetail(id){
+        const p=DEVON_PRODUCTS.find(x=>x.id===id); if(!p)return; devonState.selected=id;
+        const el=$('pkmn-devon-detail-body'); if(!el)return;
+        const qty=devonState.cart[id]||0;
+        el.innerHTML=`<div class="devon-detail-card"><div class="devon-detail-pic">${p.icon}</div><div class="devon-detail-tag">${p.tag}</div><h1>${p.name}</h1><div class="devon-detail-en">${p.en}</div><div class="devon-detail-price">${devonMoney(p.price)}</div><p>${p.desc}</p><div class="devon-detail-meta"><span>得文官方商城</span><span>朱紫参考价</span><span>可加入购物车</span></div><div class="devon-buy-row"><button id="devon-detail-minus">−</button><b id="devon-detail-qty">${qty}</b><button id="devon-detail-plus">＋</button></div><button class="devon-buy" id="devon-detail-add">加入购物车</button><button class="devon-buy devon-buy-main" id="devon-detail-now">立即购买</button></div>`;
+        $('devon-detail-minus').onclick=()=>{if((devonState.cart[id]||0)>0){devonState.cart[id]--;if(devonState.cart[id]<=0)delete devonState.cart[id];saveDevonStore();openDevonDetail(id);}};
+        $('devon-detail-plus').onclick=()=>{addDevonCart(id);openDevonDetail(id);};
+        $('devon-detail-add').onclick=()=>{addDevonCart(id);openDevonDetail(id);};
+        $('devon-detail-now').onclick=()=>{addDevonCart(id);openDevonCart();};
+        openView('devonDetail');
+    }
+    function openDevonCart(){
+        const items=Object.entries(devonState.cart).map(([id,q])=>({p:DEVON_PRODUCTS.find(x=>x.id===id),q})).filter(x=>x.p&&x.q>0);
+        const body=$('pkmn-devon-detail-body'); if(!body)return;
+        body.innerHTML=`<div class="devon-cart-page"><div class="devon-wallet">余额 <b>${devonMoney(devonState.balance)}</b></div>${items.length?items.map(({p,q})=>`<div class="devon-cart-item"><div class="devon-cart-pic">${p.icon}</div><div class="devon-cart-info"><b>${p.name}</b><small>${devonMoney(p.price)} × ${q}</small></div><div class="devon-cart-controls"><button data-cart-minus="${p.id}">−</button><b>${q}</b><button data-cart-plus="${p.id}">＋</button></div></div>`).join(''):'<div class="devon-empty">购物车还是空的</div>'}<div class="devon-cart-total"><span>合计</span><b>${devonMoney(devonCartTotal())}</b></div><button class="devon-buy devon-buy-main" id="devon-checkout" ${items.length?'':'disabled'}>提交订单</button><button class="devon-buy" id="devon-recharge">补充 10,000 ₽ 余额（测试）</button></div>`;
+        body.querySelectorAll('[data-cart-minus]').forEach(b=>b.onclick=()=>{const id=b.dataset.cartMinus;devonState.cart[id]--;if(devonState.cart[id]<=0)delete devonState.cart[id];saveDevonStore();openDevonCart();});
+        body.querySelectorAll('[data-cart-plus]').forEach(b=>b.onclick=()=>{addDevonCart(b.dataset.cartPlus);openDevonCart();});
+        $('devon-checkout').onclick=checkoutDevon;
+        $('devon-recharge').onclick=()=>{devonState.balance+=10000;saveDevonStore();openDevonCart();showToast('余额已补充');};
+        openView('devonDetail');
+    }
+    function checkoutDevon(){
+        const total=devonCartTotal(); if(!total)return; if(devonState.balance<total){showToast('余额不足，请先补充余额');return;}
+        const items=Object.entries(devonState.cart).map(([id,q])=>({id,q,name:DEVON_PRODUCTS.find(p=>p.id===id)?.name||id}));
+        const order={id:'DV'+Date.now().toString().slice(-8),time:new Date().toLocaleString('zh-CN'),total,items,status:'已下单'};
+        devonState.balance-=total;devonState.orders.unshift(order);devonState.cart={};saveDevonStore();showToast('得文商店订单已提交');renderDevonOrders();openView('devonOrders');
+    }
+    function renderDevonOrders(){
+        const el=$('pkmn-devon-orders-body');if(!el)return;
+        el.innerHTML=`<div class="devon-wallet">可用余额 <b>${devonMoney(devonState.balance)}</b></div>`+(devonState.orders.length?devonState.orders.map(o=>`<div class="devon-order"><div><b>${o.id}</b><span>${o.status}</span></div><small>${o.time}</small><p>${o.items.map(x=>`${x.name} × ${x.q}`).join('、')}</p><strong>${devonMoney(o.total)}</strong></div>`).join(''):'<div class="devon-empty">暂无订单</div>');
+    }
+    function initDevonShop(){
+        $('pkmn-devon-search')?.addEventListener('input',e=>{devonState.query=e.target.value;renderDevonShop();});
+        $('pkmn-devon-back')?.addEventListener('click',()=>openView('home'));
+        $('pkmn-devon-cart')?.addEventListener('click',openDevonCart);
+        $('pkmn-devon-detail-back')?.addEventListener('click',()=>{renderDevonShop();openView('devonShop');});
+        $('pkmn-devon-detail-cart')?.addEventListener('click',openDevonCart);
+        $('pkmn-devon-orders')?.addEventListener('click',()=>{renderDevonOrders();openView('devonOrders');});
+        $('pkmn-devon-orders-back')?.addEventListener('click',()=>openView('devonShop'));
+        renderDevonShop();
+    }
+    initDevonShop();
+
+    // ============================================================
     // 事件
     // ============================================================
 
+    $('pkmn-open-devon-shop')?.addEventListener('click', () => { renderDevonShop(); openView('devonShop'); });
     $('pkmn-open-contacts')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
     $('pkmn-contacts-back')?.addEventListener('click', () => openView('home'));
     $('pkmn-contacts-add')?.addEventListener('click', addContact);
