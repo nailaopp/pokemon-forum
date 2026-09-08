@@ -2448,3 +2448,10 @@
 #pkmn-phone-panel.pkmn-theme-night .devon-product-pic,
 #pkmn-phone-panel.pkmn-theme-night .devon-detail-pic,
 #pkmn-phone-panel.pkmn-theme-night .devon-cart-pic{background:#111820!important}
+
+/* 得文全道具同步版 */
+#pkmn-phone-panel .devon-head-actions{display:flex;align-items:center;gap:8px}
+#pkmn-phone-panel .devon-load-more{grid-column:1/-1;width:100%;height:40px;border:1px solid #d9e1ea;background:#fff;border-radius:11px;color:#315d95;font-size:11px;font-weight:800;margin-top:2px}
+#pkmn-phone-panel .devon-product-bottom button:disabled{background:#c9d0d9;color:#fff;cursor:not-allowed}
+#pkmn-phone-panel .devon-source{display:block;margin-top:12px;text-align:center;color:#4c72a5;font-size:10px;text-decoration:none}
+#pkmn-phone-panel.pkmn-theme-night .devon-load-more{background:#171e28;border-color:#2b3543;color:#9ebde5}
