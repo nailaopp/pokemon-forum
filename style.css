@@ -2743,3 +2743,42 @@
   background:#151e2d!important;
   color:#7f8da6!important;
 }
+
+
+/* ============================================================
+   v0.14.4 · 道具真实图标 + 价格徽标
+   ============================================================ */
+#pkmn-phone-panel .devon-item-img{
+  width:44px!important;height:44px!important;max-width:44px!important;max-height:44px!important;
+  object-fit:contain!important;display:block!important;margin:0 auto!important;
+  image-rendering:auto!important;
+}
+#pkmn-phone-panel .devon-item-img-lg{
+  width:84px!important;height:84px!important;max-width:84px!important;max-height:84px!important;
+  object-fit:contain!important;display:block!important;margin:0 auto!important;
+}
+#pkmn-phone-panel .devon-product-pic span,
+#pkmn-phone-panel .devon-detail-pic span{
+  display:block!important;text-align:center!important;line-height:1!important;
+}
+#pkmn-phone-panel .devon-detail-pic span{font-size:52px!important}
+#pkmn-phone-panel .devon-price-badge{
+  display:inline-block!important;margin-left:6px!important;padding:1px 7px!important;
+  border-radius:8px!important;font-size:9px!important;font-weight:800!important;
+  vertical-align:2px!important;
+  background:#eef3fb!important;color:#5c7690!important;border:1px solid #d4dde8!important;
+}
+#pkmn-phone-panel .devon-price-badge.devon-price-official{
+  background:#e8f4ec!important;color:#2f7a45!important;border-color:#c4e2cd!important;
+}
+/* 夜间适配 */
+#pkmn-phone-panel.pkmn-theme-night .devon-item-img,
+#pkmn-phone-panel.pkmn-theme-night .devon-item-img-lg{
+  filter:brightness(.92) saturate(.95)!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-price-badge{
+  background:#1d2739!important;color:#9ebde5!important;border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-price-badge.devon-price-official{
+  background:#1c3324!important;color:#7fd694!important;border-color:#2f5a3b!important;
+}
