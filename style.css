@@ -2455,3 +2455,291 @@
 #pkmn-phone-panel .devon-product-bottom button:disabled{background:#c9d0d9;color:#fff;cursor:not-allowed}
 #pkmn-phone-panel .devon-source{display:block;margin-top:12px;text-align:center;color:#4c72a5;font-size:10px;text-decoration:none}
 #pkmn-phone-panel.pkmn-theme-night .devon-load-more{background:#171e28;border-color:#2b3543;color:#9ebde5}
+
+
+/* ============================================================
+   v0.14.3 · 夜间主题补全
+   修复：微信式聊天、联系人设置、评论区、世界书、得文商店
+   等后加模块未适配夜间模式导致的大片纯白界面。
+   色板与既有夜间变量保持一致：
+   bg #111827 / paper #172033 / paper2 #1d2739 / line #2d3a50
+   text #edf3ff / text2 #b6c2d6 / text3 #7f8da6 / blue #82aef5
+   ============================================================ */
+
+/* ---------- 通讯录 / 微信式聊天 ---------- */
+#pkmn-phone-panel.pkmn-theme-night .wechat-search,
+#pkmn-phone-panel.pkmn-theme-night .wechat-contact-list,
+#pkmn-phone-panel.pkmn-theme-night .wechat-contact,
+#pkmn-phone-panel.pkmn-theme-night .wechat-messages,
+#pkmn-phone-panel.pkmn-theme-night .wechat-inputbar,
+#pkmn-phone-panel.pkmn-theme-night .wechat-inputbar textarea,
+#pkmn-phone-panel.pkmn-theme-night .wechat-typing,
+#pkmn-phone-panel.pkmn-theme-night .wechat-setting-card,
+#pkmn-phone-panel.pkmn-theme-night .wechat-delete-toolbar,
+#pkmn-phone-panel.pkmn-theme-night .wechat-nav,
+#pkmn-phone-panel.pkmn-theme-night .wechat-bottom-nav{
+  background:#172033!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-contact:active,
+#pkmn-phone-panel.pkmn-theme-night .wechat-contact:hover{
+  background:#1d2739!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-contact-main b,
+#pkmn-phone-panel.pkmn-theme-night .wechat-nav button,
+#pkmn-phone-panel.pkmn-theme-night .wechat-bottom-nav button.active,
+#pkmn-phone-panel.pkmn-theme-night .wechat-delete-toolbar button{
+  color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-contact-main p,
+#pkmn-phone-panel.pkmn-theme-night .wechat-time,
+#pkmn-phone-panel.pkmn-theme-night .wechat-typing,
+#pkmn-phone-panel.pkmn-theme-night .wechat-setting-card label{
+  color:#b6c2d6!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-msg-row .wechat-bubble{
+  background:#263349!important;
+  color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-msg-row.mine .wechat-bubble{
+  background:#3a6b3f!important;
+  color:#eef7ea!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-msg-row.contact-msg-selected .wechat-bubble{
+  background:#1d3350!important;
+  border-color:#35507c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-inputbar textarea{
+  background:#0f1726!important;
+  color:#edf3ff!important;
+  border-color:#35445c!important;
+  caret-color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .wechat-delete-toolbar{
+  border-bottom-color:#2d3a50!important;
+}
+
+/* ---------- 联系人设置 / 单联系人注入 ---------- */
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-profile,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-card,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-input,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-injection-card,
+#pkmn-phone-panel.pkmn-theme-night .contact-injection-stepper,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-contact-add-progress-box{
+  background:#172033!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-name,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-section-title,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-injection-card .contact-settings-section-title,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-toggle-row,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-toggle-row b,
+#pkmn-phone-panel.pkmn-theme-night .contact-injection-btn,
+#pkmn-phone-panel.pkmn-theme-night .contact-injection-stepper button,
+#pkmn-phone-panel.pkmn-theme-night .contact-injection-stepper b,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-score b,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-score strong{
+  color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-icon,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-injection-card .contact-settings-icon,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-injection-limit,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-score,
+#pkmn-phone-panel.pkmn-theme-night .contact-injection-stepper button{
+  color:#b6c2d6!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-persist{
+  color:#82aef5!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-injection-btn.is-active{
+  background:#1d3350!important;
+  color:#9ec5f7!important;
+  border-color:#35507c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-input{
+  background:#0f1726!important;
+  color:#edf3ff!important;
+  border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-save{
+  background:#2f6b3c!important;
+  border-color:#3f8a4f!important;
+  color:#eaf7ec!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-save:active{
+  background:#275a33!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-input input,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-input textarea{
+  background:#0f1726!important;
+  color:#edf3ff!important;
+  border-color:#35445c!important;
+}
+
+/* ---------- 论坛评论区 / 操作按钮 ---------- */
+#pkmn-phone-panel.pkmn-theme-night .pkmn-inject,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-del,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-replies-title{
+  background:#1d2739!important;
+  color:#cbd6e8!important;
+  border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-inject.on{
+  background:#1d3350!important;
+  color:#9ec5f7!important;
+  border-color:#35507c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-reply-msg,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-nested-bubble{
+  background:#1d2739!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-reply-msg.is-user{
+  background:#17324a!important;
+  color:#dbeeff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-nested-text,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-nested-name{
+  color:#d7e1f2!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-nested-target{
+  color:#82aef5!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-nested-input,
+#pkmn-phone-panel.pkmn-theme-night #pkmn-reply-input{
+  background:#0f1726!important;
+  color:#edf3ff!important;
+  border-color:#35445c!important;
+  caret-color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-user-badge{
+  background:#17324a!important;
+  color:#9ec5f7!important;
+  border-color:#35507c!important;
+}
+
+/* ---------- 世界书 ---------- */
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-panel,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-book,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-group,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-search-wrap{
+  background:#172033!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-book-toggle,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-book-title b{
+  color:#d7e1f2!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-book-actions button:first-child,
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-content-btn{
+  background:#1d293d!important;
+  color:#cbd6e8!important;
+  border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-content-box pre{
+  background:#0f1726!important;
+  color:#d7e1f2!important;
+  border-color:#2d3a50!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-worldbook-content-book{
+  color:#b6c2d6!important;
+  border-bottom-color:#2d3a50!important;
+}
+
+/* ---------- 得文商店 ---------- */
+#pkmn-phone-panel.pkmn-theme-night .devon-shop-top,
+#pkmn-phone-panel.pkmn-theme-night .devon-search,
+#pkmn-phone-panel.pkmn-theme-night .devon-cat,
+#pkmn-phone-panel.pkmn-theme-night .devon-product,
+#pkmn-phone-panel.pkmn-theme-night .devon-product-pic,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-top,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-pic,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-meta span,
+#pkmn-phone-panel.pkmn-theme-night .devon-buy-row button,
+#pkmn-phone-panel.pkmn-theme-night .devon-buy,
+#pkmn-phone-panel.pkmn-theme-night .devon-wallet,
+#pkmn-phone-panel.pkmn-theme-night .devon-cart,
+#pkmn-phone-panel.pkmn-theme-night .devon-cart-item,
+#pkmn-phone-panel.pkmn-theme-night .devon-cart-pic,
+#pkmn-phone-panel.pkmn-theme-night .devon-order,
+#pkmn-phone-panel.pkmn-theme-night .devon-load-more,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-card{
+  background:#172033!important;
+  color:#edf3ff!important;
+  border-color:#2d3a50!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-search input{
+  background:#0f1726!important;
+  color:#edf3ff!important;
+  border-color:#35445c!important;
+  caret-color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-back,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-top button,
+#pkmn-phone-panel.pkmn-theme-night .devon-shop-section-head button{
+  background:#1d293d!important;
+  color:#cbd6e8!important;
+  border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-cat{
+  color:#b6c2d6!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-cat.active{
+  background:#1d3350!important;
+  color:#9ec5f7!important;
+  border-color:#35507c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-product-name{
+  color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-product-en{
+  color:#7f8da6!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-product-bottom b,
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-price{
+  color:#8fb6ee!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-tag{
+  background:#1d3350!important;
+  color:#9ec5f7!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-card h1{
+  color:#edf3ff!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-card p{
+  color:#b6c2d6!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-detail-pic{
+  background:#1d2739!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-buy-row button{
+  border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-buy{
+  background:#1d293d!important;
+  color:#cbd6e8!important;
+  border-color:#35445c!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-buy-main{
+  background:#3b67a3!important;
+  color:#fff!important;
+  border-color:#5d86c9!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-product-bottom button:disabled{
+  background:#243043!important;
+  color:#7f8da6!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-source{
+  color:#82aef5!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-cart i{
+  background:#a54d5d!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-empty{
+  background:#151e2d!important;
+  color:#7f8da6!important;
+}
