@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.15.0)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.17.0)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.15.0"; // persist contact API independently
+    const VERSION = "0.17.0"; // 与 manifest.json / README 对齐
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -1921,12 +1921,13 @@
             <button id="pkmn-devon-settings" class="devon-cart" aria-label="商店设置">⚙</button>
         </div>
         <div class="devon-shop-scroll">
+            <div id="pkmn-devon-wallet-slot"></div>
             <div class="devon-search"><span>⌕</span><input id="pkmn-devon-search" placeholder="搜索道具、商品…"></div>
             <div class="devon-hero" id="pkmn-devon-hero">
                 <div><small>DEVON CORPORATION</small><strong>训练家装备<br>研发与配送中心</strong><span>得文科技 · 正品保障 · 快速配送</span></div>
                 <div class="devon-hero-right"><span class="devon-member-badge">🥇 黄金会员</span><div class="devon-hero-orb">D</div></div>
             </div>
-            <div class="devon-shop-section-head"><b>商品分类</b><div class="devon-head-actions"><button id="pkmn-devon-sync">同步百科</button><button id="pkmn-devon-orders">我的订单</button></div></div>
+            <div class="devon-shop-section-head"><b>商品分类</b><div class="devon-head-actions"><button id="pkmn-devon-sync">同步百科</button><button id="pkmn-devon-bag-entry">🎒 我的道具</button><button id="pkmn-devon-orders">我的订单</button></div></div>
             <div class="devon-categories" id="pkmn-devon-categories"></div>
             <div class="devon-shop-section-head"><b id="pkmn-devon-section-title">热销商品</b><span id="pkmn-devon-result-count"></span></div>
             <div class="devon-products" id="pkmn-devon-products"></div>
@@ -1946,6 +1947,11 @@
     <div id="pkmn-devon-settings-view" class="pkmn-view pkmn-devon-shop-view">
         <div class="devon-detail-top"><button id="pkmn-devon-settings-back">‹</button><b>商店设置</b><span></span></div>
         <div class="devon-orders-scroll" id="pkmn-devon-settings-body"></div>
+    </div>
+
+    <div id="pkmn-devon-bag-view" class="pkmn-view pkmn-devon-shop-view">
+        <div class="devon-detail-top"><button id="pkmn-devon-bag-back">‹</button><b>🎒 我的道具</b><span></span></div>
+        <div class="devon-orders-scroll" id="pkmn-devon-bag-body"></div>
     </div>
 
 
@@ -2564,7 +2570,8 @@
             devonShop: which === 'devonShop' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             devonDetail: which === 'devonDetail' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             devonOrders: which === 'devonOrders' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
-            devonSettings: which === 'devonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
+            devonSettings: which === 'devonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            devonBag: which === 'devonBag' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
         };
 
         home.style.transform = positions.home;
@@ -2580,6 +2587,7 @@
         const devonDetail = $('pkmn-devon-detail');
         const devonOrders = $('pkmn-devon-orders-view');
         const devonSettings = $('pkmn-devon-settings-view');
+        const devonBag = $('pkmn-devon-bag-view');
         if (contacts) contacts.style.transform = positions.contacts;
         if (chat) chat.style.transform = positions.chat;
         if (contactSettings) contactSettings.style.transform = positions.contactSettings;
@@ -2588,6 +2596,7 @@
         if (devonDetail) devonDetail.style.transform = positions.devonDetail;
         if (devonOrders) devonOrders.style.transform = positions.devonOrders;
         if (devonSettings) devonSettings.style.transform = positions.devonSettings;
+        if (devonBag) devonBag.style.transform = positions.devonBag;
     }
 
     // ============================================================
@@ -3268,6 +3277,13 @@ const FORUM_INJECT_PROMPT_ID = 'pkmn-forum-thread-injection';
                                                 t.id
                                         )
                                 );
+
+                                // 修复：删除已注入的帖子后同步刷新正文注入，
+                                // 否则已删帖子的内容仍会继续注入给 AI。
+                                if (injectedThreadIds && injectedThreadIds.has(t.id)) {
+                                    injectedThreadIds.delete(t.id);
+                                    try { applyForumInjections(); } catch (_) {}
+                                }
 
                                 saveChatState();
 
@@ -5937,7 +5953,11 @@ ${esc(b.prompt)}
     function switchContactChat(forcedKey = null, options = {}) {
         const key = getContactChatArchiveKey(forcedKey);
         if (!key) return false;
-        const current = getContactChatArchiveKey(config.__contactActiveChatKey);
+        // 修复：__contactActiveChatKey 为空时不能回退到当前 chatKey，
+        // 否则 current 永远等于 key，档案切换被短路，新聊天会沿用旧聊天的通讯录。
+        const current = config.__contactActiveChatKey
+            ? getContactChatArchiveKey(config.__contactActiveChatKey)
+            : null;
         if (current === key) {
             currentContactId = null;
             return true;
@@ -6477,11 +6497,17 @@ function renderChat() {
         setTimeout(() => $('pkmn-chat-input')?.focus(), 120);
     }
 
+    let contactSending = false;
     async function sendContactMessage() {
+        if (contactSending) {
+            showToast('上一条消息还在回复中，请稍候…');
+            return;
+        }
         const input = $('pkmn-chat-input');
         const text = String(input?.value || '').trim();
         const c = contactById(currentContactId);
         if (!text || !c) return;
+        contactSending = true;
         contactCfg();
         if (!config.contactChats[currentContactId]) config.contactChats[currentContactId] = [];
         const chat = config.contactChats[currentContactId];
@@ -6515,6 +6541,8 @@ function renderChat() {
             typing.remove();
             chat.push({role:'assistant', content:'消息发送失败：'+(e.message||e), time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
             renderChat();
+        } finally {
+            contactSending = false;
         }
     }
 
@@ -6681,6 +6709,7 @@ function renderChat() {
             if (!window.confirm(`删除联系人“${name}”？\n\n将删除该联系人在当前酒馆聊天中的资料、备注、联动设置及通讯录聊天记录。此操作无法恢复。`)) return;
             const idx = config.contacts.findIndex(x => String(x.id) === String(currentContactId));
             if (idx < 0) return;
+            const removingContactId = String(currentContactId);
             config.contacts.splice(idx, 1);
             if (config.contactChats && Object.prototype.hasOwnProperty.call(config.contactChats, currentContactId)) {
                 delete config.contactChats[currentContactId];
@@ -6690,6 +6719,15 @@ function renderChat() {
             }
             currentContactId = null;
             saveContactConfig();
+            // 修复：删除联系人后同步移除其私聊正文注入，避免已删联系人的聊天记录继续注入。
+            try {
+                const injState = getContactInjectionChatState();
+                if (injState && injState.state && injState.state.contacts && injState.state.contacts[removingContactId]) {
+                    delete injState.state.contacts[removingContactId];
+                    saveContactInjectionState(injState.all);
+                }
+                applyContactInjectionToMainAI();
+            } catch (_) {}
             renderContacts();
             openView('contacts');
             showToast(`✓ 已删除联系人：${name}`);
@@ -6877,7 +6915,8 @@ function renderChat() {
         ['megaz','Mega & Z','✧'],
         ['treasure','宝物贵重','💰'],
         ['field','野外探险','🌿'],
-        ['misc','杂项','📦']
+        ['misc','杂项','📦'],
+        ['nursery','培育屋','🥚']
     ];
     // 百科页面标题 -> 新分类（h2/h3/h4 通用；未列出的标题一律不收录）
     const DEVON_CAT_MAP = {
@@ -6931,12 +6970,12 @@ function renderChat() {
     const DEVON_TIER_NAMES={gold:'🥇 黄金会员',platinum:'🥈 白金会员',blackgold:'🥉 黑金会员',machamp:'💥 怪力卡'};
     const DEVON_TIER_SLOGANS={gold:'得文黄金会员 · 日常装备应有尽有',platinum:'白金专柜 · 进阶训练家的选择',blackgold:'黑金俱乐部 · 难得之物静候识货人',machamp:'怪力卡专区 · 传说中的库存'};
     const DEVON_TIER_HERO={gold:'训练家装备<br>研发与配送中心',platinum:'白金专柜<br>进阶训练家的选择',blackgold:'黑金俱乐部<br>稀有道具直供',machamp:'怪力卡专区<br>传说中的库存'};
-    // 分类基础 tier（越级商品对低会员完全隐藏）
-    const DEVON_CAT_TIER={balls:2,medicine:1,battle:1,held:2,berries:1,evolution:2,training:2,tms:2,megaz:3,treasure:3,field:1,misc:1};
-    // 名单覆盖：从上到下优先命中
+    // 分类基础 tier（v0.16.0 按动漫稀有度整体上调：Mega/Z 整类升至 T4；越级商品灰显锁定）
+    const DEVON_CAT_TIER={balls:2,medicine:1,battle:1,held:2,berries:1,evolution:2,training:2,tms:2,megaz:4,treasure:3,field:1,misc:1,nursery:4};
+    // 名单覆盖：从上到下优先命中（v0.16.0 动漫稀有度上调版）
     const DEVON_TIER_OVERRIDES=[
-        {t:4,kw:['大师球','究极球']},
-        {t:3,kw:['讲究','专爱','气势披带','吃剩的东西','剩饭','生命宝珠','突击背心','弱点保险','金珠','星星碎片','大珍珠','彗星','龙之牙','龙之鳞片','灵界之符','深海之牙','深海鳞片','破坏光线','剑舞','龙之舞','龙之波动','暴风','流星群','大字爆炎','打雷','暴风雪','水炮','日光烈焰','真气弹','恶之波动','精神强念','大地之力','逆鳞','近身战','闪焰冲锋','冰冻光束','暗影球','冲浪']},
+        {t:4,kw:['大师球','究极球','超级石','Ｚ纯晶','Z纯晶','化石','彗星碎片','王冠','心之鳞片','神奇糖果','金刚宝珠','白玉宝珠','白金宝珠']},
+        {t:3,kw:['讲究','专爱','气势披带','吃剩的东西','剩饭','生命宝珠','突击背心','弱点保险','金珠','星星碎片','大珍珠','龙之牙','龙之鳞片','灵界之符','深海之牙','深海鳞片','月之石','日之石','光之石','暗之石','觉醒之石','升级数据','金属膜','王者之证','破坏光线','剑舞','龙之舞','龙之波动','暴风','流星群','大字爆炎','打雷','暴风雪','水炮','日光烈焰','真气弹','恶之波动','精神强念','大地之力','逆鳞','近身战','闪焰冲锋','冰冻光束','暗影球','冲浪']},
         {t:1,kw:['精灵球','超级球','高级球','火之石','水之石','雷之石','叶之石']}
     ];
     function devonAssignTier(p){
@@ -6947,15 +6986,395 @@ function renderChat() {
         p.tier=t; return p;
     }
     function devonMemberTier(){ const m=DEVON_TIERS[devonState.membership]; return m||1; }
-    let devonState = { category:'all', query:'', page:1, cart:{}, orders:[], balance:100000, selected:null, membership:'gold' };
+    let devonState = { category:'all', query:'', page:1, cart:{}, orders:[], balance:100000, selected:null, membership:'gold', mvu:{money:null,bag:{},source:'none',floor:null,updatedAt:0}, mvuSync:true, actions:[], tradeInject:true, tradeSnapshot:false };
     try { const raw=localStorage.getItem(DEVON_STORE_KEY); if(raw) devonState={...devonState,...JSON.parse(raw)}; } catch(_){ }
     if(!DEVON_TIERS[devonState.membership]) devonState.membership='gold'; // v0.15.0 旧存档兼容
+    // v0.17.0 MVU 读取状态兜底（旧存档浅合并后可能缺字段）
+    if(!devonState.mvu||typeof devonState.mvu!=='object') devonState.mvu={money:null,bag:{},source:'none',floor:null,updatedAt:0};
+    if(!devonState.mvu.bag||typeof devonState.mvu.bag!=='object') devonState.mvu.bag={};
+    if(devonState.mvuSync===undefined) devonState.mvuSync=true;
+    if(!Array.isArray(devonState.actions)) devonState.actions=[];
+    if(devonState.tradeInject===undefined) devonState.tradeInject=true;
+    if(devonState.tradeSnapshot===undefined) devonState.tradeSnapshot=false;
     DEVON_PRODUCTS.forEach(devonAssignTier); // v0.15.0 兜底道具补算稀有度（需在常量定义后执行）
+    // ===== v0.16.0 培育屋：47 只稀有宝可梦的蛋（全怪力卡解锁；闪光版 ×3 封顶 1000 万）=====
+    const DEVON_EGG_MAX = 10000000;
+    const DEVON_EGG_SPRITE = 'https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/';
+    // [图鉴号, 名称, 地区, 普通价 ₽, 描述]
+    const DEVON_EGGS = [
+        // 各世代御三家（110万–180万，世代越新越贵）
+        [1,'妙蛙种子蛋','关都',1100000,'背上种着奇妙的种子，从出生起就与种子一起长大。'],
+        [4,'小火龙蛋','关都',1100000,'尾巴上有火焰燃烧。据说火焰熄灭时，它的生命也会结束。'],
+        [7,'杰尼龟蛋','关都',1100000,'背上的龟甲圆润可爱。受到攻击时会缩进壳里保护自己。'],
+        [152,'菊草叶蛋','城都',1200000,'脖子上挂着清香的叶子，气味能让身边的人平静下来。'],
+        [155,'火球鼠蛋','城都',1200000,'背上有燃烧的火团，胆小时火团会变得微弱。'],
+        [158,'小锯鳄蛋','城都',1200000,'嘴巴很大很有力，好奇心旺盛，最喜欢咬东西。'],
+        [252,'木守宫蛋','丰缘',1300000,'尾巴上的小刺是感知环境的雷达，能敏锐察觉季节变化。'],
+        [255,'火稚鸡蛋','丰缘',1300000,'体内的火焰袋让它热情满满，遇到困难从不轻言放弃。'],
+        [258,'水跃鱼蛋','丰缘',1300000,'头上的鳍能感知水流，湿润的皮肤是它的健康标志。'],
+        [387,'草苗龟蛋','神奥',1400000,'背上的甲壳由泥土硬化而成，喜欢在阳光下晒干身体。'],
+        [390,'小火猴蛋','神奥',1400000,'屁股上有火焰，斗志高昂时火焰会烧得更旺。'],
+        [393,'波加曼蛋','神奥',1400000,'头顶的自豪绒毛是它的骄傲，常向同伴炫耀发型。'],
+        [495,'藤藤蛇蛋','合众',1500000,'高傲冷静的蛇宝可梦，能从远处精准吐出毒液。'],
+        [498,'暖暖猪蛋','合众',1500000,'鼻孔喷出的火苗随心情起伏，最爱大口吃橡实。'],
+        [501,'水水獭蛋','合众',1500000,'胸口的扇贝是随身武器，性格认真又爱干净。'],
+        [650,'哈力栗蛋','卡洛斯',1600000,'坚硬的头部是它的骄傲，天天用撞树练习撞击。'],
+        [653,'火狐狸蛋','卡洛斯',1600000,'从耳朵喷出热气取暖，爱叼着树枝当零食。'],
+        [656,'呱呱泡蛙蛋','卡洛斯',1600000,'外表冷淡内心忠诚，遇到危险会制造水雾脱身。'],
+        [722,'木木枭蛋','阿罗拉',1650000,'白天睡觉晚上活动，飞羽几乎不带一点声音。'],
+        [725,'火斑喵蛋','阿罗拉',1650000,'毛发易燃，打完喷嚏嘴里会冒出火星。'],
+        [728,'水莲莲蛋','阿罗拉',1650000,'头顶的水珠能感知敌人，善用泡泡攻击。'],
+        [810,'敲音猴蛋','伽勒尔',1700000,'用木棒敲出节拍，是森林里天生的鼓手。'],
+        [813,'炎兔儿蛋','伽勒尔',1700000,'脚掌肉垫会发热，后旋踢是它的拿手好戏。'],
+        [816,'泪眼蜥蛋','伽勒尔',1700000,'胆小爱哭，眼泪含水量惊人，能借此脱身。'],
+        [906,'新叶喵蛋','帕底亚',1800000,'优雅爱干净的猫宝可梦，用气味小心标记领域。'],
+        [909,'呆火鳄蛋','帕底亚',1800000,'头顶的火盒储着火焰，就算淋雨也不会熄灭。'],
+        [912,'润水鸭蛋','帕底亚',1800000,'头上的羽毛爱吸水，走路蹦蹦跳跳惹人喜爱。'],
+        // 稀有人气（200万–320万，按人气与稀有度上调）
+        [54,'可达鸭蛋','关都',2000000,'头痛时会发挥神奇力量，呆呆的表情意外圈粉。'],
+        [92,'鬼斯蛋','关都',2000000,'气体状的身体，靠近时让人莫名感到头痛。'],
+        [175,'波克比蛋','城都',2200000,'壳里装满幸运的蛋宝可梦，据说能给人带来幸福。'],
+        [570,'索罗亚蛋','合众',2400000,'会变成人形戏弄人类的小狐狸，最讨厌被看穿。'],
+        [447,'利欧路蛋','神奥',2600000,'能感知他人心意的波导宝可梦，忠诚而勇敢。'],
+        [133,'伊布蛋','关都',2800000,'遗传基因不稳定，可进化成八种形态的奇妙宝可梦。'],
+        [25,'皮卡丘蛋','关都',3000000,'脸颊的电囊储存电力，全系列人气最高的电系宝可梦。'],
+        [143,'卡比兽蛋','关都',3000000,'一天能吃掉四百公斤食物，吃饱就睡的温顺巨兽。'],
+        [778,'谜拟Q蛋','阿罗拉',3000000,'披着皮卡丘布偶的幽灵宝可梦，孤独而害羞。'],
+        [131,'拉普拉斯蛋','关都',3200000,'温顺的乘骑宝可梦，背壳能载着训练家渡海。'],
+        // 龙系准传与稀有龙（350万–480万，种族值越高越贵）
+        [147,'迷你龙蛋','关都',3800000,'据说诞生于古代海洋的龙系宝可梦，蜕皮后不断成长。'],
+        [371,'宝贝龙蛋','丰缘',3800000,'梦想成为翱翔天空的龙，每日在瀑布下锻炼翅膀。'],
+        [610,'牙牙蛋','合众',3800000,'用牙齿磨树干锻炼獠牙，龙族新星的开端。'],
+        [633,'单首龙蛋','合众',4000000,'只有一个头依然凶暴的龙系，靠视觉记忆认主人。'],
+        [782,'心鳞宝蛋','阿罗拉',4000000,'额头的心形鳞片是它的宝物，碰撞声是交流方式。'],
+        [374,'铁哑铃蛋','丰缘',4200000,'身体由钢铁构成，磁力相连的双体配合无间。'],
+        [443,'圆陆鲨蛋','神奥',4200000,'居住在地底洞穴的龙系，性格活泼爱咬人。'],
+        [704,'黏黏宝蛋','卡洛斯',4200000,'黏糊糊的珍稀龙系，水润的皮肤价值连城。'],
+        [246,'幼基拉斯蛋','城都',4500000,'山崩般的力量沉睡在小小身体里。'],
+        [885,'多龙梅西亚蛋','伽勒尔',4800000,'掌握幽灵力量的新世代龙系，眼神仿佛能摄人魂魄。']
+    ];
+    function devonEggPrice(shiny, price){ return shiny ? Math.min(price*3, DEVON_EGG_MAX) : price; }
+    function devonEggProducts(){
+        const out=[];
+        for(const [dex,name,region,price,desc] of DEVON_EGGS){
+            const base='egg-'+dex;
+            out.push({id:base,name,en:'Pokémon Egg',cat:'nursery',cats:['nursery'],price,sell:null,icon:DEVON_EGG_SPRITE+dex+'.png',tag:region+' · 培育屋',desc,dex,tier:4,shiny:false,priceSource:'nursery'});
+            out.push({id:base+'-shiny',name:name.replace(/蛋$/,'蛋（闪光）'),en:'Shiny Pokémon Egg',cat:'nursery',cats:['nursery'],price:devonEggPrice(true,price),sell:null,icon:DEVON_EGG_SPRITE+'shiny/'+dex+'.png',tag:'✨ 闪光 · '+region,desc:'散发奇妙星光的稀有蛋，据说孵出的宝可梦拥有与众不同的颜色。'+desc,dex,tier:4,shiny:true,shinyOf:base,priceSource:'nursery'});
+        }
+        return out;
+    }
+    function devonInjectNursery(){
+        let added=false;
+        for(const p of devonEggProducts()){ if(!DEVON_PRODUCTS.some(x=>x.id===p.id)){DEVON_PRODUCTS.push(p);added=true;} }
+        if(added)DEVON_PRODUCTS.forEach(devonAssignTier);
+        return added;
+    }
+    devonInjectNursery(); // v0.16.0 培育屋蛋注入（缓存恢复/同步完成后会再次调用，幂等）
     function saveDevonStore(){ try{localStorage.setItem(DEVON_STORE_KEY,JSON.stringify(devonState));}catch(_){} }
+
+    // ===== v0.17.0 模块A：MVU/正文读取层（每层楼自动同步金钱与背包） =====
+    function devonMvuApi(){
+        // 扩展可能运行在 iframe 中，MVU 对象挂在 SillyTavern 主窗口
+        for(const w of [window,window.parent,window.top]){
+            try{ if(w&&w.Mvu&&typeof w.Mvu.getMvuData==='function')return w.Mvu; }catch(_){ }
+        }
+        return null;
+    }
+    function devonChatFloors(){
+        // 楼层列表：优先 ctx.chat（数据最全），兜底扫描主文档 .mes[mesid]
+        const ctx=getSTContext();
+        if(ctx&&Array.isArray(ctx.chat))return ctx.chat.map((m,i)=>({id:i,mes:m.mes||m.message||m.content||''}));
+        try{
+            const list=[];
+            topDoc.querySelectorAll('.mes[mesid]').forEach(el=>{
+                const id=parseInt(el.getAttribute('mesid')||'',10);
+                const t=el.querySelector('.mes_text');
+                if(!isNaN(id))list.push({id,mes:(t?t.textContent:el.textContent)||''});
+            });
+            return list.sort((a,b)=>a.id-b.id);
+        }catch(_){ return []; }
+    }
+    function devonParseStatText(text){
+        // 兜底：解析楼层正文中 MVU 风格的 [训练家信息]/[背包_分类] 文本块
+        if(!text||typeof text!=='string')return null;
+        const re=/\[([^\]\r\n]{1,24})\]([\s\S]*?)\[\/\1\]/g; const blocks={}; let bm;
+        while((bm=re.exec(text))!==null){
+            const o={};
+            String(bm[2]||'').trim().split('\n').forEach(line=>{
+                const i=line.indexOf(':'); if(i<0)return;
+                o[line.slice(0,i).trim()]=line.slice(i+1).trim();
+            });
+            blocks[bm[1]]=o;
+        }
+        let money=null; const bag={};
+        const tr=blocks['训练家信息'];
+        if(tr&&tr['金钱']!=null){
+            const mm=String(tr['金钱']).split('|')[0].match(/-?\d[\d,，]*/);
+            if(mm)money=Number(mm[0].replace(/[,,]/g,''))||0;
+        }
+        for(const bk in blocks){
+            if(String(bk).indexOf('背包_')!==0)continue;
+            const cat=String(bk).slice(3);
+            for(const it in blocks[bk]){
+                const ps=String(blocks[bk][it]).split(',');
+                bag[it]={类型:cat,数量:parseInt(ps[0],10)||0,图标:(ps[1]||'').trim()};
+            }
+        }
+        if(money==null&&!Object.keys(bag).length)return null;
+        return {money,bag};
+    }
+    function devonBagFromStat(sd){
+        const bag={}; const src=sd&&sd.背包;
+        if(src&&typeof src==='object'){
+            Object.keys(src).forEach(name=>{
+                const it=src[name];
+                if(it&&typeof it==='object'&&('类型' in it))bag[name]={类型:String(it.类型||'道具'),数量:Number(it.数量)||0,图标:String(it.图标||'')};
+            });
+        }
+        return bag;
+    }
+    async function devonReadMvuSnapshot(){
+        // ① MVU 框架：从最新楼层倒序找含 stat_data 的最终状态
+        try{
+            const mvu=devonMvuApi();
+            const floors=devonChatFloors();
+            if(mvu&&floors.length){
+                for(let i=floors.length-1;i>=0;i--){
+                    let d=null;
+                    try{
+                        d=mvu.getMvuData({type:'message',message_id:floors[i].id});
+                        if(d&&typeof d.then==='function')d=await d;
+                    }catch(_){ }
+                    const sd=d&&(d.stat_data||(d.data&&d.data.stat_data));
+                    if(sd&&sd.训练家&&(sd.训练家.金钱!=null||Object.keys(devonBagFromStat(sd)).length)){
+                        const money=sd.训练家.金钱!=null?Number(sd.训练家.金钱):null;
+                        return {money:(money==null||isNaN(money))?null:money,bag:devonBagFromStat(sd),source:'mvu',floor:floors[i].id};
+                    }
+                }
+            }
+        }catch(_){ }
+        // ② 正文解析兜底：倒序找最近的含 [训练家信息]/[背包_] 块的楼层
+        try{
+            const floors=devonChatFloors();
+            for(let i=floors.length-1;i>=0;i--){
+                const r=devonParseStatText(floors[i].mes);
+                if(r)return {...r,source:'text',floor:floors[i].id};
+            }
+        }catch(_){ }
+        return null;
+    }
+    let devonMvuSyncing=false,devonMvuSyncAt=0;
+    async function devonSyncMvu(reason){
+        // 同步入口：800ms 防抖（手动触发不受限）+ 在途锁，仅在实际变化时重渲染
+        if(devonState.mvuSync===false)return false;
+        const now=Date.now();
+        if(reason!=='manual'&&now-devonMvuSyncAt<800)return false;
+        devonMvuSyncAt=now;
+        if(devonMvuSyncing)return false;
+        devonMvuSyncing=true;
+        let changed=false;
+        try{
+            const snap=await devonReadMvuSnapshot();
+            if(snap){
+                const m=devonState.mvu||{money:null,bag:{},source:'none',floor:null,updatedAt:0};
+                changed=(snap.money!==m.money)||JSON.stringify(snap.bag)!==JSON.stringify(m.bag||{})||snap.floor!==m.floor;
+                devonState.mvu={money:snap.money,bag:snap.bag,source:snap.source,floor:snap.floor,updatedAt:Date.now()};
+                devonConfirmActions(snap.floor); // v0.17.0：更新到更高楼层 = AI 已有机会处理此前交易
+                if(changed){
+                    saveDevonStore();
+                    try{ renderDevonShop(); }catch(_){ }
+                    if(typeof renderDevonBag==='function'){ try{ renderDevonBag(); }catch(_){ } }
+                    console.log('[得文商店] MVU 同步（'+reason+'）：金钱 '+snap.money+' ｜ 背包 '+Object.keys(snap.bag).length+' 种 ｜ 楼层 #'+snap.floor);
+                }
+            }
+        }catch(_){ }
+        finally{ devonMvuSyncing=false; }
+        return changed;
+    }
+    function devonMvuStatusText(){
+        const m=devonState.mvu||{};
+        if(!m.updatedAt||m.source==='none')return '未检测到 MVU 变量（商店金钱暂用本地余额）';
+        const src=m.source==='mvu'?'MVU 变量':'正文解析';
+        const bag=Object.keys(m.bag||{}).length;
+        const money=m.money==null?'—':'₽ '+Number(m.money).toLocaleString('zh-CN');
+        return '来源：'+src+' ｜ 楼层 #'+(m.floor==null?'—':m.floor)+' ｜ 金钱 '+money+' ｜ 背包 '+bag+' 种 ｜ '+new Date(m.updatedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    }
+    // ===== v0.17.0 模块B：金钱与持有道具展示 =====
+    function devonWalletMoney(){
+        // 金额展示：MVU 金钱优先（方案1A），未同步到 MVU 时回落商店本地余额
+        const m=devonState.mvu||{};
+        if(m.updatedAt&&m.source!=='none'&&m.money!=null)return {val:m.money+devonPendingNet(),src:'mvu'}; // v0.17.0 叠加未确认交易净额
+        return {val:devonState.balance,src:'local'};
+    }
+    function devonWalletHTML(){
+        const w=devonWalletMoney();
+        const tag=w.src==='mvu'?'<span class="devon-wallet-src">MVU</span>':'';
+        return `<div class="devon-wallet">${tag}钱包余额 <b>${devonMoney(w.val)}</b></div>`;
+    }
+    function renderDevonBag(){
+        const el=$('pkmn-devon-bag-body'); if(!el)return;
+        const m=devonState.mvu||{money:null,bag:{},source:'none',floor:null,updatedAt:0};
+        const bag=m.bag||{};
+        const names=Object.keys(bag);
+        const srcTxt=m.source==='mvu'?'MVU 变量':(m.source==='text'?'正文解析':'未检测到');
+        const timeTxt=m.updatedAt?new Date(m.updatedAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+        const cats=['道具','精灵球','重要物品'];
+        const total=names.reduce((a,n)=>a+(Number(bag[n].数量)||0),0);
+        const icoHTML=it=>it.图标?`<img class="devon-bag-ico" src="${esc(it.图标)}" alt="" onerror="this.style.display='none'">`:'<span class="devon-bag-ico devon-bag-ico-ph">📦</span>';
+        const sec=(title,items)=>{
+            const sum=items.reduce((a,n)=>a+(Number(bag[n].数量)||0),0);
+            return `<div class="devon-bag-sec"><div class="devon-bag-sec-h">${esc(title)}<span>${items.length} 种 · ${sum} 件</span></div>${items.map(n=>{const it=bag[n];const sp=devonSellPrice(n);const sell=sp!=null?`<button class="devon-bag-sell" data-devon-sell="${esc(n)}">出售 ₽${sp.toLocaleString('zh-CN')}</button>`:'';return `<div class="devon-bag-item">${icoHTML(it)}<div class="devon-bag-info"><b>${esc(n)}</b><small>${esc(it.类型||'道具')}</small></div>${sell}<span class="devon-bag-cnt">×${Number(it.数量)||0}</span></div>`;}).join('')}</div>`;
+        };
+        let body='';
+        if(!names.length){
+            body=`<div class="devon-empty">${m.updatedAt?'背包是空的':'尚未同步到 MVU 数据<br>同步后这里会显示训练家当前持有的道具'}</div>`+(m.updatedAt?'':'<button class="devon-load-more" data-devon-bag-sync>立即同步</button>');
+        }else{
+            cats.forEach(c=>{ const items=names.filter(n=>bag[n]&&bag[n].类型===c); if(items.length)body+=sec(c,items); });
+            const other=names.filter(n=>bag[n]&&!cats.includes(bag[n].类型));
+            if(other.length)body+=sec('其他',other);
+            body=`<div class="devon-bag-meta">共 ${names.length} 种 · ${total} 件 ｜ 同步来源：${esc(srcTxt)} ｜ 楼层 #${m.floor==null?'—':m.floor} ｜ ${esc(timeTxt)}</div>`+body;
+        }
+        el.innerHTML=devonWalletHTML()+body;
+        el.querySelectorAll('[data-devon-bag-sync]').forEach(b=>b.onclick=async()=>{b.disabled=true;b.textContent='同步中…';await devonSyncMvu('manual');renderDevonBag();});
+        el.querySelectorAll('[data-devon-sell]').forEach(b=>b.onclick=e=>{e.stopPropagation();devonSellItem(b.dataset.devonSell);}); // v0.17.0 出售
+    }
+    // ===== v0.17.0 模块C/D：交易行为注入 + 出售 =====
+    const DEVON_ACTION_INJECT_KEY='pkmn-devon-shop-actions';
+    const DEVON_ACTION_MAX=20;
+    function devonMvuActive(){
+        const m=devonState.mvu||{};
+        return !!(m.updatedAt&&m.source!=='none');
+    }
+    function devonPendingNet(){
+        return (devonState.actions||[]).reduce((a,t)=>a+(t.kind==='buy'?-t.total:+t.total),0);
+    }
+    function devonSellPrice(name){
+        // 回收价 = 商品库价（官方/参考）→ 官方价表 → 分类估值，统一 ×50%（方案3A）
+        const prod=DEVON_PRODUCTS.find(x=>x.name===name);
+        let full=(prod&&prod.price!=null)?prod.price:DEVON_PRICE_TABLE[name];
+        if(full==null){
+            const bag=(devonState.mvu&&devonState.mvu.bag)||{};
+            const catMap={'精灵球':'balls','道具':'medicine','重要物品':'treasure','其他':'misc'};
+            full=devonEstimatePrice(catMap[(bag[name]&&bag[name].类型)]||'misc',name);
+        }
+        if(full==null||isNaN(full))return null;
+        return Math.max(1,Math.floor(Number(full)*0.5));
+    }
+    function devonMvuCatOf(p){
+        const c=p&&((p.cats&&p.cats[0])||p.cat);
+        if(c==='balls')return '精灵球';
+        if(c==='treasure')return '重要物品';
+        return '道具';
+    }
+    function devonAdjustBag(name,delta,cat,icon){
+        // 乐观更新本地背包显示；真实值以 AI 更新后的 MVU 同步为准（覆盖语义）
+        const m=devonState.mvu;
+        if(!m||typeof m.bag!=='object')return;
+        const cur=m.bag[name];
+        const n=(cur?Number(cur.数量)||0:0)+(Number(delta)||0);
+        if(n<=0)delete m.bag[name];
+        else if(cur)cur.数量=n;
+        else m.bag[name]={类型:cat||'道具',数量:n,图标:icon||''};
+        saveDevonStore();
+    }
+    function devonRecordAction(kind,name,q,unit){
+        const qN=Number(q)||0,uN=Number(unit)||0;
+        if(!qN)return;
+        if(!Array.isArray(devonState.actions))devonState.actions=[];
+        devonState.actions.push({t:Date.now(),kind,name,q:qN,unit:uN,total:qN*uN,base:devonWalletMoney().val,floor:(devonState.mvu&&devonState.mvu.floor!=null)?devonState.mvu.floor:null});
+        if(devonState.actions.length>DEVON_ACTION_MAX)devonState.actions=devonState.actions.slice(-DEVON_ACTION_MAX);
+        saveDevonStore();
+        devonApplyTradeInjection();
+    }
+    function devonConfirmActions(floor){
+        // 同步到更高楼层说明 AI 已在新楼层的上下文里见过注入：从待注入列表移除
+        if(floor==null)return;
+        const list=devonState.actions||[];
+        const keep=list.filter(a=>!(a.floor!=null&&floor>a.floor));
+        if(keep.length!==list.length){
+            devonState.actions=keep;
+            saveDevonStore();
+            devonApplyTradeInjection();
+        }
+    }
+    function devonBuildTradeInjection(){
+        if(devonState.tradeInject===false)return '';
+        const list=(devonState.actions||[]).slice(-DEVON_ACTION_MAX);
+        if(!list.length)return '';
+        const tm=t=>new Date(t).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+        const fmt=n=>'₽'+Number(n||0).toLocaleString('zh-CN');
+        const before=Math.max(0,list[0].base||0);
+        let spend=0,income=0; const delta={};
+        const lines=list.map((a,i)=>{
+            if(a.kind==='buy'){spend+=a.total;delta[a.name]=(delta[a.name]||0)+a.q;return `${i+1}. ${tm(a.t)} 购买　${a.name} ×${a.q}　单价 ${fmt(a.unit)}　支出 −${fmt(a.total)}`;}
+            income+=a.total;delta[a.name]=(delta[a.name]||0)-a.q;
+            return `${i+1}. ${tm(a.t)} 出售　${a.name} ×${a.q}　单价 ${fmt(a.unit)}　收入 +${fmt(a.total)}`;
+        });
+        const after=Math.max(0,before-spend+income);
+        const bag=(devonState.mvu&&devonState.mvu.bag)||{};
+        const bagLines=Object.keys(delta).map(n=>{
+            const cur=(bag[n]?Number(bag[n].数量)||0:0);
+            const d=delta[n];
+            return `${n} ${d>0?'+'+d:d}（${cur>0?'→ ×'+cur:'→ 从背包移除'}）`;
+        }).join('、');
+        const out=[];
+        out.push('【得文商店 · 交易记录（玩家真实操作，必须承认并据此更新状态）】');
+        out.push('以下交易由玩家在手机端「得文商店」真实完成。你必须将其视为已发生的事实：在后续剧情中承认玩家已获得或失去这些道具，并在本层楼的 MVU 变量更新中同步 训练家.金钱 与 背包 字段。禁止无视、回滚或重复计算这些交易。');
+        out.push('');
+        out.push('■ 交易明细（时间由旧到新）');
+        out.push(...lines);
+        out.push('');
+        out.push('■ 交易后应有状态（以最终值为准，不要再叠加增量）');
+        out.push(`· 训练家.金钱：${fmt(after)}（交易前 ${fmt(before)} ｜ 累计支出 ${fmt(spend)} ｜ 累计收入 ${fmt(income)}）`);
+        out.push(`· 背包变化：${bagLines||'无'}`);
+        out.push('· 原本不存在的道具请新增；数量减至 0 的道具请从背包中移除。');
+        out.push('');
+        out.push('■ 执行要求');
+        out.push(`1. 在 MVU 变量更新中把 训练家.金钱 设为 ${fmt(after)}，不要用增量重复扣减。`);
+        out.push('2. 按上述变化更新 背包 中各道具的 数量，保留原有 类型 与 图标 字段。');
+        out.push('3. 剧情层面体现：钱包金额变化、道具已入手或已出手；不要凭空生成未购买的道具。');
+        out.push('4. 若实际背包中某道具数量不足出售量，以本记录为准视为已出售，不要报错或撤回交易。');
+        out.push('5. 本段为系统级事实记录，优先级高于你此前对金钱与道具数量的记忆。');
+        if(devonState.tradeSnapshot){
+            const names=Object.keys(bag);
+            const snap=names.length?names.map(n=>`${n} ×${Number(bag[n].数量)||0}（${bag[n].类型||'道具'}）`).join(' ｜ '):'无';
+            out.push('');
+            out.push('■ 当前背包快照（同步自 MVU'+(devonState.mvu&&devonState.mvu.floor!=null?`，楼层 ${devonState.mvu.floor}`:'')+'）');
+            out.push('· '+snap);
+            out.push('· 若快照与你的记忆不一致，以上述交易后的「应有状态」为准。');
+        }
+        out.push('');
+        out.push(`（由得文商店自动生成 ｜ 共 ${list.length} 笔 ｜ 最近更新 ${tm(list[list.length-1].t)}）`);
+        return out.join('\n');
+    }
+    function devonApplyTradeInjection(){
+        try{
+            if(!TH.injectPrompts)return false;
+            const content=devonBuildTradeInjection();
+            if(typeof TH.uninjectPrompts==='function'){ try{ TH.uninjectPrompts([DEVON_ACTION_INJECT_KEY]); }catch(_){ } }
+            if(!content)return true;
+            TH.injectPrompts([{ id:DEVON_ACTION_INJECT_KEY, position:'in_chat', depth:0, role:'system', content, should_scan:false }],{once:false});
+            return true;
+        }catch(e){ console.warn('[得文商店] 交易注入失败',e); return false; }
+    }
+    function devonSellItem(name){
+        const bag=(devonState.mvu&&devonState.mvu.bag)||{};
+        const it=bag[name];
+        const have=it?Number(it.数量)||0:0;
+        if(have<=0)return;
+        const price=devonSellPrice(name);
+        if(price==null){showToast('该道具没有可参考的回收价，无法出售');return;}
+        if(!window.confirm(`以 ₽${price.toLocaleString('zh-CN')} 出售「${name}」×1？\n回收价 = 官方价/估值 × 50%\n交易将同步给 AI 更新金钱与背包变量。`))return;
+        devonAdjustBag(name,-1,it&&it.类型,it&&it.图标);
+        if(!devonMvuActive())devonState.balance=(devonState.balance||0)+price; // 未对接 MVU 时收入进商店余额
+        devonRecordAction('sell',name,1,price);
+        showToast(`已出售 ${name} ×1 ｜ 收入 +₽${price.toLocaleString('zh-CN')}`);
+        renderDevonBag(); renderDevonShop();
+    }
     function devonMoney(n){ return n==null ? '价格待核实' : '₽ ' + Number(n||0).toLocaleString('zh-CN'); }
     function devonCartCount(){ return Object.values(devonState.cart||{}).reduce((a,b)=>a+Number(b||0),0); }
     function devonCartTotal(){ return Object.entries(devonState.cart||{}).reduce((sum,[id,q])=>{const p=DEVON_PRODUCTS.find(x=>x.id===id);return sum+(p&&p.price!=null?p.price:0)*q;},0); }
-    function devonIcon(cat){ return ({balls:'🔴',medicine:'🧴',battle:'⚔️',evolution:'💎',field:'🌿',berries:'🍓',held:'◇',training:'📈',megaz:'✧',treasure:'💰',tms:'💿',misc:'📦'})[cat]||'📦'; }
+    function devonIcon(cat){ return ({balls:'🔴',medicine:'🧴',battle:'⚔️',evolution:'💎',field:'🌿',berries:'🍓',held:'◇',training:'📈',megaz:'✧',treasure:'💰',tms:'💿',misc:'📦',nursery:'🥚'})[cat]||'📦'; }
     function devonCatName(cat){ const c=DEVON_CATEGORIES.find(x=>x[0]===cat); return c?c[1]:'道具'; }
 
     // v0.14.4 价格策略（用户设定）：朱紫官方价 -> 其他世代官方价 -> 分类参考估值
@@ -7074,34 +7493,53 @@ function renderChat() {
         const txt=DEVON_TIER_NAMES[m]||DEVON_TIER_NAMES.gold;
         if(badge)badge.textContent=txt;
     }
+    // v0.16.0：商品卡渲染（越级商品不再隐藏，改为灰显锁定卡）
+    function devonTierName(t){ return {1:'黄金会员',2:'白金会员',3:'黑金会员',4:'怪力卡'}[t]||'黄金会员'; }
+    function devonCardHTML(p,mt){
+        const locked=(p.tier??1)>mt;
+        if(locked){
+            const need=devonTierName(p.tier??1);
+            return `<article class="devon-product devon-locked" data-devon-locked="${esc(p.id)}" data-devon-need="${esc(need)}"><div class="devon-product-pic">${devonPicHTML(p,'devon-item-img')}<em>${esc(devonCatName(p.cat))}</em><i class="devon-lock-ico">🔒</i></div><div class="devon-product-name devon-locked-name">？？？</div><div class="devon-product-en">未解锁道具</div><div class="devon-product-bottom"><span class="devon-locked-badge">怪力卡解锁</span></div></article>`;
+        }
+        const ownN=(devonState.mvu&&devonState.mvu.bag&&devonState.mvu.bag[p.name])?Number(devonState.mvu.bag[p.name].数量)||0:0; // v0.17.0 持有角标
+        const ownTxt=ownN>0?`<i class="devon-own-badge">持有 ×${ownN}</i>`:'';
+        return `<article class="devon-product" data-devon-product="${esc(p.id)}"><div class="devon-product-pic">${devonPicHTML(p,'devon-item-img')}<em>${esc(devonCatName(p.cat))}</em>${ownTxt}</div><div class="devon-product-name">${esc(p.name)}</div><div class="devon-product-en">${esc(p.en||p.ja||'')}</div><div class="devon-product-bottom"><b>${devonMoney(p.price)}</b><button data-devon-add="${esc(p.id)}" aria-label="加入购物车" ${p.price==null?'disabled':''}>${p.price==null?'?':'＋'}</button></div></article>`;
+    }
     function renderDevonShop(){
         renderDevonCategories();
         renderDevonHero();
+        const ws=$('pkmn-devon-wallet-slot'); if(ws)ws.innerHTML=devonWalletHTML(); // v0.17.0 钱包条
         const q=(devonState.query||'').trim().toLowerCase();
         const mt=devonMemberTier();
         let list=DEVON_PRODUCTS.filter(p=>{
+            if(p.shiny)return false; // v0.16.0 闪光蛋变体仅在详情页出现
             const cats=p.cats||[p.cat];
-            if((p.tier??1)>mt)return false; // v0.15.0 越级商品完全隐藏
             return (devonState.category==='all'||cats.includes(devonState.category)) && (!q||[p.name,p.en,p.ja,p.desc,p.tag].join(' ').toLowerCase().includes(q));
         });
+        const lockedN=list.filter(p=>(p.tier??1)>mt).length;
         const title=$('pkmn-devon-section-title'); if(title) title.textContent=devonState.category==='all'?(q?'搜索结果':'全部道具'):(DEVON_CATEGORIES.find(x=>x[0]===devonState.category)?.[1]||'商品');
-        const rc=$('pkmn-devon-result-count'); if(rc)rc.textContent=`${list.length} 件${devonWikiStatus==='同步完成'?'道具':''}`;
+        const rc=$('pkmn-devon-result-count'); if(rc)rc.textContent=`${list.length} 件${devonWikiStatus==='同步完成'?'道具':''}${lockedN?` · ${lockedN} 件待解锁`:''}`;
         const out=$('pkmn-devon-products'); if(!out)return;
         const max=Math.max(1,Math.ceil(list.length/DEVON_PAGE_SIZE)); devonState.page=Math.min(Math.max(1,devonState.page||1),max);
         const visible=list.slice(0,devonState.page*DEVON_PAGE_SIZE);
-        out.innerHTML=visible.map(p=>`<article class="devon-product" data-devon-product="${esc(p.id)}"><div class="devon-product-pic">${devonPicHTML(p,'devon-item-img')}<em>${esc(devonCatName(p.cat))}</em></div><div class="devon-product-name">${esc(p.name)}</div><div class="devon-product-en">${esc(p.en||p.ja||'')}</div><div class="devon-product-bottom"><b>${devonMoney(p.price)}</b><button data-devon-add="${esc(p.id)}" aria-label="加入购物车" ${p.price==null?'disabled':''}>${p.price==null?'?':'＋'}</button></div></article>`).join('')||'<div class="devon-empty">没有找到符合条件的道具</div>';
+        out.innerHTML=visible.map(p=>devonCardHTML(p,mt)).join('')||'<div class="devon-empty">没有找到符合条件的道具</div>';
         if(visible.length<list.length){ const more=document.createElement('button'); more.className='devon-load-more'; more.textContent=`加载更多（已显示 ${visible.length} / ${list.length}）`; more.onclick=()=>{devonState.page++;renderDevonShop();}; out.appendChild(more); }
         out.querySelectorAll('[data-devon-product]').forEach(c=>c.onclick=e=>{if(e.target.closest('[data-devon-add]'))return;openDevonDetail(c.dataset.devonProduct);});
         out.querySelectorAll('[data-devon-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.disabled)return;addDevonCart(b.dataset.devonAdd);});
+        out.querySelectorAll('[data-devon-locked]').forEach(c=>c.onclick=()=>showToast(`该商品需要「${c.dataset.devonNeed}」才能解锁，无法查看详情`));
         const cc=$('pkmn-devon-cart-count');if(cc)cc.textContent=devonCartCount();
     }
-    function addDevonCart(id){ const p=DEVON_PRODUCTS.find(x=>x.id===id); if(!p||p.price==null){showToast('该道具暂无朱紫购买价，暂不能下单');return;} devonState.cart[id]=(devonState.cart[id]||0)+1;saveDevonStore();renderDevonShop();showToast('已加入得文商店购物车'); }
+    function addDevonCart(id){ const p=DEVON_PRODUCTS.find(x=>x.id===id); if(!p||p.price==null){showToast('该道具暂无朱紫购买价，暂不能下单');return;} if((p.tier??1)>devonMemberTier()){showToast('该商品尚未解锁，无法加入购物车');return;} devonState.cart[id]=(devonState.cart[id]||0)+1;saveDevonStore();renderDevonShop();showToast('已加入得文商店购物车'); }
     function openDevonDetail(id){
         const p=DEVON_PRODUCTS.find(x=>x.id===id); if(!p)return; devonState.selected=id;
         const el=$('pkmn-devon-detail-body'); if(!el)return;
         const qty=devonState.cart[id]||0;
         const cats=(p.cats||[p.cat]).map(c=>DEVON_CATEGORIES.find(x=>x[0]===c)?.[1]).filter(Boolean).join(' / ');
-        el.innerHTML=`<div class="devon-detail-card"><div class="devon-detail-pic">${devonPicHTML(p,'devon-item-img-lg')}</div><div class="devon-detail-tag">${esc(devonCatName(p.cat))}</div><h1>${esc(p.name)}</h1><div class="devon-detail-en">${esc(p.en||'')}</div><div class="devon-detail-price">${devonMoney(p.price)}${p.priceSource==='ref'?'<span class="devon-price-badge">参考价</span>':(p.priceSource==='official'?'<span class="devon-price-badge devon-price-official">官方价</span>':'')}</div><p>${esc(p.desc||'神奇宝贝系列道具。')}</p><div class="devon-detail-meta"><span>${esc(cats||'道具')}</span><span>52Poké 数据</span>${p.ja?`<span>${esc(p.ja)}</span>`:''}</div><div class="devon-buy-row"><button id="devon-detail-minus">−</button><b id="devon-detail-qty">${qty}</b><button id="devon-detail-plus">＋</button></div><button class="devon-buy" id="devon-detail-add" ${p.price==null?'disabled':''}>${p.price==null?'暂无购买价':'加入购物车'}</button><button class="devon-buy devon-buy-main" id="devon-detail-now" ${p.price==null?'disabled':''}>${p.price==null?'价格待核实':'立即购买'}</button>${p.source?`<a class="devon-source" href="${esc(p.source)}" target="_blank" rel="noopener noreferrer">查看52Poké道具资料</a>`:''}</div>`;
+        const isEgg=p.cat==='nursery'; // v0.16.0 培育屋蛋：✨闪光版开关
+        const shinyBtn=isEgg?`<button class="devon-shiny-toggle ${p.shiny?'devon-shiny-on':''}" id="devon-shiny-switch"><i>✨</i><span>闪光版${p.shiny?' · 已选':''}</span><small>${p.shiny?'点击切回普通版 · 价格×3':'点击选择闪光版 · 价格×3（封顶 1,000 万 ₽）'}</small></button>`:'';
+        const priceBadge=p.priceSource==='nursery'?'<span class="devon-price-badge devon-price-nursery">培育屋定价</span>':(p.priceSource==='ref'?'<span class="devon-price-badge">参考价</span>':(p.priceSource==='official'?'<span class="devon-price-badge devon-price-official">官方价</span>':''));
+        el.innerHTML=`<div class="devon-detail-card"><div class="devon-detail-pic">${devonPicHTML(p,'devon-item-img-lg')}</div><div class="devon-detail-tag">${esc(devonCatName(p.cat))}</div><h1>${esc(p.name)}</h1><div class="devon-detail-en">${esc(p.en||'')}</div><div class="devon-detail-price">${devonMoney(p.price)}${priceBadge}</div><p>${esc(p.desc||'神奇宝贝系列道具。')}</p><div class="devon-detail-meta"><span>${esc(cats||'道具')}</span>${isEgg?'<span>稀有度 · 怪力卡</span>':'<span>52Poké 数据</span>'}${p.ja?`<span>${esc(p.ja)}</span>`:''}</div>${shinyBtn}<div class="devon-buy-row"><button id="devon-detail-minus">−</button><b id="devon-detail-qty">${qty}</b><button id="devon-detail-plus">＋</button></div><button class="devon-buy" id="devon-detail-add" ${p.price==null?'disabled':''}>${p.price==null?'暂无购买价':'加入购物车'}</button><button class="devon-buy devon-buy-main" id="devon-detail-now" ${p.price==null?'disabled':''}>${p.price==null?'价格待核实':'立即购买'}</button>${p.source?`<a class="devon-source" href="${esc(p.source)}" target="_blank" rel="noopener noreferrer">查看52Poké道具资料</a>`:''}</div>`;
+        if(isEgg)$('devon-shiny-switch').onclick=()=>openDevonDetail(p.shiny?p.shinyOf:(p.id+'-shiny'));
         $('devon-detail-minus').onclick=()=>{if((devonState.cart[id]||0)>0){devonState.cart[id]--;if(devonState.cart[id]<=0)delete devonState.cart[id];saveDevonStore();openDevonDetail(id);}};
         $('devon-detail-plus').onclick=()=>addDevonCart(id);
         $('devon-detail-add').onclick=()=>{addDevonCart(id);openDevonDetail(id);};
@@ -7111,7 +7549,7 @@ function renderChat() {
     function openDevonCart(){
         const items=Object.entries(devonState.cart).map(([id,q])=>({p:DEVON_PRODUCTS.find(x=>x.id===id),q})).filter(x=>x.p&&x.q>0);
         const body=$('pkmn-devon-detail-body'); if(!body)return;
-        body.innerHTML=`<div class="devon-cart-page"><div class="devon-wallet">余额 <b>${devonMoney(devonState.balance)}</b></div>${items.length?items.map(({p,q})=>`<div class="devon-cart-item"><div class="devon-cart-pic">${esc(p.icon)||devonIcon(p.cat)}</div><div class="devon-cart-info"><b>${esc(p.name)}</b><small>${devonMoney(p.price)} × ${q}</small></div><div class="devon-cart-controls"><button data-cart-minus="${esc(p.id)}">−</button><b>${q}</b><button data-cart-plus="${esc(p.id)}">＋</button></div></div>`).join(''):'<div class="devon-empty">购物车还是空的</div>'}<div class="devon-cart-total"><span>合计</span><b>${devonMoney(devonCartTotal())}</b></div><button class="devon-buy devon-buy-main" id="devon-checkout" ${items.length?'':'disabled'}>提交订单</button><button class="devon-buy" id="devon-recharge">补充 10,000 ₽ 余额（测试）</button></div>`;
+        body.innerHTML=`<div class="devon-cart-page"><div class="devon-wallet">${devonMvuActive()?"<span class='devon-wallet-src'>MVU</span>":""}可用金钱 <b>${devonMoney(devonWalletMoney().val)}</b></div>${items.length?items.map(({p,q})=>`<div class="devon-cart-item"><div class="devon-cart-pic">${devonPicHTML(p,'devon-item-img')}</div><div class="devon-cart-info"><b>${esc(p.name)}</b><small>${devonMoney(p.price)} × ${q}</small></div><div class="devon-cart-controls"><button data-cart-minus="${esc(p.id)}">−</button><b>${q}</b><button data-cart-plus="${esc(p.id)}">＋</button></div></div>`).join(''):'<div class="devon-empty">购物车还是空的</div>'}<div class="devon-cart-total"><span>合计</span><b>${devonMoney(devonCartTotal())}</b></div><button class="devon-buy devon-buy-main" id="devon-checkout" ${items.length?'':'disabled'}>提交订单</button><button class="devon-buy" id="devon-recharge">补充 10,000 ₽ 余额（测试）</button></div>`;
         body.querySelectorAll('[data-cart-minus]').forEach(b=>b.onclick=()=>{const id=b.dataset.cartMinus;devonState.cart[id]--;if(devonState.cart[id]<=0)delete devonState.cart[id];saveDevonStore();openDevonCart();});
         body.querySelectorAll('[data-cart-plus]').forEach(b=>b.onclick=()=>{addDevonCart(b.dataset.cartPlus);openDevonCart();});
         $('devon-checkout').onclick=checkoutDevon;
@@ -7121,14 +7559,25 @@ function renderChat() {
     function checkoutDevon(){
         const invalid=Object.keys(devonState.cart).some(id=>{const p=DEVON_PRODUCTS.find(x=>x.id===id);return !p||p.price==null;});
         if(invalid){showToast('购物车中存在暂无朱紫购买价的道具，请移除后再结算');return;}
-        const total=devonCartTotal(); if(!total)return; if(devonState.balance<total){showToast('余额不足，请先补充余额');return;}
+        const forbidden=Object.keys(devonState.cart).find(id=>{const p=DEVON_PRODUCTS.find(x=>x.id===id);return p&&(p.tier??1)>devonMemberTier();});
+        if(forbidden){showToast('购物车中存在未解锁商品，请移除后再结算');return;}
+        const total=devonCartTotal(); if(!total)return;
+        const mvuMode=devonMvuActive(); // v0.17.0 方案1A：已对接 MVU 时按训练家金钱判定
+        if((mvuMode?devonWalletMoney().val:devonState.balance)<total){showToast(mvuMode?'金钱不足（以 MVU 训练家金钱为准）':'余额不足，请先补充余额');return;}
         const items=Object.entries(devonState.cart).map(([id,q])=>({id,q,name:DEVON_PRODUCTS.find(p=>p.id===id)?.name||id}));
         const order={id:'DV'+Date.now().toString().slice(-8),time:new Date().toLocaleString('zh-CN'),total,items,status:'已下单'};
-        devonState.balance-=total;devonState.orders.unshift(order);devonState.cart={};saveDevonStore();showToast('得文商店订单已提交');renderDevonOrders();openView('devonOrders');
+        devonState.orders.unshift(order);
+        items.forEach(({id,q,name})=>{ // v0.17.0：交易记录 + 注入；乐观更新背包（MVU 模式下金钱由 AI 更新）
+            const p=DEVON_PRODUCTS.find(x=>x.id===id);
+            devonAdjustBag(name,q,devonMvuCatOf(p),p&&(p.icon||''));
+            devonRecordAction('buy',name,q,p?p.price:0);
+        });
+        if(!mvuMode)devonState.balance-=total;
+        devonState.cart={};saveDevonStore();showToast('得文商店订单已提交，交易已同步给 AI');renderDevonOrders();openView('devonOrders');
     }
     function renderDevonOrders(){
         const el=$('pkmn-devon-orders-body');if(!el)return;
-        el.innerHTML=`<div class="devon-wallet">可用余额 <b>${devonMoney(devonState.balance)}</b></div>`+(devonState.orders.length?devonState.orders.map(o=>`<div class="devon-order"><div><b>${esc(o.id)}</b><span>${esc(o.status)}</span></div><small>${esc(o.time)}</small><p>${esc(o.items.map(x=>`${x.name} × ${x.q}`).join('、'))}</p><strong>${devonMoney(o.total)}</strong></div>`).join(''):'<div class="devon-empty">暂无订单</div>');
+        el.innerHTML=`<div class="devon-wallet">${devonMvuActive()?'<span class="devon-wallet-src">MVU</span>':''}可用金钱 <b>${devonMoney(devonWalletMoney().val)}</b></div>`+(devonState.orders.length?devonState.orders.map(o=>`<div class="devon-order"><div><b>${esc(o.id)}</b><span>${esc(o.status)}</span></div><small>${esc(o.time)}</small><p>${esc(o.items.map(x=>`${x.name} × ${x.q}`).join('、'))}</p><strong>${devonMoney(o.total)}</strong></div>`).join(''):'<div class="devon-empty">暂无订单</div>');
     }
     // v0.14.5：商店设置页渲染（数据概览 + 同步 + 清缓存）
     function renderDevonSettings(){
@@ -7138,6 +7587,7 @@ function renderChat() {
             const c=JSON.parse(localStorage.getItem(DEVON_CACHE_KEY)||'null');
             if(c&&Array.isArray(c.items)) cacheInfo=`本地缓存 ${c.items.length} 件道具 · 更新于 ${new Date(c.time).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
         }catch(_){ }
+        const mvuStatus=devonMvuStatusText();
         el.innerHTML=`
             <div class="devon-wallet">数据概览：${esc(cacheInfo)}</div>
             <div class="devon-set-head">💳 会员卡包 <small>点击卡片切换体验（升级功能暂未开放）</small></div>
@@ -7160,6 +7610,31 @@ function renderChat() {
                 <div class="devon-set-info"><b>清空百科缓存</b><p>删除本地缓存并立即重新同步。道具显示异常时使用。</p></div>
                 <button class="devon-set-btn devon-set-danger" id="pkmn-devon-settings-clear">清空重同步</button>
             </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">📊</div>
+                <div class="devon-set-info"><b>MVU 变量同步</b><p>${esc(mvuStatus)}</p></div>
+                <button class="devon-set-btn" id="pkmn-devon-mvu-sync">立即同步</button>
+            </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">🔁</div>
+                <div class="devon-set-info"><b>每层楼自动同步</b><p>收到新消息后自动读取最新楼层的金钱与背包，保持商店与游戏状态一致。</p></div>
+                <button class="devon-set-btn" id="pkmn-devon-mvu-auto">${devonState.mvuSync!==false?'已开启':'已关闭'}</button>
+            </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">🧾</div>
+                <div class="devon-set-info"><b>交易行为注入正文</b><p>购买/出售后把交易注入提示层，由 AI 更新金钱与背包变量。${devonState.tradeInject!==false?`当前待同步 ${ (devonState.actions||[]).length } 笔`:'注入已关闭，交易仅保留在手机端'}</p></div>
+                <button class="devon-set-btn" id="pkmn-devon-trade-inject">${devonState.tradeInject!==false?'已开启':'已关闭'}</button>
+            </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">🎒</div>
+                <div class="devon-set-info"><b>携带背包快照</b><p>注入时附上最近同步的背包快照，帮助 AI 对齐状态（默认关）。</p></div>
+                <button class="devon-set-btn" id="pkmn-devon-trade-snap">${devonState.tradeSnapshot?'已开启':'已关闭'}</button>
+            </div>
+            <div class="devon-set-item">
+                <div class="devon-set-ico">🗑️</div>
+                <div class="devon-set-info"><b>清空交易记录</b><p>删除全部待同步交易并清空注入，AI 不再收到本批交易提醒。</p></div>
+                <button class="devon-set-btn devon-set-danger" id="pkmn-devon-trade-clear">清空</button>
+            </div>
             <div class="devon-set-note">道具与图片数据来源：52Poké 百科《道具列表》《招式学习器》。价格策略：朱紫官方价 → 其他世代官方价 → 分类参考估值。</div>`;
         el.querySelectorAll('[data-devon-vip]').forEach(c=>c.onclick=()=>{
             const k=c.dataset.devonVip; if(!DEVON_TIERS[k]||devonState.membership===k)return;
@@ -7178,6 +7653,32 @@ function renderChat() {
             showToast('已清空百科缓存，开始重新同步');
             await syncDevonFrom52Poke(true);
             renderDevonSettings();
+        });
+        // v0.17.0：MVU 同步按钮 / 自动同步开关
+        $('pkmn-devon-mvu-sync')?.addEventListener('click',async e=>{
+            const b=e.currentTarget; b.disabled=true; b.textContent='同步中…';
+            await devonSyncMvu('manual');
+            renderDevonSettings();
+        });
+        $('pkmn-devon-mvu-auto')?.addEventListener('click',()=>{
+            devonState.mvuSync=devonState.mvuSync===false;
+            saveDevonStore(); renderDevonSettings();
+            showToast(devonState.mvuSync!==false?'已开启每层楼自动同步':'已关闭自动同步，可手动同步');
+        });
+        // v0.17.0 模块C：交易注入开关 / 背包快照 / 清空记录
+        $('pkmn-devon-trade-inject')?.addEventListener('click',()=>{
+            devonState.tradeInject=devonState.tradeInject===false;
+            saveDevonStore(); devonApplyTradeInjection(); renderDevonSettings();
+            showToast(devonState.tradeInject!==false?'已开启交易行为注入':'已关闭交易行为注入');
+        });
+        $('pkmn-devon-trade-snap')?.addEventListener('click',()=>{
+            devonState.tradeSnapshot=!devonState.tradeSnapshot;
+            saveDevonStore(); devonApplyTradeInjection(); renderDevonSettings();
+            showToast(devonState.tradeSnapshot?'已开启背包快照附加':'已关闭背包快照附加');
+        });
+        $('pkmn-devon-trade-clear')?.addEventListener('click',()=>{
+            devonState.actions=[]; saveDevonStore(); devonApplyTradeInjection(); renderDevonSettings();
+            showToast('已清空交易记录');
         });
     }
     const DEVON_SYNC_FAIL_KEY='pkmn_devon_sync_fail_v1';
@@ -7198,7 +7699,7 @@ function renderChat() {
             try{
                 const cache=JSON.parse(localStorage.getItem(DEVON_CACHE_KEY)||'null');
                 // v0.14.4：有效缓存阈值从 100 降到 40，避免部分同步永远不生效而反复请求
-                if(cache&&Array.isArray(cache.items)&&cache.items.length>=40){DEVON_PRODUCTS=cache.items;cache.items.forEach(devonAssignTier);devonSetStatus('同步完成');renderDevonShop();return true;}
+                if(cache&&Array.isArray(cache.items)&&cache.items.length>=40){DEVON_PRODUCTS=cache.items;cache.items.forEach(devonAssignTier);devonInjectNursery();devonSetStatus('同步完成');renderDevonShop();return true;}
             }catch(_){ }
             // 5 分钟内刚失败过则跳过自动同步，防止每次打开商店都重复请求
             if(devonRecentSyncFail()){devonSetStatus('同步失败');return false;}
@@ -7292,7 +7793,7 @@ function renderChat() {
                 devonAssignTier(p);
                 devonAssignPrice(p);
             });
-            DEVON_PRODUCTS=list; localStorage.setItem(DEVON_CACHE_KEY,JSON.stringify({time:Date.now(),items:list}));devonClearSyncFail();devonSetStatus('同步完成');devonState.page=1;saveDevonStore();renderDevonShop();showToast(`已同步 52Poké：${list.length} 件道具`);return true;
+            DEVON_PRODUCTS=list; localStorage.setItem(DEVON_CACHE_KEY,JSON.stringify({time:Date.now(),items:list}));devonInjectNursery();devonClearSyncFail();devonSetStatus('同步完成');devonState.page=1;saveDevonStore();renderDevonShop();showToast(`已同步 52Poké：${list.length} 件道具`);return true;
         }catch(e){
             console.warn('[得文商店] 52Poké同步失败',e);devonMarkSyncFail();devonSetStatus('同步失败');renderDevonShop();showToast('52Poké同步失败，已保留本地道具库');return false;
         }
@@ -7309,6 +7810,16 @@ function renderChat() {
         // v0.14.5：商店设置页（同步百科 / 清空缓存重新同步），独立视图仿论坛/通讯录
         $('pkmn-devon-settings')?.addEventListener('click',()=>{renderDevonSettings();openView('devonSettings');});
         $('pkmn-devon-settings-back')?.addEventListener('click',()=>openView('devonShop'));
+        // v0.17.0 模块B：我的道具页
+        $('pkmn-devon-bag-entry')?.addEventListener('click',()=>{renderDevonBag();openView('devonBag');});
+        $('pkmn-devon-bag-back')?.addEventListener('click',()=>openView('devonShop'));
+        // v0.17.0 模块A：每层楼自动同步 MVU（延迟 1.2s 等待变量脚本写入完成）
+        const devonMvuAuto=()=>{ if(devonState.mvuSync===false)return; setTimeout(()=>{ devonSyncMvu('event'); },1200); };
+        TH.eventOn('MESSAGE_RECEIVED',devonMvuAuto);
+        TH.eventOn('MESSAGE_SENT',devonMvuAuto);
+        TH.eventOn('GENERATION_ENDED',devonMvuAuto);
+        TH.eventOn('CHAT_CHANGED',devonMvuAuto);
+        devonSyncMvu('boot');
         renderDevonShop(); syncDevonFrom52Poke(false);
     }
     initDevonShop();
