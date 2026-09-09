@@ -44,7 +44,13 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.17.5"; // 与 manifest.json / README 对齐
+    const VERSION = "0.18.1"; // 与 manifest.json / README 对齐
+    // v0.17.6 Lucide 图标（ISC 许可，https://lucide.dev）内联；stroke=currentColor 自动适配日/夜间
+    const PKMN_ICONS = {"arrow-up-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M7 7h10v10\"/> <path d=\"M7 17 17 7\"/> </svg>","camera":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\"/> <circle cx=\"12\" cy=\"13\" r=\"3\"/> </svg>","check":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 6 9 17l-5-5\"/> </svg>","chevron-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m9 18 6-6-6-6\"/> </svg>","contact":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 2v2\"/> <path d=\"M7 21v-2a2 2 0 012-2h6a2 2 0 012 2v2\"/> <path d=\"M8 2v2\"/> <circle cx=\"12\" cy=\"10\" r=\"3\"/> <rect x=\"3\" y=\"3\" rx=\"2\"/> </svg>","download":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12 15V3\"/> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/> <path d=\"m7 10 5 5 5-5\"/> </svg>","globe":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/> <path d=\"M2 12h20\"/> </svg>","image":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <rect x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/> <circle cx=\"9\" cy=\"9\" r=\"2\"/> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/> </svg>","link":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/> </svg>","megaphone":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z\"/> <path d=\"M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14\"/> <path d=\"M8 6v8\"/> </svg>","message-circle":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/> </svg>","message-square-dashed":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M14 3h2\"/> <path d=\"M16 19h-2\"/> <path d=\"M2 12v-2\"/> <path d=\"M2 16v5.286a.71.71 0 0 0 1.212.502l1.149-1.149\"/> <path d=\"M20 19a2 2 0 0 0 2-2v-1\"/> <path d=\"M22 10v2\"/> <path d=\"M22 6V5a2 2 0 0 0-2-2\"/> <path d=\"M4 3a2 2 0 0 0-2 2v1\"/> <path d=\"M8 19h2\"/> <path d=\"M8 3h2\"/> </svg>","pencil":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/> <path d=\"m15 5 4 4\"/> </svg>","plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M5 12h14\"/> <path d=\"M12 5v14\"/> </svg>","save":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/> <path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\"/> <path d=\"M7 3v4a1 1 0 0 0 1 1h7\"/> </svg>","scroll-text":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15 12h-5\"/> <path d=\"M15 8h-5\"/> <path d=\"M19 17V5a2 2 0 0 0-2-2H4\"/> <path d=\"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3\"/> </svg>","search":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m21 21-4.34-4.34\"/> <circle cx=\"11\" cy=\"11\" r=\"8\"/> </svg>","settings":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/> <circle cx=\"12\" cy=\"12\" r=\"3\"/> </svg>","shield":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/> </svg>","star":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\"/> </svg>","tag":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/> <circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/> </svg>","trash-2":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 11v6\"/> <path d=\"M14 11v6\"/> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/> <path d=\"M3 6h18\"/> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/> </svg>","user":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/> <circle cx=\"12\" cy=\"7\" r=\"4\"/> </svg>","user-plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> <line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"/> <line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/> </svg>","users":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> </svg>","users-round":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M18 21a8 8 0 0 0-16 0\"/> <circle cx=\"10\" cy=\"8\" r=\"5\"/> <path d=\"M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3\"/> </svg>","zap":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z\"/> </svg>"};
+    function pkmnIcon(name, cls){
+        const s = PKMN_ICONS[name]; if(!s) return '';
+        return s.replace('<svg', '<svg class="' + (cls||'pkmn-ico') + '"');
+    }
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -554,9 +560,13 @@
         matureBoards:
             MATURE_BOARDS.map(x => ({ ...x })),
 
-        // 独立通讯录/微信式聊天配置
+        // 独立通讯录/聊天配置
         contacts: [],
         contactChats: {},
+        // v0.18.0 群聊：contactGroups 存群定义，groupChats 按群 id 存消息
+        contactGroups: [],
+        groupChats: {},
+        groupInjection: {},
         contactLinkMeta: {},
         contactPlayerNickname: '',
         contactPlayerIdentity: '',
@@ -569,8 +579,10 @@
             model: '',
             temperature: 0.85,
             maxTokens: 900,
-            systemPrompt: '你正在模拟宝可梦世界中的通讯软件聊天。请严格按照联系人本人的身份、性格、经历、当前所在地和当前剧情进行回复。你不是旁白，不要替玩家决定行动。回复要像真实微信消息一样自然、简洁、有来有回。除非剧情需要，不要使用舞台说明、JSON或长篇旁白。',
-            readForumAll: true
+            systemPrompt: '你正在模拟宝可梦世界中的通讯软件聊天。请严格按照联系人本人的身份、性格、经历、当前所在地和当前剧情进行回复。你不是旁白，不要替玩家决定行动。回复要自然、简洁、有来有回。除非剧情需要，不要使用舞台说明、JSON或长篇旁白。',
+            readForumAll: true,
+            // v0.18.0 群聊：点刷新后 AI 成员轮流发言的默认条数（每群可在群设置里单独覆盖）
+            groupAiTurns: 6
         }
     };
 
@@ -1884,8 +1896,8 @@
             </div>
 
             <div class="pkmn-app-icon pkmn-contacts-icon" id="pkmn-open-contacts">
-                <div class="pkmn-app-image wechat-app-logo">💬</div>
-                微信
+                <div class="pkmn-app-image pkmn-contacts-logo">${pkmnIcon('contact','pkmn-app-ico')}</div>
+                通讯录
             </div>
 
             <div
@@ -2082,11 +2094,11 @@
 
     </div>
 
-    <!-- 通讯录（v0.17.4 · 2026 微信风格：微信/通讯录/我 三栏） -->
+    <!-- 通讯录（v0.17.6 · 消息/通讯录/我 三栏） -->
     <div id="pkmn-contacts" class="pkmn-view pkmn-chat-app">
         <div class="wechat-nav">
             <button id="pkmn-contacts-back">‹</button>
-            <div class="wechat-nav-title" id="wx2-nav-title">微信</div>
+            <div class="wechat-nav-title" id="wx2-nav-title">消息</div>
             <button id="pkmn-contacts-add">＋</button>
         </div>
         <div class="wx2-scroll" id="wx2-scroll">
@@ -2094,13 +2106,13 @@
                 <div class="wx2-list" id="wx2-chat-list"></div>
             </div>
             <div class="wx2-pane" id="wx2-pane-contacts" style="display:none">
-                <div class="wx2-search"><span class="wx2-search-ico">⌕</span><input id="pkmn-contact-search" placeholder="搜索"></div>
+                <div class="wx2-search">${pkmnIcon('search','pkmn-ico wx2-search-ico')}<input id="pkmn-contact-search" placeholder="搜索"></div>
                 <div class="wx2-entries">
-                    <button class="wx2-entry" id="wx2-entry-add"><i class="wx2-entry-ico is-orange">👤</i><span>新的朋友</span></button>
-                    <button class="wx2-entry" id="wx2-entry-groups"><i class="wx2-entry-ico is-blue">💬</i><span>群聊</span></button>
-                    <button class="wx2-entry" id="wx2-entry-tags"><i class="wx2-entry-ico is-indigo">🔖</i><span>标签</span></button>
-                    <button class="wx2-entry" id="wx2-entry-mp"><i class="wx2-entry-ico is-green">📢</i><span>公众号</span></button>
-                    <button class="wx2-entry" id="wx2-entry-settings"><i class="wx2-entry-ico is-gray">⚙️</i><span>通讯录设置</span></button>
+                    <button class="wx2-entry" id="wx2-entry-add"><i class="wx2-entry-ico">${pkmnIcon('user-plus','pkmn-ico')}</i><span>新认识的训练家</span></button>
+                    <button class="wx2-entry" id="wx2-entry-groups"><i class="wx2-entry-ico">${pkmnIcon('users-round','pkmn-ico')}</i><span>群聊</span></button>
+                    <button class="wx2-entry" id="wx2-entry-tags"><i class="wx2-entry-ico">${pkmnIcon('tag','pkmn-ico')}</i><span>标签</span></button>
+                    <button class="wx2-entry" id="wx2-entry-mp"><i class="wx2-entry-ico">${pkmnIcon('megaphone','pkmn-ico')}</i><span>公告板</span></button>
+                    <button class="wx2-entry" id="wx2-entry-settings"><i class="wx2-entry-ico">${pkmnIcon('settings','pkmn-ico')}</i><span>设置</span></button>
                 </div>
                 <div class="wx2-list" id="pkmn-contact-list"></div>
             </div>
@@ -2111,13 +2123,13 @@
         <div class="wx2-index" id="wx2-index"></div>
         <div class="wx2-index-hint" id="wx2-index-hint">A</div>
         <div class="wechat-bottom-nav" id="wx2-tabbar">
-            <button id="wx2-tab-chats" class="active">💬<small>微信</small></button>
-            <button id="wx2-tab-contacts">👤<small>通讯录</small></button>
-            <button id="wx2-tab-me">🙂<small>我</small></button>
+            <button id="wx2-tab-chats" class="active">${pkmnIcon('message-circle','pkmn-ico wx2-tab-ico')}<small>消息</small></button>
+            <button id="wx2-tab-contacts">${pkmnIcon('users','pkmn-ico wx2-tab-ico')}<small>通讯录</small></button>
+            <button id="wx2-tab-me">${pkmnIcon('user','pkmn-ico wx2-tab-ico')}<small>我</small></button>
         </div>
     </div>
 
-    <!-- 微信式聊天 -->
+    <!-- 聊天 -->
     <div id="pkmn-chat" class="pkmn-view pkmn-chat-app">
         <div class="wechat-nav">
             <button id="pkmn-chat-back">‹</button>
@@ -2148,6 +2160,38 @@
             <span>聊天设置</span>
         </div>
         <div class="pkmn-settings" id="pkmn-contact-person-settings-body"></div>
+    </div>
+
+    <!-- v0.18.0 群聊：群列表 / 群会话 / 群设置 -->
+    <div id="pkmn-group-list-view" class="pkmn-view">
+        <div class="wechat-nav">
+            <button id="pkmn-group-list-back">‹</button>
+            <div class="wechat-nav-title">群聊</div>
+            <button id="pkmn-group-create">＋</button>
+        </div>
+        <div class="pkmn-settings" id="pkmn-group-list-body"></div>
+    </div>
+
+    <div id="pkmn-group-chat-view" class="pkmn-view pkmn-chat-app">
+        <div class="wechat-nav">
+            <button id="pkmn-group-chat-back">‹</button>
+            <div class="wechat-nav-title" id="pkmn-group-chat-title">群聊</div>
+            <button id="pkmn-group-chat-refresh" title="让 AI 互聊" aria-label="让 AI 互聊">↻</button>
+            <button id="pkmn-group-chat-more">⋯</button>
+        </div>
+        <div class="wechat-messages" id="pkmn-group-messages"></div>
+        <div class="wechat-inputbar">
+            <textarea id="pkmn-group-input" rows="1" placeholder="说点什么…（长按头像可 @ 成员）"></textarea>
+            <button class="wechat-send" id="pkmn-group-send">发送</button>
+        </div>
+    </div>
+
+    <div id="pkmn-group-settings-view" class="pkmn-view">
+        <div class="pkmn-head">
+            <button id="pkmn-group-settings-back">‹</button>
+            <span>群聊设置</span>
+        </div>
+        <div class="pkmn-settings" id="pkmn-group-settings-body"></div>
     </div>
 
 </div>
@@ -2591,7 +2635,11 @@
             devonDetail: which === 'devonDetail' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             devonOrders: which === 'devonOrders' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
             devonSettings: which === 'devonSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
-            devonBag: which === 'devonBag' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
+            devonBag: which === 'devonBag' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            // v0.18.0 群聊视图
+            groupList: which === 'groupList' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            groupChat: which === 'groupChat' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)',
+            groupSettings: which === 'groupSettings' ? 'translate3d(0,0,0)' : 'translate3d(100%,0,0)'
         };
 
         home.style.transform = positions.home;
@@ -2617,6 +2665,13 @@
         if (devonOrders) devonOrders.style.transform = positions.devonOrders;
         if (devonSettings) devonSettings.style.transform = positions.devonSettings;
         if (devonBag) devonBag.style.transform = positions.devonBag;
+        // v0.18.0 群聊
+        const groupList = $('pkmn-group-list-view');
+        const groupChat = $('pkmn-group-chat-view');
+        const groupSettings = $('pkmn-group-settings-view');
+        if (groupList) groupList.style.transform = positions.groupList;
+        if (groupChat) groupChat.style.transform = positions.groupChat;
+        if (groupSettings) groupSettings.style.transform = positions.groupSettings;
     }
 
     // ============================================================
@@ -2705,6 +2760,8 @@
  * ========================================================= */
 const CONTACT_INJECT_PROMPT_ID = 'pokemon_forum_contact_injection_v2';
 const CONTACT_INJECT_STORAGE_KEY = 'pokemon_forum_contact_injection_v2';
+// v0.18.0：群聊注入条目由 IIFE 内的群聊模块注册进来（顶层无法直接访问其内部函数）
+let pkmnGroupEntriesProvider = null;
 
 function getCurrentChatInjectionKey() {
     try {
@@ -2819,20 +2876,35 @@ function getAllEnabledContactInjectionEntries() {
 
 function buildContactInjectionText() {
     const entries = getAllEnabledContactInjectionEntries();
-    if (!entries.length) return '';
+    // v0.18.0：群聊注入条目（由群聊模块注册）
+    const groupEntries = typeof pkmnGroupEntriesProvider === 'function'
+        ? (pkmnGroupEntriesProvider() || [])
+        : [];
+    if (!entries.length && !groupEntries.length) return '';
     const grouped = new Map();
     for (const e of entries) {
         if (!grouped.has(e.contactId)) grouped.set(e.contactId, { name: e.contactName, items: [] });
         grouped.get(e.contactId).items.push(e);
     }
     const lines = [
-        '【通讯录私聊记忆｜当前酒馆聊天】',
-        '以下是被用户单独开启“注入正文”的通讯录私聊内容。它们属于私聊剧情记忆，不是公开论坛帖子。',
-        '请仅将其作为背景事实参考。通讯录昵称后括号内为当前酒馆主角的正式姓名；不要将通讯录昵称误认为主角姓名。不要擅自替主角发言，也不要把私聊内容伪装成论坛内容。'
+        '【通讯录聊天记忆｜当前酒馆聊天】',
+        '以下是被用户单独开启“注入正文”的通讯录私聊与群聊内容。它们属于剧情记忆，不是公开论坛帖子。',
+        '请仅将其作为背景事实参考。通讯录昵称后括号内为当前酒馆主角的正式姓名；不要将通讯录昵称误认为主角姓名。不要擅自替主角发言，也不要把私聊或群聊内容伪装成论坛内容。'
     ];
     for (const g of grouped.values()) {
         lines.push(`\n【联系人：${g.name}】`);
         g.items.forEach((e, i) => lines.push(`${i + 1}. ${e.speaker}: ${e.content}`));
+    }
+    if (groupEntries.length) {
+        const gg = new Map();
+        for (const e of groupEntries) {
+            if (!gg.has(e.groupId)) gg.set(e.groupId, { name: e.groupName, items: [] });
+            gg.get(e.groupId).items.push(e);
+        }
+        for (const g of gg.values()) {
+            lines.push(`\n【群聊：${g.name}】`);
+            g.items.forEach((e, i) => lines.push(`${i + 1}. ${e.speaker}: ${e.content}`));
+        }
     }
     return lines.join('\n');
 }
@@ -5849,7 +5921,7 @@ ${esc(b.prompt)}
 
 
     // ============================================================
-    // 通讯录 / 微信式聊天
+    // 通讯录 / 聊天
     // ============================================================
     let currentContactId = null;
 
@@ -5875,6 +5947,18 @@ ${esc(b.prompt)}
         saveContactConfig();
     }
 
+    // v0.17.6 玩家头像：可填自定义图片地址，留空则用昵称首字渐变方块
+    function getContactPlayerAvatar() {
+        contactCfg();
+        return typeof config.contactPlayerAvatar === 'string' ? config.contactPlayerAvatar.trim() : '';
+    }
+
+    function setContactPlayerAvatar(value) {
+        contactCfg();
+        config.contactPlayerAvatar = String(value || '').trim();
+        saveContactConfig();
+    }
+
     function getContactPlayerDisplayName() {
         return getContactPlayerNickname().trim() || '我';
     }
@@ -5897,6 +5981,24 @@ ${esc(b.prompt)}
             config.contacts = config.contacts.filter(x => !legacyIds.has(String(x?.id || '')));
         }
         if (!config.contactChats || typeof config.contactChats !== 'object') config.contactChats = {};
+        // v0.18.0 群聊：群定义 / 群消息 / 群注入设置
+        if (!Array.isArray(config.contactGroups)) config.contactGroups = [];
+        if (!config.groupChats || typeof config.groupChats !== 'object') config.groupChats = {};
+        if (!config.groupInjection || typeof config.groupInjection !== 'object') config.groupInjection = {};
+        if (!Number.isFinite(Number(config.contactApi.groupAiTurns))) config.contactApi.groupAiTurns = 6;
+        config.contactGroups.forEach(g => {
+            if (!g || typeof g !== 'object') return;
+            if (!g.id) g.id = 'g_' + Math.random().toString(36).slice(2, 10);
+            if (!g.name) g.name = '未命名群聊';
+            if (!Array.isArray(g.memberIds)) g.memberIds = [];
+            // aiTurns 为 null 表示跟随全局设置
+            if (!(Number.isFinite(Number(g.aiTurns)) && Number(g.aiTurns) >= 1)) g.aiTurns = null;
+            if (!Array.isArray(config.groupChats[g.id])) config.groupChats[g.id] = [];
+        });
+        // 清掉已删群的孤儿消息，避免存储无限膨胀
+        Object.keys(config.groupChats).forEach(id => {
+            if (!config.contactGroups.some(g => g && g.id === id)) delete config.groupChats[id];
+        });
         if (!config.contactLinkMeta || typeof config.contactLinkMeta !== 'object') config.contactLinkMeta = {};
         config.contacts.forEach(c => {
             if (!c || typeof c !== 'object') return;
@@ -6199,7 +6301,7 @@ function contactByNickname(nickname) {
             const memory = getContactChatMemory(c);
             const rawMoral = Number(c.moralScore);
             const moral = Number.isFinite(rawMoral) ? Math.max(0, Math.min(100, rawMoral)) : 50;
-            return `【联系人：${nickname}】\n身份说明：论坛昵称与微信原昵称一致；玩家在私聊中是“玩家本人”，不是普通匿名网友。\n道德值：${moral}/100\n聊天记忆：\n${memory || '（暂无聊天记录）'}`;
+            return `【联系人：${nickname}】\n身份说明：论坛昵称与原昵称一致；玩家在私聊中是“玩家本人”，不是普通匿名网友。\n道德值：${moral}/100\n聊天记忆：\n${memory || '（暂无聊天记录）'}`;
         });
         return `【已开启“此聊天与论坛联动”的通讯录联系人】
 ${blocks.join('\n\n')}
@@ -6397,7 +6499,7 @@ ${blocks.join('\n\n')}
         if (chatBtn) chatBtn.onclick = () => { close(); openContact(existing.id); };
     }
 
-    // ===== v0.17.3 通讯录 · 2026 微信风格：拼音首字母分组 / 字母索引 / 星标朋友 / 人数统计 =====
+    // ===== v0.17.3 通讯录 · 拼音首字母分组 / 字母索引 / 星标朋友 / 人数统计 =====
     const WX2_PINYIN_BOUNDS = [['a','阿'],['b','芭'],['c','擦'],['d','搭'],['e','蛾'],['f','发'],['g','噶'],['h','哈'],['j','击'],['k','喀'],['l','垃'],['m','妈'],['n','拿'],['o','哦'],['p','啪'],['q','期'],['r','然'],['s','撒'],['t','塌'],['w','挖'],['x','昔'],['y','压'],['z','匝']];
     let wx2Collator = null;
     try { wx2Collator = new Intl.Collator('zh-Hans-CN-u-co-pinyin'); } catch (_) { wx2Collator = null; }
@@ -6424,12 +6526,29 @@ ${blocks.join('\n\n')}
         const disp = contactDisplayName(c);
         return disp ? disp.slice(0, 1).toUpperCase() : '匿';
     }
+    // v0.17.6 头像：c.avatar 为图片地址时渲染圆角照片，否则回落首字渐变方块。
+    // 图片加载失败时 onerror 直接移除 <img>，底层首字自动露出，不留空白。
+    function contactAvatarIsImage(v) {
+        const s = String(v || '').trim();
+        if (!s || s.length > 600) return false;
+        return /^(https?:\/\/|data:image\/|blob:|\.{0,2}\/)/i.test(s)
+            || /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?.*)?$/i.test(s);
+    }
+    function contactAvatarHTML(c, sizeCls, label, baseCls) {
+        const cls = String((baseCls || 'wx2-avatar') + ' ' + (sizeCls || '') + ' ' + contactAvatarClass(c)).replace(/\s+/g, ' ').trim();
+        const txt = esc(typeof label === 'string' && label ? label : contactAvatarChar(c));
+        const v = String((c && c.avatar) || '').trim();
+        if (contactAvatarIsImage(v)) {
+            return `<span class="${cls}"><b class="wx2-av-txt">${txt}</b><img class="wx2-av-img" src="${esc(v)}" alt="" loading="lazy" onerror="this.remove()"></span>`;
+        }
+        return `<span class="${cls}"><b class="wx2-av-txt">${txt}</b></span>`;
+    }
     function wx2IndexBar(listEl, letters) {
         const bar = $('wx2-index'), hint = $('wx2-index-hint');
         if (!bar) return;
         if (!letters.length) { bar.style.display = 'none'; return; }
         bar.style.display = 'flex';
-        bar.innerHTML = letters.map(L => `<span data-wx2-idx="${L}">${L === '★' ? '☆' : L}</span>`).join('');
+        bar.innerHTML = letters.map(L => `<span data-wx2-idx="${L}">${L === '★' ? pkmnIcon('star','pkmn-ico wx2-idx-star') : L}</span>`).join('');
         bar.querySelectorAll('[data-wx2-idx]').forEach(el => {
             el.onclick = () => {
                 const L = el.dataset.wx2Idx;
@@ -6444,7 +6563,7 @@ ${blocks.join('\n\n')}
             };
         });
     }
-    // ===== v0.17.4 微信三栏：微信(消息) / 通讯录 / 我 =====
+    // ===== v0.17.6 三栏：消息 / 通讯录 / 我 =====
     let wx2ActiveTab = 'chats';
     let wx2MeEdit = null;
     function wx2SwitchTab(tab) {
@@ -6457,35 +6576,57 @@ ${blocks.join('\n\n')}
         if (addBtn) addBtn.style.display = tab === 'me' ? 'none' : '';
         const idx = $('wx2-index');
         if (idx && tab !== 'contacts') idx.style.display = 'none';
-        if (tab === 'contacts') renderContacts($('pkmn-contact-search')?.value || '');
-        else if (tab === 'chats') { renderWx2Chats(); if (title) title.textContent = '微信'; }
+        if (tab === 'contacts') { renderContacts($('pkmn-contact-search')?.value || ''); if (title) title.textContent = '通讯录'; }
+        else if (tab === 'chats') { renderWx2Chats(); if (title) title.textContent = '消息'; }
         else { renderWx2Me(); if (title) title.textContent = '我'; }
+    }
+    // v0.18.0：把 HH:MM 转成可排序的分钟数，供会话列表排序
+    function wx2TsOf(last) {
+        const tm = last ? String(last.time || '').match(/(\d{1,2}):(\d{2})/) : null;
+        return tm ? Number(tm[1]) * 60 + Number(tm[2]) : -1;
     }
     function renderWx2Chats() {
         contactCfg();
         const box = $('wx2-chat-list');
         if (!box) return;
-        if (!config.contacts.length) {
-            box.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">💬</div><div class="wx2-empty-t">还没有会话</div><div class="wx2-empty-d">到「通讯录」添加联系人后即可开始私聊</div></div>`;
-            return;
-        }
-        const rows = config.contacts.map(c => {
+        const items = [];
+        // 群聊会话
+        (config.contactGroups || []).forEach(g => {
+            const chat = groupMessages(g.id);
+            const last = chat.length ? chat[chat.length - 1] : null;
+            items.push({ kind: 'group', id: g.id, g, last, ts: wx2TsOf(last) });
+        });
+        // 私聊会话
+        (config.contacts || []).forEach(c => {
             const chat = Array.isArray(config.contactChats[c.id]) ? config.contactChats[c.id] : [];
             const last = chat.length ? chat[chat.length - 1] : null;
-            const tm = last ? String(last.time || '').match(/(\d{1,2}):(\d{2})/) : null;
-            const ts = tm ? Number(tm[1]) * 60 + Number(tm[2]) : -1;
-            return { c, last, ts };
-        }).sort((a, b) => b.ts - a.ts);
-        box.innerHTML = rows.map(item => {
-            const c = item.c, last = item.last;
+            items.push({ kind: 'contact', id: c.id, c, last, ts: wx2TsOf(last) });
+        });
+        if (!items.length) {
+            box.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">${pkmnIcon('message-square-dashed','pkmn-ico')}</div><div class="wx2-empty-t">还没有会话</div><div class="wx2-empty-d">到「通讯录」添加联系人，或在「群聊」里建个群</div></div>`;
+            return;
+        }
+        items.sort((a, b) => b.ts - a.ts);
+        box.innerHTML = items.map(item => {
+            const last = item.last;
+            if (item.kind === 'group') {
+                const g = item.g;
+                return `<button class="wx2-conv group-conv" data-group-conv="${esc(g.id)}">
+                    ${groupAvatarHTML(g, 'lg')}
+                    <span class="wx2-conv-main"><b>${esc(g.name)}<em class="group-member-count">（${groupMemberContacts(g).length}）</em></b><small>${esc(groupLastPreview(g))}</small></span>
+                    <time>${esc((last && last.time) || '')}</time>
+                </button>`;
+            }
+            const c = item.c;
             const preview = last ? esc(String(last.content || '').replace(/\s+/g, ' ')).slice(0, 40) : '暂无消息';
             return `<button class="wx2-conv" data-conv="${esc(c.id)}">
-                <span class="wx2-avatar lg ${contactAvatarClass(c)}">${esc(contactAvatarChar(c))}</span>
+                ${contactAvatarHTML(c, 'lg')}
                 <span class="wx2-conv-main"><b>${esc(contactDisplayName(c))}</b><small>${preview}</small></span>
                 <time>${esc((last && last.time) || '')}</time>
             </button>`;
         }).join('');
         box.querySelectorAll('[data-conv]').forEach(el => el.onclick = () => openContact(el.dataset.conv));
+        box.querySelectorAll('[data-group-conv]').forEach(el => el.onclick = () => openGroupChat(el.dataset.groupConv));
     }
     function renderWx2Me() {
         contactCfg();
@@ -6502,22 +6643,22 @@ ${blocks.join('\n\n')}
         }
         body.innerHTML = `
             <div class="wx2-me-card">
-                <span class="wx2-avatar xl ${contactAvatarClass({ id: 'player-me' })}">${rawNick ? esc(nick.slice(0, 1).toUpperCase()) : '🙂'}</span>
+                ${contactAvatarHTML({ id: 'player-me', avatar: getContactPlayerAvatar() }, 'xl', rawNick ? nick.slice(0, 1).toUpperCase() : pkmnIcon('user', 'pkmn-ico wx2-av-ico'))}
                 <div class="wx2-me-main">
                     <div class="wx2-me-nick">${esc(nick)}</div>
-                    <div class="wx2-me-wxid">微信号：${identity ? esc(identity.replace(/\s+/g, ' ').slice(0, 22)) : '点击下方「介绍」设置'}</div>
+                    <div class="wx2-me-wxid">训练家 ID：${identity ? esc(identity.replace(/\s+/g, ' ').slice(0, 22)) : '点击下方「介绍」设置'}</div>
                 </div>
-                <i class="wx2-me-arrow">›</i>
+                <i class="wx2-me-arrow">${pkmnIcon('chevron-right','pkmn-ico')}</i>
             </div>
             <div class="wx2-me-group">
-                <button class="wx2-me-row" id="wx2-me-nick-row"><i class="wx2-me-ico">✏️</i><span>昵称</span><em>${rawNick ? esc(nick) : '未设置'}</em><b>›</b></button>
-                <button class="wx2-me-row" id="wx2-me-identity-row"><i class="wx2-me-ico">📜</i><span>介绍</span><em>${identity ? esc(identity.replace(/\s+/g, ' ').slice(0, 12)) + (identity.length > 12 ? '…' : '') : '未设置'}</em><b>›</b></button>
+                <button class="wx2-me-row" id="wx2-me-nick-row"><i class="wx2-me-ico">${pkmnIcon('pencil','pkmn-ico')}</i><span>昵称</span><em>${rawNick ? esc(nick) : '未设置'}</em><b>${pkmnIcon('chevron-right','pkmn-ico')}</b></button>
+                <button class="wx2-me-row" id="wx2-me-identity-row"><i class="wx2-me-ico">${pkmnIcon('scroll-text','pkmn-ico')}</i><span>介绍</span><em>${identity ? esc(identity.replace(/\s+/g, ' ').slice(0, 12)) + (identity.length > 12 ? '…' : '') : '未设置'}</em><b>${pkmnIcon('chevron-right','pkmn-ico')}</b></button>
             </div>
             ${editCard}
             <div class="wx2-me-group">
-                <button class="wx2-me-row" id="pkmn-contact-settings"><i class="wx2-me-ico">⚙️</i><span>设置</span><b>›</b></button>
+                <button class="wx2-me-row" id="pkmn-contact-settings"><i class="wx2-me-ico">${pkmnIcon('settings','pkmn-ico')}</i><span>设置</span><b>${pkmnIcon('chevron-right','pkmn-ico')}</b></button>
             </div>
-            <div class="wx2-me-foot">宝可梦小手机 · 微信 v0.17.5</div>`;
+            <div class="wx2-me-foot">宝可梦小手机 · 通讯录 v0.17.6</div>`;
         const nickRow = $('wx2-me-nick-row'); if (nickRow) nickRow.onclick = () => { wx2MeEdit = 'nickname'; renderWx2Me(); };
         const idRow = $('wx2-me-identity-row'); if (idRow) idRow.onclick = () => { wx2MeEdit = 'identity'; renderWx2Me(); };
         const cancelBtn = $('wx2-me-cancel'); if (cancelBtn) cancelBtn.onclick = () => { wx2MeEdit = null; renderWx2Me(); };
@@ -6549,12 +6690,12 @@ ${blocks.join('\n\n')}
         const q = String(filter || '').trim().toLowerCase();
         const items = config.contacts.filter(c => !q || [c.nickname,c.name,c.note,c.location,c.bio].join(' ').toLowerCase().includes(q));
         if (!total) {
-            list.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">👥</div><div class="wx2-empty-t">通讯录还是空的</div><div class="wx2-empty-d">点击右上角「＋」添加第一位联系人<br>或在论坛用户资料页加好友</div></div>`;
+            list.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">${pkmnIcon('users','pkmn-ico')}</div><div class="wx2-empty-t">通讯录还是空的</div><div class="wx2-empty-d">点击右上角「＋」添加第一位联系人<br>或在论坛用户资料页加好友</div></div>`;
             wx2IndexBar(list, []);
             return;
         }
         if (!items.length) {
-            list.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">🔍</div><div class="wx2-empty-t">没有找到联系人</div><div class="wx2-empty-d">换个关键词试试</div></div>`;
+            list.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">${pkmnIcon('search','pkmn-ico')}</div><div class="wx2-empty-t">没有找到联系人</div><div class="wx2-empty-d">换个关键词试试</div></div>`;
             wx2IndexBar(list, []);
             return;
         }
@@ -6581,9 +6722,9 @@ ${blocks.join('\n\n')}
                 <div class="wx2-letter">${g.letter === '★' ? '★ 星标朋友' : g.letter}</div>
                 ${g.list.map(c => `
                 <button class="wx2-row" data-contact="${esc(c.id)}">
-                    <span class="wx2-avatar ${contactAvatarClass(c)}">${esc(contactAvatarChar(c))}</span>
+                    ${contactAvatarHTML(c, '', contactAvatarChar(c))}
                     <span class="wx2-name">${esc(contactDisplayName(c))}</span>
-                    ${c.star ? '<span class="wx2-meta">★</span>' : ''}
+                    ${c.star ? `<span class="wx2-meta">${pkmnIcon('star','pkmn-ico wx2-meta-star')}</span>` : ''}
                 </button>`).join('')}
             </section>`).join('') + `<div class="wx2-count">${q ? '找到 ' + items.length + ' 位联系人' : items.length + ' 位联系人'}</div>`;
         list.querySelectorAll('[data-contact]').forEach(el => el.onclick = () => openContact(el.dataset.contact));
@@ -6591,29 +6732,15 @@ ${blocks.join('\n\n')}
     }
 
     
-    let contactMultiDeleteMode = false;
-    let contactSelectedMessages = new Set();
+    // v0.18.1 长按消息 → 气泡下方出现小 ×，点击 × 直接删除该条（替代原顶部多选工具栏）
+    let contactMsgDeleteIndex = null;
     let contactLongPressTimer = null;
+    let contactJustLongPressed = false;
 
-    function exitContactDeleteMode() {
-        contactMultiDeleteMode = false;
-        contactSelectedMessages.clear();
-        renderChat();
-    }
-
-    function deleteSelectedContactMessages() {
-        if (!contactSelectedMessages.size) {
-            showToast('请选择要删除的消息');
-            return;
-        }
-        const chat = config.contactChats[currentContactId] || [];
-        config.contactChats[currentContactId] = chat.filter((_, i) => !contactSelectedMessages.has(i));
-        saveContactConfig();
-        showToast(`已删除 ${contactSelectedMessages.size} 条消息`);
-        contactSelectedMessages.clear();
-        contactMultiDeleteMode = false;
-        renderChat();
-        autoRefreshContactInjection(currentContactId);
+    function contactDelX(msgIndex) {
+        return contactMsgDeleteIndex === msgIndex
+            ? '<button class="msg-del-x" data-del-contact-msg="' + msgIndex + '" type="button" aria-label="删除这条消息">×</button>'
+            : '';
     }
 
     function bindContactMessageLongPress() {
@@ -6623,36 +6750,52 @@ ${blocks.join('\n\n')}
         box.querySelectorAll('.wechat-msg-row[data-msg-index]').forEach(row => {
             const index = Number(row.dataset.msgIndex);
 
-            const toggleSelect = () => {
-                if (!contactMultiDeleteMode) return;
-                if (contactSelectedMessages.has(index)) contactSelectedMessages.delete(index);
-                else contactSelectedMessages.add(index);
+            const press = () => {
+                // 长按同一条：显示 / 收起 ×
+                contactMsgDeleteIndex = contactMsgDeleteIndex === index ? null : index;
+                contactJustLongPressed = true;
                 renderChat();
             };
 
-            row.addEventListener('click', toggleSelect);
-
             row.addEventListener('touchstart', () => {
-                contactLongPressTimer = setTimeout(() => {
-                    contactMultiDeleteMode = true;
-                    contactSelectedMessages.add(index);
-                    renderChat();
-                }, 550);
+                contactLongPressTimer = setTimeout(press, 550);
             }, {passive:true});
 
             row.addEventListener('touchend', () => clearTimeout(contactLongPressTimer));
             row.addEventListener('touchmove', () => clearTimeout(contactLongPressTimer));
 
             row.addEventListener('mousedown', () => {
-                contactLongPressTimer = setTimeout(() => {
-                    contactMultiDeleteMode = true;
-                    contactSelectedMessages.add(index);
-                    renderChat();
-                }, 550);
+                contactLongPressTimer = setTimeout(press, 550);
             });
 
             row.addEventListener('mouseup', () => clearTimeout(contactLongPressTimer));
             row.addEventListener('mouseleave', () => clearTimeout(contactLongPressTimer));
+
+            // 点击消息其他区域：收起 ×
+            row.addEventListener('click', () => {
+                if (contactJustLongPressed) { contactJustLongPressed = false; return; }
+                if (contactMsgDeleteIndex !== null) {
+                    contactMsgDeleteIndex = null;
+                    renderChat();
+                }
+            });
+        });
+
+        // 点击小 × 直接删除该条消息
+        box.querySelectorAll('[data-del-contact-msg]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const i = Number(btn.getAttribute('data-del-contact-msg'));
+                const chat = config.contactChats[currentContactId] || [];
+                if (i >= 0 && i < chat.length) {
+                    chat.splice(i, 1);
+                    saveContactConfig();
+                    showToast('已删除该消息');
+                    autoRefreshContactInjection(currentContactId);
+                }
+                contactMsgDeleteIndex = null;
+                renderChat();
+            });
         });
     }
 
@@ -6664,22 +6807,21 @@ function renderChat() {
         $('pkmn-chat-title').textContent = contactName;
         const box = $('pkmn-chat-messages');
         const msgs = config.contactChats[currentContactId] || [];
-        box.innerHTML = (contactMultiDeleteMode ? `<div class="wechat-delete-toolbar"><button data-contact-cancel-delete>取消</button><span>已选择 ${contactSelectedMessages.size} 条</span><button data-contact-delete-selected>删除</button></div>` : '') + msgs.map((m, msgIndex) => {
+        box.innerHTML = msgs.map((m, msgIndex) => {
             const mine = m.role === 'user';
             const displayName = mine ? playerName : contactName;
-            const avatarText = mine ? playerName.slice(0, 1) : String(c.avatar || contactName || '👤').slice(0, 1);
-            return `<div data-msg-index="${msgIndex}" class="wechat-msg-row ${mine?'mine':'theirs'} ${contactSelectedMessages.has(msgIndex)?'contact-msg-selected':''}">
-                ${mine ? '' : `<span class="wechat-avatar mini">${esc(avatarText)}</span>`}
+            const avatarText = mine ? playerName.slice(0, 1) : (contactAvatarIsImage(c.avatar) ? '' : String(c.avatar || contactName || '匿').slice(0, 1));
+            return `<div data-msg-index="${msgIndex}" class="wechat-msg-row ${mine?'mine':'theirs'}">
+                ${mine ? '' : contactAvatarHTML(c, 'mini', avatarText, 'wechat-avatar')}
                 <div class="wechat-msg-main">
                     <div class="wechat-msg-name">${esc(displayName)}</div>
                     <div class="wechat-bubble">${esc(m.content).replace(/\n/g,'<br>')}</div>
                     <small class="wechat-time">${esc(m.time||'')}</small>
+                    ${contactDelX(msgIndex)}
                 </div>
-                ${mine ? `<span class="wechat-avatar mini me">${esc(avatarText)}</span>` : ''}
+                ${mine ? contactAvatarHTML({ id: 'player-me', avatar: getContactPlayerAvatar() }, 'mini me', avatarText, 'wechat-avatar') : ''}
             </div>`;
         }).join('') || `<div class="wechat-daytip">与 ${esc(contactName)} 的聊天</div>`;
-        box.querySelector('[data-contact-cancel-delete]')?.addEventListener('click', exitContactDeleteMode);
-        box.querySelector('[data-contact-delete-selected]')?.addEventListener('click', deleteSelectedContactMessages);
         bindContactMessageLongPress();
         box.scrollTop = box.scrollHeight;
     }
@@ -6722,7 +6864,7 @@ function renderChat() {
             }
             const contactPlayerNickname = getContactPlayerDisplayName();
             const contactPlayerIdentity = getContactPlayerIdentity();
-            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n微信原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【微信玩家身份】\n玩家昵称：${contactPlayerNickname}\n玩家身份：${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述昵称与身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context : ''}${forumContext}`;
+            const system = `${contactCfg().systemPrompt}\n\n【联系人资料】\n原昵称：${c.nickname || c.name}\n通讯录备注：${c.note||''}\n简介：${c.bio||''}\n当前位置：${c.location||'未知'}\n道德值：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50))}/100\n${getMoralBehaviorText(Number(c.moralScore))}\n对玩家忠诚倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralLoyalty)) ? Number(c.moralLoyalty) : 50))}/100\n对玩家好感倾向：${Math.max(0,Math.min(100,Number.isFinite(Number(c.moralAffinity)) ? Number(c.moralAffinity) : 50))}/100\n\n【玩家身份】\n玩家昵称：${contactPlayerNickname}\n玩家身份：${contactPlayerIdentity || '未设置'}\n当前聊天对象就是上述昵称与身份的玩家本人，不要把玩家当成普通论坛网友。\n${context ? '\n【当前世界/剧情资料】\n'+context : ''}${forumContext}`;
             const recent = chat.slice(-20).map(m => ({role:m.role, content:m.content}));
             const reply = await callContactAI([{role:'system',content:system}, ...recent]);
             typing.remove();
@@ -6742,6 +6884,626 @@ function renderChat() {
         }
     }
 
+    /* ================= v0.18.0 群聊 ================= */
+    // 数据：config.contactGroups[] 存群定义，config.groupChats[groupId] 存消息，
+    //      config.groupInjection[groupId] 存该群的正文注入设置。
+
+    function nowHM() {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function contactGroupById(id) {
+        if (!id) return null;
+        // 注意：contactCfg() 返回的是 contactApi 配置，群列表在 config.contactGroups
+        return ((config.contactGroups) || []).find(g => g && String(g.id) === String(id)) || null;
+    }
+
+    function groupMemberContacts(g) {
+        const ids = Array.isArray(g && g.memberIds) ? g.memberIds : [];
+        return ids.map(id => contactById(id)).filter(Boolean);
+    }
+
+    // 每群可覆盖全局条数；未设置（null）时跟随设置页的全局默认值
+    function groupAiTurns(g) {
+        const own = Number(g && g.aiTurns);
+        if (Number.isFinite(own) && own >= 1) return Math.max(1, Math.min(20, Math.floor(own)));
+        const def = Number(contactCfg().groupAiTurns);
+        return Math.max(1, Math.min(20, Number.isFinite(def) && def >= 1 ? Math.floor(def) : 6));
+    }
+
+    function groupMessages(groupId) {
+        contactCfg();
+        if (!Array.isArray(config.groupChats[groupId])) config.groupChats[groupId] = [];
+        return config.groupChats[groupId];
+    }
+
+    function groupAvatarHTML(g, sizeCls) {
+        const cls = String('wx2-avatar wx2-av-group ' + (sizeCls || '')).replace(/\s+/g, ' ').trim();
+        const ico = pkmnIcon('users-round', 'pkmn-ico wx2-av-ico');
+        const v = String((g && g.avatar) || '').trim();
+        if (contactAvatarIsImage(v)) {
+            return `<span class="${cls}"><b class="wx2-av-txt">${ico}</b><img class="wx2-av-img" src="${esc(v)}" alt="" loading="lazy" onerror="this.remove()"></span>`;
+        }
+        return `<span class="${cls}">${ico}</span>`;
+    }
+
+    function groupLastPreview(g) {
+        const msgs = groupMessages(g.id);
+        const last = msgs[msgs.length - 1];
+        if (!last) return '还没有消息';
+        const name = String(last.senderName || '').trim();
+        const body = String(last.content || '').replace(/\s+/g, ' ').trim();
+        return (name ? name + '：' : '') + body.slice(0, 28);
+    }
+
+    let currentGroupId = null;
+    let groupGenerating = false;
+
+    function setGroupRefreshBusy(busy) {
+        const btn = $('pkmn-group-chat-refresh');
+        if (!btn) return;
+        btn.classList.toggle('is-busy', !!busy);
+        btn.disabled = !!busy;
+    }
+
+    // ---------- 群聊列表 ----------
+    function renderGroupList() {
+        const body = $('pkmn-group-list-body');
+        if (!body) return;
+        contactCfg();
+        const groups = config.contactGroups || [];
+        if (!groups.length) {
+            body.innerHTML = `
+                <div class="wx2-empty">
+                    <div class="wx2-empty-ico">${pkmnIcon('users-round', 'pkmn-ico')}</div>
+                    <div class="wx2-empty-t">还没有群聊</div>
+                    <div class="wx2-empty-d">点右上角 ＋ 拉几位训练家进群</div>
+                </div>`;
+            return;
+        }
+        body.innerHTML = groups.map(g => `
+            <button class="wx2-conv group-conv" data-group="${esc(g.id)}">
+                ${groupAvatarHTML(g, 'lg')}
+                <span class="wx2-conv-main">
+                    <b>${esc(g.name)}<em class="group-member-count">（${groupMemberContacts(g).length}）</em></b>
+                    <small>${esc(groupLastPreview(g))}</small>
+                </span>
+            </button>`).join('');
+        body.querySelectorAll('[data-group]').forEach(btn => {
+            btn.onclick = () => openGroupChat(btn.getAttribute('data-group'));
+        });
+    }
+
+    function renderGroupCreate() {
+        const body = $('pkmn-group-list-body');
+        if (!body) return;
+        contactCfg();
+        const all = config.contacts || [];
+        if (!all.length) {
+            showToast('先在通讯录里添加联系人');
+            return;
+        }
+        body.innerHTML = `
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">新建群聊</div>
+                <label class="pkmn-label">群名称
+                    <input class="pkmn-input" id="group-new-name" placeholder="例如：常青森林探险队">
+                </label>
+                <div class="pkmn-small" style="margin:9px 0 6px">选择成员（至少 2 位，AI 会让他们轮流发言）</div>
+                <div class="group-member-pick">
+                    ${all.map(c => `<label class="group-member-row"><input type="checkbox" class="group-new-member" value="${esc(c.id)}"><span>${esc(contactDisplayName(c))}</span></label>`).join('')}
+                </div>
+                <div class="pkmn-row" style="margin-top:10px">
+                    <button class="pkmn-btn pkmn-primary" id="group-create-confirm" style="flex:1">创建</button>
+                    <button class="pkmn-btn pkmn-secondary" id="group-create-cancel">取消</button>
+                </div>
+            </div>`;
+        $('group-create-cancel').onclick = () => renderGroupList();
+        $('group-create-confirm').onclick = () => {
+            const name = String(($('group-new-name') || {}).value || '').trim() || '未命名群聊';
+            const ids = [...body.querySelectorAll('.group-new-member:checked')].map(x => x.value);
+            if (ids.length < 2) {
+                showToast('至少选择 2 位成员');
+                return;
+            }
+            const g = {
+                id: 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                name,
+                avatar: '',
+                memberIds: ids,
+                aiTurns: null,
+                speakCursor: 0,
+                createdAt: Date.now()
+            };
+            config.contactGroups.push(g);
+            config.groupChats[g.id] = [];
+            saveContactConfig();
+            showToast('✓ 群聊已创建');
+            openGroupChat(g.id);
+        };
+    }
+
+    // ---------- 群聊会话 ----------
+    function openGroupChat(groupId) {
+        const g = contactGroupById(groupId);
+        if (!g) return;
+        currentGroupId = g.id;
+        renderGroupChat();
+        openView('groupChat');
+    }
+
+    // v0.18.1 群聊：长按消息出 × 删除；长按成员头像 @ 该成员
+    let groupMsgDeleteIndex = null;
+    let groupLongPressTimer = null;
+    let groupAvatarPressTimer = null;
+    let groupJustLongPressed = false;
+
+    function groupDelX(i) {
+        return groupMsgDeleteIndex === i
+            ? '<button class="msg-del-x" data-del-group-msg="' + i + '" type="button" aria-label="删除这条消息">×</button>'
+            : '';
+    }
+
+    function insertGroupMention(index) {
+        const g = contactGroupById(currentGroupId);
+        if (!g) return;
+        const m = groupMessages(g.id)[index];
+        const name = m ? String(m.senderName || '').trim() : '';
+        if (!name || name === '我') return;
+        const input = $('pkmn-group-input');
+        if (!input) return;
+        input.value = String(input.value || '').replace(/\s*$/, ' ') + '@' + name + ' ';
+        input.focus();
+        showToast('已 @ ' + name);
+    }
+
+    function bindGroupMessageLongPress() {
+        const box = $('pkmn-group-messages');
+        if (!box) return;
+        box.querySelectorAll('.wechat-msg-row[data-group-msg-index]').forEach(row => {
+            const index = Number(row.dataset.groupMsgIndex);
+            const press = () => {
+                groupMsgDeleteIndex = groupMsgDeleteIndex === index ? null : index;
+                groupJustLongPressed = true;
+                renderGroupChat();
+            };
+            row.addEventListener('touchstart', () => { groupLongPressTimer = setTimeout(press, 550); }, {passive:true});
+            ['touchend', 'touchmove'].forEach(ev => row.addEventListener(ev, () => clearTimeout(groupLongPressTimer)));
+            row.addEventListener('mousedown', () => { groupLongPressTimer = setTimeout(press, 550); });
+            ['mouseup', 'mouseleave'].forEach(ev => row.addEventListener(ev, () => clearTimeout(groupLongPressTimer)));
+            row.addEventListener('click', () => {
+                if (groupJustLongPressed) { groupJustLongPressed = false; return; }
+                if (groupMsgDeleteIndex !== null) { groupMsgDeleteIndex = null; renderGroupChat(); }
+            });
+        });
+        box.querySelectorAll('[data-del-group-msg]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const g = contactGroupById(currentGroupId);
+                const i = Number(btn.getAttribute('data-del-group-msg'));
+                if (g) {
+                    const msgs = groupMessages(g.id);
+                    if (i >= 0 && i < msgs.length) {
+                        msgs.splice(i, 1);
+                        saveContactConfig();
+                        showToast('已删除该消息');
+                        autoRefreshGroupInjection(g.id);
+                        renderGroupList();
+                        renderWx2Chats();
+                    }
+                }
+                groupMsgDeleteIndex = null;
+                renderGroupChat();
+            });
+        });
+    }
+
+    function bindGroupAvatarLongPress() {
+        const box = $('pkmn-group-messages');
+        if (!box) return;
+        // 只绑定成员头像（ theirs 行）；stopPropagation 避免触发消息长按删除
+        box.querySelectorAll('.wechat-msg-row.theirs[data-group-msg-index]').forEach(row => {
+            const index = Number(row.dataset.groupMsgIndex);
+            const av = row.querySelector('.wechat-avatar');
+            if (!av) return;
+            av.addEventListener('touchstart', e => {
+                e.stopPropagation();
+                groupAvatarPressTimer = setTimeout(() => insertGroupMention(index), 550);
+            }, {passive:true});
+            ['touchend', 'touchmove'].forEach(ev => av.addEventListener(ev, () => clearTimeout(groupAvatarPressTimer)));
+            av.addEventListener('mousedown', e => {
+                e.stopPropagation();
+                groupAvatarPressTimer = setTimeout(() => insertGroupMention(index), 550);
+            });
+            ['mouseup', 'mouseleave'].forEach(ev => av.addEventListener(ev, () => clearTimeout(groupAvatarPressTimer)));
+        });
+    }
+
+    function renderGroupChat() {
+        const g = contactGroupById(currentGroupId);
+        const box = $('pkmn-group-messages');
+        if (!g || !box) return;
+        const titleEl = $('pkmn-group-chat-title');
+        if (titleEl) titleEl.textContent = `${g.name}（${groupMemberContacts(g).length}）`;
+        const msgs = groupMessages(g.id);
+        const playerNick = getContactPlayerDisplayName() || '我';
+        const playerContact = { id: 'player-me', avatar: getContactPlayerAvatar(), nickname: playerNick };
+        if (!msgs.length) {
+            box.innerHTML = `<div class="wechat-daytip">群聊已创建，点右上角 ↻ 让 AI 们聊起来</div>`;
+        } else {
+            box.innerHTML = msgs.map((m, gi) => {
+                const mine = m.role === 'user';
+                const name = mine ? (m.senderName || playerNick) : (m.senderName || '成员');
+                const speaker = mine ? null : contactById(m.senderId);
+                const av = mine
+                    ? contactAvatarHTML(playerContact, 'mini me', (m.senderName || playerNick).slice(0, 1), 'wechat-avatar')
+                    : (speaker
+                        ? contactAvatarHTML(speaker, 'mini', contactAvatarChar(speaker), 'wechat-avatar')
+                        : `<span class="wechat-avatar mini">${esc(name.slice(0, 1))}</span>`);
+                return `<div data-group-msg-index="${gi}" class="wechat-msg-row ${mine ? 'mine' : 'theirs'}">
+                    ${av}
+                    <div class="wechat-msg-main">
+                        ${mine ? '' : `<div class="wechat-msg-name">${esc(name)}</div>`}
+                        <div class="wechat-bubble">${esc(m.content)}</div>
+                        ${groupDelX(gi)}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        bindGroupMessageLongPress();
+        bindGroupAvatarLongPress();
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // 找出最后一条玩家消息里 @ 到的成员，让他们优先回应
+    function findMentionedMemberIds(g, msgs) {
+        const arr = Array.isArray(msgs) ? msgs : [];
+        let last = null;
+        for (let i = arr.length - 1; i >= 0; i--) {
+            if (arr[i] && arr[i].role === 'user') { last = arr[i]; break; }
+        }
+        if (!last) return [];
+        const text = String(last.content || '');
+        if (!text.includes('@')) return [];
+        return groupMemberContacts(g)
+            .filter(m => [contactDisplayName(m), m.nickname, m.name].filter(Boolean).some(n => text.includes('@' + n)))
+            .map(m => m.id);
+    }
+
+    async function generateGroupMemberLine(g, member) {
+        const members = groupMemberContacts(g);
+        const roster = members
+            .map(m => `- ${contactDisplayName(m)}${m.bio ? '（' + m.bio + '）' : ''}`)
+            .join('\n');
+        const msgs = groupMessages(g.id);
+        const context = await buildContext();
+        let forumContext = '';
+        if (contactCfg().readForumAll) {
+            const allThreads = [...(chatState.safeThreads || []), ...(chatState.matureThreads || [])];
+            forumContext = '\n【论坛全部内容】\n' + JSON.stringify(allThreads).slice(0, 30000);
+        }
+        const score = Math.max(0, Math.min(100, Number.isFinite(Number(member.moralScore)) ? Number(member.moralScore) : 50));
+        const system = `${contactCfg().systemPrompt}
+
+【当前场景：群聊】
+你正在一个名为「${g.name}」的群聊里发言，群里还有这些成员：
+${roster}
+你现在要用「${contactDisplayName(member)}」的身份说话。只输出这一句发言本身：不要加自己的昵称前缀、不要加引号、不要写旁白或动作描写、不要替其他人说话。一到两句话即可，像真实群聊一样简短自然。可以回应别人刚说的话，也可以起新话题，但不要重复别人已经说过的内容。
+
+【你的资料】
+原昵称：${member.nickname || member.name || ''}
+通讯录备注：${member.note || ''}
+简介：${member.bio || ''}
+当前位置：${member.location || '未知'}
+道德值：${score}/100
+${getMoralBehaviorText(Number(member.moralScore))}
+对玩家忠诚倾向：${Math.max(0, Math.min(100, Number.isFinite(Number(member.moralLoyalty)) ? Number(member.moralLoyalty) : 50))}/100
+对玩家好感倾向：${Math.max(0, Math.min(100, Number.isFinite(Number(member.moralAffinity)) ? Number(member.moralAffinity) : 50))}/100
+
+【玩家身份】
+玩家昵称：${getContactPlayerDisplayName()}
+玩家身份：${getContactPlayerIdentity() || '未设置'}
+${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}`;
+
+        const history = msgs.slice(-30).map(m => {
+            const who = m.role === 'user'
+                ? (m.senderName || getContactPlayerDisplayName() || '我')
+                : (m.senderName || '成员');
+            return `${who}：${m.content}`;
+        }).join('\n');
+        const prompt = history
+            ? `以下是群里最近的对话：\n${history}\n\n现在轮到「${contactDisplayName(member)}」发言，请只输出这一句发言内容。`
+            : `群里还没有人说话，请你用「${contactDisplayName(member)}」的身份开个场，只输出这一句发言内容。`;
+        const reply = await callContactAI([
+            { role: 'system', content: system },
+            { role: 'user', content: prompt }
+        ]);
+        return String(reply || '').trim().replace(/^[\s"'`「」『』【】]+|[\s"'`「」『』【】]+$/g, '');
+    }
+
+    function appendGroupTyping(speaker) {
+        const box = $('pkmn-group-messages');
+        if (!box) return { remove() {} };
+        const el = document.createElement('div');
+        el.className = 'wechat-typing';
+        el.textContent = contactDisplayName(speaker) + ' 正在输入…';
+        box.appendChild(el);
+        box.scrollTop = box.scrollHeight;
+        return el;
+    }
+
+    // 刷新按钮核心：成员轮流各说一句，每句都能看到前面已生成的内容
+    async function runGroupChatRound(groupId, count) {
+        const g = contactGroupById(groupId);
+        if (!g) return 0;
+        const members = groupMemberContacts(g);
+        if (!members.length) {
+            showToast('这个群还没有成员');
+            return 0;
+        }
+        if (groupGenerating) {
+            showToast('群里还在聊，请稍候…');
+            return 0;
+        }
+        const turns = Math.max(1, Math.min(20, Math.floor(Number(count) || groupAiTurns(g))));
+        groupGenerating = true;
+        setGroupRefreshBusy(true);
+        const msgs = groupMessages(g.id);
+        // @ 到的人先说，剩下的按 cursor 轮流
+        const atIds = findMentionedMemberIds(g, msgs);
+        let cursor = Number.isFinite(Number(g.speakCursor)) ? Number(g.speakCursor) : 0;
+        let written = 0;
+        try {
+            for (let i = 0; i < turns; i++) {
+                let speaker = null;
+                if (i < atIds.length) {
+                    speaker = contactById(atIds[i]);
+                }
+                if (!speaker) {
+                    speaker = members[((cursor % members.length) + members.length) % members.length];
+                    cursor++;
+                }
+                if (!speaker) break;
+                const typing = appendGroupTyping(speaker);
+                try {
+                    const line = await generateGroupMemberLine(g, speaker);
+                    typing.remove();
+                    msgs.push({
+                        role: 'assistant',
+                        senderId: speaker.id,
+                        senderName: contactDisplayName(speaker),
+                        content: line || '……',
+                        time: nowHM()
+                    });
+                    written++;
+                    g.speakCursor = cursor % members.length;
+                    saveContactConfig();
+                    renderGroupChat();
+                    renderGroupList();
+                    renderWx2Chats();
+                    await autoRefreshGroupInjection(g.id);
+                } catch (e) {
+                    typing.remove();
+                    msgs.push({
+                        role: 'assistant',
+                        senderId: speaker.id,
+                        senderName: contactDisplayName(speaker),
+                        content: '（发言失败：' + (e && e.message ? e.message : e) + '）',
+                        time: nowHM()
+                    });
+                    saveContactConfig();
+                    renderGroupChat();
+                    break;
+                }
+            }
+        } finally {
+            groupGenerating = false;
+            setGroupRefreshBusy(false);
+            saveContactConfig();
+            renderGroupChat();
+            renderGroupList();
+            renderWx2Chats();
+        }
+        if (written) showToast(`✓ 群里新增 ${written} 句发言`);
+        return written;
+    }
+
+    async function sendGroupMessage() {
+        const g = contactGroupById(currentGroupId);
+        const input = $('pkmn-group-input');
+        if (!g || !input) return;
+        const text = String(input.value || '').trim();
+        if (!text) return;
+        if (groupGenerating) {
+            showToast('群里还在聊，请稍候…');
+            return;
+        }
+        input.value = '';
+        const msgs = groupMessages(g.id);
+        msgs.push({
+            role: 'user',
+            senderId: 'player',
+            senderName: getContactPlayerDisplayName() || '我',
+            content: text,
+            time: nowHM()
+        });
+        saveContactConfig();
+        renderGroupChat();
+        renderGroupList();
+        renderWx2Chats();
+        await autoRefreshGroupInjection(g.id);
+        // @ 了人就让被 @ 的先回应，否则群里随机接一句
+        const mentioned = findMentionedMemberIds(g, msgs);
+        await runGroupChatRound(g.id, mentioned.length ? mentioned.length : 1);
+    }
+
+    // ---------- 群聊正文注入 ----------
+    function getGroupInjectionSettings(groupId) {
+        contactCfg();
+        const s = config.groupInjection[groupId];
+        return {
+            enabled: !!(s && s.enabled),
+            auto: !!(s && s.auto),
+            limit: Math.max(1, Math.min(40, Number(s && s.limit) || 20))
+        };
+    }
+
+    function setGroupInjectionSettings(groupId, patch) {
+        contactCfg();
+        const cur = getGroupInjectionSettings(groupId);
+        config.groupInjection[groupId] = Object.assign({}, cur, patch || {});
+        saveContactConfig();
+    }
+
+    async function autoRefreshGroupInjection(groupId) {
+        const s = getGroupInjectionSettings(groupId);
+        if (!s.auto) return false;
+        if (!s.enabled) setGroupInjectionSettings(groupId, { enabled: true });
+        return applyContactInjectionToMainAI();
+    }
+
+    function getEnabledGroupInjectionEntries() {
+        contactCfg();
+        const entries = [];
+        for (const id of Object.keys(config.groupInjection || {})) {
+            const s = config.groupInjection[id];
+            if (!s || !s.enabled) continue;
+            const g = contactGroupById(id);
+            if (!g) continue;
+            const msgs = Array.isArray(config.groupChats[id]) ? config.groupChats[id] : [];
+            const limit = Math.max(1, Math.min(40, Number(s.limit) || 20));
+            msgs.slice(-limit).forEach(m => {
+                const content = String((m && m.content) || '').trim();
+                if (!content) return;
+                entries.push({
+                    groupId: String(id),
+                    groupName: String(g.name || '群聊'),
+                    speaker: String((m && m.senderName) || (m && m.role === 'user' ? '我' : '成员')),
+                    content
+                });
+            });
+        }
+        return entries;
+    }
+
+    // 注册给顶层的 buildContactInjectionText，让群聊内容也能注入酒馆正文
+    pkmnGroupEntriesProvider = getEnabledGroupInjectionEntries;
+
+    async function injectGroupChatToMainAI(groupId) {
+        const g = contactGroupById(groupId);
+        if (!g) return false;
+        setGroupInjectionSettings(groupId, { enabled: true });
+        const ok = applyContactInjectionToMainAI();
+        if (ok) showToast(`✓ 已注入群聊「${g.name}」的正文`);
+        return ok;
+    }
+
+    // ---------- 群设置 ----------
+    function renderGroupSettings() {
+        const g = contactGroupById(currentGroupId);
+        const body = $('pkmn-group-settings-body');
+        if (!g || !body) return;
+        contactCfg();
+        const inj = getGroupInjectionSettings(g.id);
+        const all = config.contacts || [];
+        body.innerHTML = `
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">群资料</div>
+                <label class="pkmn-label">群名称
+                    <input class="pkmn-input" id="group-set-name" value="${esc(g.name)}">
+                </label>
+                <label class="pkmn-label" style="margin-top:8px;display:block">群头像（图片地址，可选）
+                    <input class="pkmn-input" id="group-set-avatar" value="${esc(g.avatar || '')}" placeholder="https://... 图片直链">
+                </label>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">群成员</div>
+                <div class="group-member-pick">
+                    ${all.length
+                        ? all.map(c => `<label class="group-member-row"><input type="checkbox" class="group-set-member" value="${esc(c.id)}" ${g.memberIds.includes(c.id) ? 'checked' : ''}><span>${esc(contactDisplayName(c))}</span></label>`).join('')
+                        : '<div class="pkmn-small">通讯录还是空的，先去添加联系人。</div>'}
+                </div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="wechat-setting-title">AI 互聊</div>
+                <label class="pkmn-label">本群每轮发言条数
+                    <input class="pkmn-input" id="group-set-turns" type="number" min="1" max="20" value="${groupAiTurns(g)}" placeholder="${contactCfg().groupAiTurns}">
+                </label>
+                <div class="pkmn-small" style="margin-top:6px">清空则跟随设置页的全局默认值（当前 ${contactCfg().groupAiTurns} 句）。在聊天页点右上角 ↻ 触发一轮。</div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('arrow-up-right', 'pkmn-ico contact-settings-ico')}</span> 正文注入</div>
+                <label class="contact-settings-toggle-row" for="group-inject-auto">
+                    <span>
+                        <b>自动注入群聊正文</b>
+                        <small>开启后，群里每次新增消息都会自动把最近群聊内容注入酒馆正文。</small>
+                    </span>
+                    <input type="checkbox" id="group-inject-auto" ${inj.auto ? 'checked' : ''}>
+                    <i aria-hidden="true"></i>
+                </label>
+                <label class="pkmn-label" style="margin-top:8px;display:block">注入最近消息条数
+                    <input class="pkmn-input" id="group-inject-limit" type="number" min="1" max="40" value="${inj.limit}">
+                </label>
+                <button class="pkmn-btn ${inj.enabled ? 'pkmn-primary' : 'pkmn-secondary'}" id="group-inject-toggle" style="margin-top:8px;width:100%">${inj.enabled ? '已注入正文（点击取消）' : '手动注入正文'}</button>
+            </div>
+            <div class="pkmn-row" style="margin:10px 0 22px">
+                <button class="pkmn-btn pkmn-primary" id="group-set-save" style="flex:1">保存群设置</button>
+                <button class="pkmn-btn pkmn-secondary" id="group-set-delete">删除群聊</button>
+            </div>`;
+
+        $('group-inject-auto').onchange = (e) => {
+            setGroupInjectionSettings(g.id, { auto: !!e.target.checked, enabled: e.target.checked ? true : getGroupInjectionSettings(g.id).enabled });
+            applyContactInjectionToMainAI();
+            showToast(e.target.checked ? '✓ 群聊已开启自动注入' : '✓ 群聊已关闭自动注入');
+            renderGroupSettings();
+        };
+        $('group-inject-toggle').onclick = () => {
+            const cur = getGroupInjectionSettings(g.id);
+            if (cur.enabled) {
+                setGroupInjectionSettings(g.id, { enabled: false });
+                applyContactInjectionToMainAI();
+                showToast('✓ 已取消群聊正文注入');
+            } else {
+                injectGroupChatToMainAI(g.id);
+            }
+            renderGroupSettings();
+        };
+        $('group-set-save').onclick = () => {
+            g.name = String(($('group-set-name') || {}).value || '').trim() || g.name;
+            g.avatar = String(($('group-set-avatar') || {}).value || '').trim();
+            const picked = [...body.querySelectorAll('.group-set-member:checked')].map(x => x.value);
+            if (picked.length < 2) {
+                showToast('群聊至少要有 2 位成员');
+                return;
+            }
+            g.memberIds = picked;
+            const turnsRaw = String(($('group-set-turns') || {}).value || '').trim();
+            g.aiTurns = turnsRaw === '' ? null : Math.max(1, Math.min(20, Math.floor(Number(turnsRaw) || 1)));
+            const limitRaw = Number(($('group-inject-limit') || {}).value);
+            setGroupInjectionSettings(g.id, {
+                limit: Math.max(1, Math.min(40, Number.isFinite(limitRaw) && limitRaw >= 1 ? Math.floor(limitRaw) : 20))
+            });
+            saveContactConfig();
+            applyContactInjectionToMainAI();
+            showToast('✓ 群设置已保存');
+            renderGroupChat();
+            renderGroupList();
+        };
+        $('group-set-delete').onclick = () => {
+            if (!confirm(`确定删除群聊「${g.name}」？群内聊天记录会一并删除。`)) return;
+            config.contactGroups = (config.contactGroups || []).filter(x => x && x.id !== g.id);
+            delete config.groupChats[g.id];
+            delete config.groupInjection[g.id];
+            saveContactConfig();
+            applyContactInjectionToMainAI();
+            showToast('✓ 群聊已删除');
+            currentGroupId = null;
+            renderGroupList();
+            renderWx2Chats();
+            openView('groupList');
+        };
+    }
+
     function renderContactPersonSettings() {
         const c = contactById(currentContactId);
         if (!c) return;
@@ -6750,26 +7512,33 @@ function renderChat() {
         if (!body) return;
         const score = Math.max(0, Math.min(100, Number.isFinite(Number(c.moralScore)) ? Number(c.moralScore) : 50));
         const label = c.moralLabel || (score < 40 ? '较低' : score < 70 ? '一般' : score < 85 ? '较高' : '很高');
-        const avatar = String(c.avatar || (c.nickname || c.name || '匿').slice(0,1));
         body.innerHTML = `
             <div class="contact-settings-profile">
-                <div class="contact-settings-avatar">${esc(avatar)}</div>
+                ${contactAvatarHTML(c, '', contactAvatarChar(c), 'contact-settings-avatar')}
                 <div class="contact-settings-profile-main">
                     <div class="contact-settings-name">${esc(c.nickname || c.name || '匿名用户')}</div>
-                    <div class="contact-settings-original">微信原昵称：${esc(c.nickname || c.name || '匿名用户')}</div>
+                    <div class="contact-settings-original">原昵称：${esc(c.nickname || c.name || '匿名用户')}</div>
                 </div>
             </div>
 
             <section class="contact-settings-card">
-                <div class="contact-settings-section-title"><span class="contact-settings-icon">✎</span> 备注</div>
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('pencil','pkmn-ico contact-settings-ico')}</span> 备注</div>
                 <label class="contact-settings-field-label">备注名
                     <input class="pkmn-input contact-settings-input" id="contact-person-note" value="${esc(c.note||'')}" placeholder="设置备注名">
                 </label>
-                <div class="contact-settings-hint">通讯录列表显示备注名；不设置时显示原微信昵称。</div>
+                <div class="contact-settings-hint">通讯录列表显示备注名；不设置时显示原昵称。</div>
+            </section>
+
+            <section class="contact-settings-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('camera','pkmn-ico contact-settings-ico')}</span> 头像</div>
+                <label class="contact-settings-field-label">头像图片地址（可选）
+                    <input class="pkmn-input contact-settings-input" id="contact-person-avatar" value="${esc(contactAvatarIsImage(c.avatar) ? String(c.avatar).trim() : '')}" placeholder="https://... 图片直链">
+                </label>
+                <div class="contact-settings-hint">填图片直链后通讯录与聊天里都显示这张图；留空或加载失败会自动回退到昵称首字方块。</div>
             </section>
 
             <section class="contact-settings-card contact-settings-link-card">
-                <div class="contact-settings-section-title"><span class="contact-settings-icon">⭐</span> 星标联系人</div>
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('star','pkmn-ico contact-settings-ico')}</span> 星标联系人</div>
                 <label class="contact-settings-toggle-row" for="contact-person-star">
                     <span>
                         <b>星标联系人</b>
@@ -6781,7 +7550,7 @@ function renderChat() {
             </section>
 
             <section class="contact-settings-card contact-settings-link-card">
-                <div class="contact-settings-section-title"><span class="contact-settings-icon">🔗</span> 论坛联动</div>
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('link','pkmn-ico contact-settings-ico')}</span> 论坛联动</div>
                 <label class="contact-settings-toggle-row" for="contact-person-link-forum">
                     <span>
                         <b>此聊天与论坛联动</b>
@@ -6796,7 +7565,7 @@ function renderChat() {
 
             <section class="contact-settings-card contact-settings-injection-card" id="contact-person-injection-panel">
                 <div class="contact-settings-section-title">
-                    <span class="contact-settings-icon">↗</span> 正文注入
+                    <span class="contact-settings-icon">${pkmnIcon('arrow-up-right','pkmn-ico contact-settings-ico')}</span> 正文注入
                 </div>
                 <div class="contact-injection-buttons">
                     <button type="button" class="contact-injection-btn" id="contact-injection-toggle" aria-pressed="false">手动注入</button>
@@ -6818,7 +7587,7 @@ function renderChat() {
                 <input id="contact-moral-unlock-input" type="text" autocomplete="off" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ccc;border-radius:8px;" />
             </div>
             <section class="contact-settings-card" id="contact-moral-settings-panel" style="display:none;">
-                <div class="contact-settings-section-title"><span class="contact-settings-icon">◈</span> 道德检定</div>
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('shield','pkmn-ico contact-settings-ico')}</span> 道德检定</div>
                 <div class="contact-settings-score">AI 判定：<b>${esc(label)}</b><span>·</span><strong>${score} / 100</strong></div>
                 <div class="contact-settings-hint">加好友时由通讯录 AI 根据 NPC 人设、正文、世界书和论坛表现判断并保存。不能手动修改。</div>
                 <div class="contact-settings-reason">行为阶段：${esc(c.moralStage || moralBehaviorProfile(score).stage)}</div>
@@ -6826,8 +7595,8 @@ function renderChat() {
                 ${c.moralReason ? `<div class="contact-settings-reason">判断依据：${esc(c.moralReason)}</div>` : ''}
             </section>
 
-            <button class="contact-settings-save" id="contact-person-save"><span>✓</span> 保存联系人设置</button>
-            <button class="contact-settings-delete" id="contact-person-delete" type="button"><span>🗑</span> 删除联系人</button>
+            <button class="contact-settings-save" id="contact-person-save"><span>${pkmnIcon('check','pkmn-ico contact-settings-ico-sm')}</span> 保存联系人设置</button>
+            <button class="contact-settings-delete" id="contact-person-delete" type="button"><span>${pkmnIcon('trash-2','pkmn-ico contact-settings-ico-sm')}</span> 删除联系人</button>
         `;
 
         const starToggle = $('contact-person-star');
@@ -6913,6 +7682,8 @@ function renderChat() {
         };
         $('contact-person-save').onclick = () => {
             c.note = $('contact-person-note').value.trim();
+            const avEl = $('contact-person-avatar');
+            if (avEl) c.avatar = String(avEl.value || '').trim();
             c.linkForum = !!toggle.checked;
             saveContactConfig();
             showToast('✓ 联系人设置已保存');
@@ -6971,7 +7742,10 @@ function renderChat() {
                 <label class="pkmn-label" style="margin-top:9px;display:block">玩家身份
                     <textarea class="pkmn-textarea" id="contact-player-identity" rows="3" placeholder="例如：宝可梦训练家、沼王饲养员……">${esc(contactPlayerIdentity)}</textarea>
                 </label>
-                <div class="pkmn-small" style="margin-top:6px">微信/通讯录独立资料。聊天界面显示“玩家昵称”，AI 会同时读取“玩家身份”；两者都不与论坛玩家资料同步。</div>
+                <label class="pkmn-label" style="margin-top:9px;display:block">我的头像（图片地址，可选）
+                    <input class="pkmn-input" id="contact-player-avatar" value="${esc(getContactPlayerAvatar())}" placeholder="https://... 图片直链">
+                </label>
+                <div class="pkmn-small" style="margin-top:6px">通讯录独立资料。聊天界面显示“玩家昵称”，AI 会同时读取“玩家身份”；两者都不与论坛玩家资料同步。</div>
                 <button class="pkmn-btn pkmn-primary" id="contact-save-player-identity" style="margin-top:8px;width:100%">保存玩家资料</button>
             </div>
             <div class="wechat-setting-card">
@@ -6979,13 +7753,13 @@ function renderChat() {
                 <label>API Endpoint<input class="pkmn-input" id="contact-api-endpoint" value="${esc(c.endpoint)}" placeholder="https://.../v1"></label>
                 <label>API Key<input class="pkmn-input" id="contact-api-key" type="password" value="${esc(c.key)}" placeholder="留空则不发送 Authorization"></label>
                 <label>模型<select class="pkmn-select" id="contact-api-model">${models.map(m => `<option value="${esc(m)}" ${m===c.model?'selected':''}>${esc(m)}</option>`).join('')}${c.model && !models.includes(c.model) ? `<option selected value="${esc(c.model)}">${esc(c.model)}</option>` : ''}</select></label>
-                <div class="pkmn-row" style="margin-top:8px"><button class="pkmn-btn pkmn-secondary" id="contact-test-api">🔌 检测连接</button><button class="pkmn-btn pkmn-secondary" id="contact-load-models">📥 加载模型</button></div>
-                <button class="pkmn-btn pkmn-primary" id="contact-save-api" style="margin-top:8px;width:100%">💾 保存 API 设置</button>
+                <div class="pkmn-row" style="margin-top:8px"><button class="pkmn-btn pkmn-secondary" id="contact-test-api">${pkmnIcon('zap','pkmn-ico')} 检测连接</button><button class="pkmn-btn pkmn-secondary" id="contact-load-models">${pkmnIcon('download','pkmn-ico')} 加载模型</button></div>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-api" style="margin-top:8px;width:100%">${pkmnIcon('save','pkmn-ico')} 保存 API 设置</button>
                 <div class="pkmn-small" id="contact-api-status" style="margin-top:8px">${models.length ? '● 已有模型缓存' : '● 未检测'}</div>
                 <div class="pkmn-row"><label>温度<input class="pkmn-input" id="contact-api-temp" value="${esc(c.temperature)}"></label><label>最大回复<input class="pkmn-input" id="contact-api-max" value="${esc(c.maxTokens)}"></label></div>
             </div>
             <div class="wechat-setting-card contact-settings-link-card">
-                <div class="contact-settings-section-title"><span class="contact-settings-icon">◎</span> 论坛内容读取</div>
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('globe','pkmn-ico contact-settings-ico')}</span> 论坛内容读取</div>
                 <label class="contact-settings-toggle-row" for="contact-read-forum-all">
                     <span>
                         <b>读取论坛全部内容</b>
@@ -6995,6 +7769,14 @@ function renderChat() {
                     <i aria-hidden="true"></i>
                 </label>
                 <div class="contact-settings-persist">ⓘ 此开关为通讯录全局设置，默认开启，修改后立即保存，下次打开仍保持当前状态。</div>
+            </div>
+            <div class="wechat-setting-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">${pkmnIcon('users-round','pkmn-ico contact-settings-ico')}</span> 群聊 AI 互聊</div>
+                <label class="pkmn-label">每轮发言条数（全局默认）
+                    <input class="pkmn-input" id="contact-group-turns" type="number" min="1" max="20" value="${esc(contactCfg().groupAiTurns)}">
+                </label>
+                <div class="pkmn-small" style="margin-top:6px">在群聊页点右上角 ↻ 时，AI 成员按顺序轮流发言的总句数。每个群还能在「群聊设置」里单独覆盖这个默认值。</div>
+                <button class="pkmn-btn pkmn-primary" id="contact-save-group-turns" style="margin-top:8px;width:100%">${pkmnIcon('save','pkmn-ico')} 保存群聊设置</button>
             </div>
             <div class="wechat-setting-card">
                 <div class="wechat-setting-title">通讯录 AI 提示词</div>
@@ -7011,10 +7793,20 @@ function renderChat() {
             saveContactConfig();
             showToast(c.readForumAll ? '✓ 已开启读取论坛全部内容' : '✓ 已关闭读取论坛全部内容');
         };
+        // v0.18.0 群聊：全局默认每轮 AI 发言条数
+        $('contact-save-group-turns').onclick = () => {
+            const raw = Number(($('contact-group-turns') || {}).value);
+            const n = Math.max(1, Math.min(20, Math.floor(Number.isFinite(raw) && raw >= 1 ? raw : 6)));
+            contactCfg().groupAiTurns = n;
+            saveContactConfig();
+            showToast('✓ 群聊每轮 AI 发言已设为 ' + n + ' 句');
+        };
         $('contact-save-player-identity').onclick = () => {
             setContactPlayerNickname($('contact-player-nickname').value.trim());
             setContactPlayerIdentity($('contact-player-identity').value.trim());
-            showToast('✓ 微信玩家资料已保存');
+            if ($('contact-player-avatar')) setContactPlayerAvatar($('contact-player-avatar').value.trim());
+            showToast('✓ 玩家资料已保存');
+            renderWx2Me();
             renderChat();
         };
         const readContactApiFields = () => {
@@ -7094,7 +7886,7 @@ function renderChat() {
             });
             const id = 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000);
             config.contacts.push({
-                id, nickname:name, name, avatar:'👤', note:'', bio:'', location:'', linkForum:true,
+                id, nickname:name, name, avatar:'', note:'', bio:'', location:'', linkForum:true,
                 moralScore:moral.score, moralLabel:moral.label, moralStage:moral.stage,
                 moralLoyalty:moral.loyalty, moralAffinity:moral.affinity, moralReason:moral.reason,
                 moralEvidence:forumEvidence.slice(0,30000)
@@ -8066,17 +8858,19 @@ function renderChat() {
     $('pkmn-open-contacts')?.addEventListener('click', () => { wx2SwitchTab('chats'); renderContacts($('pkmn-contact-search')?.value || ''); openView('contacts'); });
     $('pkmn-contacts-back')?.addEventListener('click', () => openView('home'));
     $('pkmn-contacts-add')?.addEventListener('click', addContact);
-    // v0.17.3 通讯录入口卡（微信 2026 风格）
+    // v0.17.3 通讯录入口卡
     $('wx2-entry-add')?.addEventListener('click', addContact);
     $('wx2-entry-settings')?.addEventListener('click', () => { renderContactSettings(); openView('contactSettings'); });
-    ['wx2-entry-groups', 'wx2-entry-tags', 'wx2-entry-mp'].forEach(id => $(id)?.addEventListener('click', () => showToast('该功能正在筹备中，敬请期待')));
+    // v0.18.0：群聊入口正式启用，其余仍为占位
+    $('wx2-entry-groups')?.addEventListener('click', () => { renderGroupList(); openView('groupList'); });
+    ['wx2-entry-tags', 'wx2-entry-mp'].forEach(id => $(id)?.addEventListener('click', () => showToast('该功能正在筹备中，敬请期待')));
     $('pkmn-contact-search')?.addEventListener('input', e => renderContacts(e.target.value));
     $('pkmn-chat-back')?.addEventListener('click', () => { wx2SwitchTab('chats'); openView('contacts'); });
     $('pkmn-chat-send')?.addEventListener('click', sendContactMessage);
     $('pkmn-chat-input')?.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendContactMessage(); }
     });
-    // v0.17.4 微信三栏 tab + 初始渲染（设置入口移至「我」页，由 renderWx2Me 动态绑定）
+    // v0.17.6 三栏 tab + 初始渲染（设置入口移至「我」页，由 renderWx2Me 动态绑定）
     $('wx2-tab-chats')?.addEventListener('click', () => wx2SwitchTab('chats'));
     $('wx2-tab-contacts')?.addEventListener('click', () => wx2SwitchTab('contacts'));
     $('wx2-tab-me')?.addEventListener('click', () => wx2SwitchTab('me'));
@@ -8086,6 +8880,23 @@ function renderChat() {
     renderWx2Chats();
     renderWx2Me();
     $('pkmn-contact-person-settings-back')?.addEventListener('click', () => { renderChat(); openView('chat'); });
+
+    // ===== v0.18.0 群聊事件 =====
+    $('pkmn-group-list-back')?.addEventListener('click', () => { wx2SwitchTab('contacts'); openView('contacts'); });
+    $('pkmn-group-create')?.addEventListener('click', renderGroupCreate);
+    $('pkmn-group-chat-back')?.addEventListener('click', () => { renderGroupList(); openView('groupList'); });
+    $('pkmn-group-chat-refresh')?.addEventListener('click', () => {
+        const g = contactGroupById(currentGroupId);
+        if (!g) { showToast('请先打开一个群聊'); return; }
+        runGroupChatRound(g.id, groupAiTurns(g));
+    });
+    $('pkmn-group-chat-more')?.addEventListener('click', () => { renderGroupSettings(); openView('groupSettings'); });
+    $('pkmn-group-settings-back')?.addEventListener('click', () => { renderGroupChat(); openView('groupChat'); });
+    $('pkmn-group-send')?.addEventListener('click', sendGroupMessage);
+    $('pkmn-group-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); }
+    });
+    // v0.18.1：@ 成员改为「长按消息头像」触发（见 bindGroupAvatarLongPress）
 
     $('pkmn-open-safe').onclick =
         () => {

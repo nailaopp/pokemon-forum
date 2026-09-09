@@ -1232,7 +1232,7 @@
 }
 
 /* ============================================================
-   微信式通讯录 / 聊天 UI
+   通讯录 / 聊天 UI
    ============================================================ */
 #pkmn-phone-panel .pkmn-chat-app{background:#f2f2f2;color:#111}
 #pkmn-phone-panel .wechat-nav{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:rgba(247,247,247,.96);border-bottom:1px solid #ddd;flex:none}
@@ -1243,7 +1243,7 @@
 #pkmn-phone-panel .wechat-contact-list{flex:1;overflow:auto;background:#fff}
 #pkmn-phone-panel .wechat-contact{width:100%;display:flex;align-items:center;text-align:left;border:0;border-bottom:1px solid #eee;background:#fff;padding:11px 13px;min-height:72px;cursor:pointer}
 #pkmn-phone-panel .wechat-contact:active{background:#e9e9e9}
-#pkmn-phone-panel .wechat-avatar{width:48px;height:48px;border-radius:7px;background:#d9e9f0;display:flex;align-items:center;justify-content:center;flex:none;font-size:25px;overflow:hidden}
+#pkmn-phone-panel .wechat-avatar{width:48px;height:48px;border-radius:8px;background:#d9e9f0;display:flex;align-items:center;justify-content:center;flex:none;font-size:25px;overflow:hidden;position:relative;color:#fff;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 1px 2px rgba(18,28,40,.10)}
 #pkmn-phone-panel .wechat-contact-main{min-width:0;flex:1;margin-left:11px;display:flex;flex-direction:column;gap:5px}
 #pkmn-phone-panel .wechat-contact-main b{font-size:15px;font-weight:600;color:#222}
 #pkmn-phone-panel .wechat-contact-main small{font-size:12px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1257,7 +1257,7 @@
 #pkmn-phone-panel .wechat-msg-row{display:flex;align-items:flex-start;gap:8px;margin:9px 0}
 #pkmn-phone-panel .wechat-msg-row.mine{justify-content:flex-end}
 #pkmn-phone-panel .wechat-avatar.mini{width:38px;height:38px;border-radius:6px;font-size:18px}
-#pkmn-phone-panel .wechat-avatar.mini.me{background:#9fd48a;color:#fff;font-size:12px}
+#pkmn-phone-panel .wechat-avatar.mini.me{background:transparent;color:#fff;font-size:14px}
 #pkmn-phone-panel .wechat-bubble{position:relative;max-width:260px;padding:9px 11px;border-radius:4px;background:#fff;font-size:14px;line-height:1.55;color:#222;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.04)}
 #pkmn-phone-panel .wechat-msg-row.mine .wechat-bubble{background:#95d475}
 #pkmn-phone-panel .wechat-time{display:block;color:#aaa;font-size:9px;margin-top:3px;text-align:left}
@@ -1265,13 +1265,13 @@
 #pkmn-phone-panel .wechat-inputbar{min-height:54px;padding:8px;background:#f7f7f7;border-top:1px solid #ddd;display:flex;align-items:flex-end;gap:7px}
 #pkmn-phone-panel .wechat-inputbar>button{border:0;background:transparent;font-size:24px;width:34px;height:38px}
 #pkmn-phone-panel .wechat-inputbar textarea{flex:1;resize:none;max-height:100px;min-height:38px;border:1px solid #ddd;border-radius:5px;background:#fff;padding:9px 10px;font-size:14px;line-height:20px;outline:none}
-#pkmn-phone-panel .wechat-inputbar .wechat-send{width:48px;height:38px;background:#07c160;color:#fff;border-radius:5px;font-size:13px;font-weight:600}
+#pkmn-phone-panel .wechat-inputbar .wechat-send{width:48px;height:38px;background:#1a1a1a;color:#fff;border-radius:5px;font-size:13px;font-weight:600}
 #pkmn-phone-panel .wechat-typing{display:inline-block;margin:4px 0 8px 46px;padding:7px 10px;border-radius:4px;background:#fff;color:#999;font-size:11px}
 #pkmn-phone-panel .wechat-setting-card{background:#fff;border-radius:9px;padding:13px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 #pkmn-phone-panel .wechat-setting-title{font-weight:700;font-size:14px;margin-bottom:10px}
 #pkmn-phone-panel .wechat-setting-card label{display:block;font-size:12px;color:#666;margin:8px 0}
 #pkmn-phone-panel .wechat-setting-card .pkmn-input,#pkmn-phone-panel .wechat-setting-card .pkmn-textarea{box-sizing:border-box;width:100%;margin-top:5px}
-#pkmn-phone-panel .pkmn-contacts-icon .wechat-app-logo{font-size:31px;background:#07c160;color:#fff;border-radius:13px;display:flex;align-items:center;justify-content:center}
+#pkmn-phone-panel .pkmn-contacts-icon .pkmn-contacts-logo{font-size:31px;background:#f2f3f5;color:#3a3a3a;border-radius:13px;display:flex;align-items:center;justify-content:center}
 
 /* ============================================================
    论坛用户 ↔ 通讯录：用户资料卡 / 单联系人设置
@@ -1293,7 +1293,7 @@
 #pkmn-phone-panel .pkmn-switch-row{display:flex!important;align-items:center;gap:10px;padding:9px 0;margin:0!important;color:#222!important;font-size:14px!important}
 #pkmn-phone-panel .pkmn-switch-row input{appearance:none;width:44px;height:25px;border-radius:13px;background:#ccc;position:relative;outline:0;flex:none;transition:.18s}
 #pkmn-phone-panel .pkmn-switch-row input:before{content:'';position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:.18s}
-#pkmn-phone-panel .pkmn-switch-row input:checked{background:#07c160}
+#pkmn-phone-panel .pkmn-switch-row input:checked{background:#1a1a1a}
 #pkmn-phone-panel .pkmn-switch-row input:checked:before{transform:translateX(19px)}
 @keyframes pkmnUserCardIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
 
@@ -1305,13 +1305,15 @@
 #pkmn-phone-panel #pkmn-contact-person-settings-view .wechat-nav-title{font-size:18px;letter-spacing:.1px}
 #pkmn-phone-panel #pkmn-contact-person-settings-view .pkmn-settings{padding:14px 12px 28px;overflow:auto}
 #pkmn-phone-panel .contact-settings-profile{display:flex;align-items:center;gap:14px;background:#fff;border-radius:16px;padding:18px 16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,30,40,.045);border:1px solid rgba(0,0,0,.025)}
-#pkmn-phone-panel .contact-settings-avatar{width:64px;height:64px;border-radius:15px;background:linear-gradient(145deg,#dcecf2,#c7dfe8);display:flex;align-items:center;justify-content:center;flex:none;color:#fff;font-size:29px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+#pkmn-phone-panel .contact-settings-avatar{width:64px;height:64px;border-radius:17px;background:linear-gradient(145deg,#8FB6C9,#5F8CA6);display:flex;align-items:center;justify-content:center;flex:none;color:#fff;font-size:27px;font-weight:600;position:relative;overflow:hidden;letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 6px rgba(18,28,40,.12)}
 #pkmn-phone-panel .contact-settings-profile-main{min-width:0}
 #pkmn-phone-panel .contact-settings-name{font-size:19px;font-weight:750;color:#1f252b;line-height:1.35}
 #pkmn-phone-panel .contact-settings-original{margin-top:5px;font-size:12px;color:#9aa0a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #pkmn-phone-panel .contact-settings-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,30,40,.045);border:1px solid rgba(0,0,0,.025)}
 #pkmn-phone-panel .contact-settings-section-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:750;color:#20262c;margin-bottom:13px}
-#pkmn-phone-panel .contact-settings-icon{width:27px;height:27px;border-radius:8px;background:#f1f3f5;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#4f5963}
+#pkmn-phone-panel .contact-settings-icon{width:27px;height:27px;border-radius:8px;background:#f1f3f5;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#4f5963;flex:none}
+#pkmn-phone-panel .contact-settings-ico{width:15px;height:15px;stroke-width:2;opacity:.92}
+#pkmn-phone-panel .contact-settings-ico-sm{width:15px;height:15px;stroke-width:2.4;display:inline-block;vertical-align:-2px}
 #pkmn-phone-panel .contact-settings-field-label{display:block;font-size:12px;color:#777f87;margin:0!important}
 #pkmn-phone-panel .contact-settings-input{height:48px;border-radius:11px!important;border:1px solid #dfe3e7!important;background:#fff!important;font-size:15px!important;padding:0 13px!important;margin-top:6px!important;outline:none}
 #pkmn-phone-panel .contact-settings-input:focus{border-color:#b9c3cc!important;box-shadow:0 0 0 3px rgba(80,100,120,.07)}
@@ -1324,7 +1326,7 @@
 #pkmn-phone-panel .contact-settings-toggle-row input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;pointer-events:none!important}
 #pkmn-phone-panel .contact-settings-toggle-row i{display:block;position:relative;flex:none;width:50px;height:30px;border-radius:16px;background:#cfd4d8;box-shadow:inset 0 1px 2px rgba(0,0,0,.12);transition:background .18s ease,box-shadow .18s ease}
 #pkmn-phone-panel .contact-settings-toggle-row i:after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:transform .18s ease}
-#pkmn-phone-panel .contact-settings-toggle-row input:checked+i{background:#07c160;box-shadow:inset 0 1px 2px rgba(0,80,35,.15)}
+#pkmn-phone-panel .contact-settings-toggle-row input:checked+i{background:#1a1a1a;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
 #pkmn-phone-panel .contact-settings-toggle-row input:checked+i:after{transform:translateX(20px)}
 #pkmn-phone-panel .contact-settings-persist{background:#f0f7ff;border-radius:11px;padding:10px 11px;font-size:11px;line-height:1.55;color:#5f88b4;margin-top:3px}
 #pkmn-phone-panel .contact-settings-score{height:46px;border:1px solid #e0e4e7;border-radius:11px;display:flex;align-items:center;padding:0 12px;box-sizing:border-box;font-size:14px;color:#555e66;background:#fafbfc}
@@ -1505,7 +1507,7 @@
   #pkmn-phone-panel .pkmn-btn{padding:0 7px!important;font-size:11px!important}
 }
 
-/* v0.13.10 · 微信聊天双方昵称 */
+/* v0.13.10 · 聊天双方昵称 */
 #pkmn-phone-panel .wechat-msg-main{
   min-width:0;
   display:flex;
@@ -1534,7 +1536,7 @@
 #pkmn-phone-panel .pkmn-contact-add-progress{position:absolute;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
 #pkmn-phone-panel .pkmn-contact-add-progress-backdrop{position:absolute;inset:0;background:rgba(18,24,30,.32);backdrop-filter:blur(2px)}
 #pkmn-phone-panel .pkmn-contact-add-progress-box{position:relative;width:min(320px,88%);box-sizing:border-box;padding:25px 22px 22px;border-radius:18px;background:#fff;box-shadow:0 16px 42px rgba(0,0,0,.2);text-align:center}
-#pkmn-phone-panel .pkmn-contact-add-progress-spinner{width:28px;height:28px;margin:0 auto 13px;border:3px solid #e7ebee;border-top-color:#07c160;border-radius:50%;animation:pkmnContactAddSpin .8s linear infinite}
+#pkmn-phone-panel .pkmn-contact-add-progress-spinner{width:28px;height:28px;margin:0 auto 13px;border:3px solid #e7ebee;border-top-color:#4a4a4a;border-radius:50%;animation:pkmnContactAddSpin .8s linear infinite}
 #pkmn-phone-panel .pkmn-contact-add-progress-title{font-size:17px;font-weight:750;color:#20262c}
 #pkmn-phone-panel .pkmn-contact-add-progress-text{margin-top:9px;font-size:13px;line-height:1.55;color:#5d666e;white-space:pre-wrap;word-break:break-word}
 #pkmn-phone-panel .pkmn-contact-add-progress-hint{margin-top:6px;font-size:11px;color:#a1a7ac}
@@ -1621,7 +1623,7 @@
   #pkmn-phone-panel .contact-injection-btn{height:40px;font-size:13px}
 }
 
-/* v0.13.19 微信消息多选删除 */
+/* v0.13.19 消息多选删除 */
 #pkmn-phone-panel .wechat-delete-toolbar{
  display:flex;align-items:center;justify-content:space-between;
  padding:8px 10px;margin-bottom:8px;background:#fff;border-bottom:1px solid #eee;
@@ -2518,14 +2520,14 @@
 
 /* ============================================================
    v0.14.3 · 夜间主题补全
-   修复：微信式聊天、联系人设置、评论区、世界书、得文商店
+   修复：聊天、联系人设置、评论区、世界书、得文商店
    等后加模块未适配夜间模式导致的大片纯白界面。
    色板与既有夜间变量保持一致：
    bg #111827 / paper #172033 / paper2 #1d2739 / line #2d3a50
    text #edf3ff / text2 #b6c2d6 / text3 #7f8da6 / blue #82aef5
    ============================================================ */
 
-/* ---------- 通讯录 / 微信式聊天 ---------- */
+/* ---------- 通讯录 / 聊天 ---------- */
 #pkmn-phone-panel.pkmn-theme-night .wechat-search,
 #pkmn-phone-panel.pkmn-theme-night .wechat-contact-list,
 #pkmn-phone-panel.pkmn-theme-night .wechat-contact,
@@ -2940,7 +2942,7 @@
 #pkmn-phone-panel.pkmn-theme-night .devon-bag-sell{background:#15261c;border-color:#2c4a38;color:#5fbf85}
 
 /* ============================================================
-   v0.17.3 通讯录 · 2026 微信风格（拼音分组/字母索引/星标/入口卡）
+   v0.17.3 通讯录 · 拼音分组/字母索引/星标/入口卡
    ============================================================ */
 #pkmn-phone-panel .wx2-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;background:#ededed;position:relative;scrollbar-width:none}
 #pkmn-phone-panel .wx2-scroll::-webkit-scrollbar{display:none}
@@ -2952,27 +2954,27 @@
 #pkmn-phone-panel .wx2-entry{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f2f2f2;padding:0 14px;height:54px;cursor:pointer;text-align:left;font-size:16px;color:#191919;box-sizing:border-box}
 #pkmn-phone-panel .wx2-entry:last-child{border-bottom:0}
 #pkmn-phone-panel .wx2-entry:active{background:#e5e5e5}
-#pkmn-phone-panel .wx2-entry-ico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;font-style:normal;flex:none;color:#fff}
-#pkmn-phone-panel .wx2-entry-ico.is-orange{background:linear-gradient(135deg,#FFB02E,#F0732C)}
-#pkmn-phone-panel .wx2-entry-ico.is-blue{background:linear-gradient(135deg,#4FC3FF,#1485EE)}
-#pkmn-phone-panel .wx2-entry-ico.is-indigo{background:linear-gradient(135deg,#8E7BFF,#5D4FE8)}
-#pkmn-phone-panel .wx2-entry-ico.is-green{background:linear-gradient(135deg,#3DDC84,#07C160)}
-#pkmn-phone-panel .wx2-entry-ico.is-gray{background:linear-gradient(135deg,#A9B4C0,#7D8B9A)}
+#pkmn-phone-panel .wx2-entry-ico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;font-style:normal;flex:none;background:#f2f3f5;color:#4a4a4a}
+/* v0.17.6：入口卡改为简约浅灰底 + Lucide 线性图标（原彩色渐变已移除） */
 #pkmn-phone-panel .wx2-entry::after{content:'›';margin-left:auto;color:#c8c8c8;font-size:20px;line-height:1}
 #pkmn-phone-panel .wx2-group{background:#fff}
 #pkmn-phone-panel .wx2-letter{position:sticky;top:50px;z-index:2;background:#ededed;color:#808080;font-size:12px;font-weight:600;padding:3px 14px;letter-spacing:.5px}
 #pkmn-phone-panel .wx2-row{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f0f0f0;padding:0 14px;height:58px;cursor:pointer;text-align:left;box-sizing:border-box}
 #pkmn-phone-panel .wx2-row:last-child{border-bottom:0}
 #pkmn-phone-panel .wx2-row:active{background:#e5e5e5}
-#pkmn-phone-panel .wx2-avatar{width:40px;height:40px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:600;overflow:hidden}
-#pkmn-phone-panel .wx2-av-0{background:linear-gradient(135deg,#34D377,#08A95C)}
-#pkmn-phone-panel .wx2-av-1{background:linear-gradient(135deg,#4FC3FF,#1485EE)}
-#pkmn-phone-panel .wx2-av-2{background:linear-gradient(135deg,#FFB02E,#F0732C)}
-#pkmn-phone-panel .wx2-av-3{background:linear-gradient(135deg,#9E7BFF,#6C4DF0)}
-#pkmn-phone-panel .wx2-av-4{background:linear-gradient(135deg,#FF7AA2,#F04F7B)}
-#pkmn-phone-panel .wx2-av-5{background:linear-gradient(135deg,#2ED3B7,#0FA890)}
-#pkmn-phone-panel .wx2-av-6{background:linear-gradient(135deg,#FFC24B,#F09A26)}
-#pkmn-phone-panel .wx2-av-7{background:linear-gradient(135deg,#8FA3BC,#5F7391)}
+#pkmn-phone-panel .wx2-avatar{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;color:#fff;font-size:16px;font-weight:600;letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 1px 2px rgba(18,28,40,.12);user-select:none;-webkit-user-select:none}
+#pkmn-phone-panel .wx2-av-0{background:linear-gradient(145deg,#7CC4AF,#3F8F79)}
+#pkmn-phone-panel .wx2-av-1{background:linear-gradient(145deg,#86B3E8,#4374C2)}
+#pkmn-phone-panel .wx2-av-2{background:linear-gradient(145deg,#EBB36E,#CE7F3E)}
+#pkmn-phone-panel .wx2-av-3{background:linear-gradient(145deg,#A893DE,#6E5CBE)}
+#pkmn-phone-panel .wx2-av-4{background:linear-gradient(145deg,#E596AC,#C1617E)}
+#pkmn-phone-panel .wx2-av-5{background:linear-gradient(145deg,#6EC7B8,#33948A)}
+#pkmn-phone-panel .wx2-av-6{background:linear-gradient(145deg,#EFC877,#CE9438)}
+#pkmn-phone-panel .wx2-av-7{background:linear-gradient(145deg,#9BABC0,#66768E)}
+/* v0.17.6 头像：首字在下、图片在上覆盖；图片加载失败被移除后首字自动露出 */
+#pkmn-phone-panel .wx2-av-txt{position:relative;z-index:0;line-height:1;text-shadow:0 1px 1px rgba(0,0,0,.15)}
+#pkmn-phone-panel .wx2-av-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;background:#e9ecef;border-radius:inherit}
+#pkmn-phone-panel .wx2-av-ico{width:26px;height:26px;stroke-width:2.1}
 #pkmn-phone-panel .wx2-name{flex:1;min-width:0;font-size:16px;color:#191919;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #pkmn-phone-panel .wx2-meta{font-size:12px;color:#b2b2b2;flex:none}
 #pkmn-phone-panel .wx2-count{background:#fff;padding:14px;text-align:center;color:#9a9a9a;font-size:13px}
@@ -2982,7 +2984,7 @@
 #pkmn-phone-panel .wx2-empty-d{font-size:12px;color:#a0a0a0;line-height:1.7}
 #pkmn-phone-panel .wx2-index{position:absolute;right:2px;top:130px;bottom:110px;display:none;flex-direction:column;justify-content:center;align-items:center;z-index:6}
 #pkmn-phone-panel .wx2-index span{display:block;width:20px;height:17px;line-height:17px;text-align:center;font-size:10px;color:#7f7f7f;cursor:pointer;border-radius:8px;user-select:none}
-#pkmn-phone-panel .wx2-index span:active{background:#07c160;color:#fff}
+#pkmn-phone-panel .wx2-index span:active{background:#e0e0e0;color:#1a1a1a}
 #pkmn-phone-panel .wx2-index-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);width:84px;height:84px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:700;z-index:9;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
 #pkmn-phone-panel .wx2-index-hint.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #pkmn-phone-panel.pkmn-theme-night .wx2-scroll,
@@ -3005,7 +3007,7 @@
 #pkmn-phone-panel.pkmn-theme-night .wx2-empty-t{color:#9a9a9a}
 
 /* ============================================================
-   v0.17.4 微信三栏（微信/通讯录/我）
+   v0.17.6 三栏（消息/通讯录/我）
    ============================================================ */
 #pkmn-phone-panel .wx2-pane{display:flex;flex-direction:column;min-height:0;flex:1}
 #pkmn-phone-panel #wx2-pane-chats{display:flex}
@@ -3014,7 +3016,7 @@
 #pkmn-phone-panel .wx2-pane::-webkit-scrollbar{display:none}
 #pkmn-phone-panel .wx2-tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;font-size:20px;color:#7f7f7f;height:100%;cursor:pointer;padding:4px 0 0}
 #pkmn-phone-panel .wx2-tabbar button small{font-size:10px;transform:scale(.92)}
-#pkmn-phone-panel .wx2-tabbar button.active{color:#07c160}
+#pkmn-phone-panel .wx2-tabbar button.active{color:#1a1a1a}
 #pkmn-phone-panel .wx2-conv{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f0f0f0;padding:0 14px;height:64px;cursor:pointer;text-align:left;box-sizing:border-box}
 #pkmn-phone-panel .wx2-conv:active{background:#e5e5e5}
 #pkmn-phone-panel .wx2-avatar.lg{width:48px;height:48px;border-radius:10px;font-size:20px}
@@ -3057,4 +3059,68 @@
 #pkmn-phone-panel.pkmn-theme-night .wx2-me-row em{color:#6e6e6e}
 #pkmn-phone-panel.pkmn-theme-night .wx2-tabbar{background:#1e1e1e;border-top-color:#2a2a2a}
 #pkmn-phone-panel.pkmn-theme-night .wx2-tabbar button{color:#6e6e6e}
-#pkmn-phone-panel.pkmn-theme-night .wx2-tabbar button.active{color:#07c160}
+#pkmn-phone-panel.pkmn-theme-night .wx2-tabbar button.active{color:#ffffff}
+
+/* ===== v0.17.6 Lucide 内联图标（ISC 许可，https://lucide.dev）===== */
+#pkmn-phone-panel .pkmn-ico{width:1em;height:1em;display:inline-block;vertical-align:-.125em;flex:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#pkmn-phone-panel .pkmn-ico-lg{width:1.25em;height:1.25em}
+#pkmn-phone-panel .pkmn-ico-sm{width:.875em;height:.875em}
+/* ===== v0.17.6 通讯录：Lucide 图标尺寸 + 简约配色夜间适配 ===== */
+#pkmn-phone-panel .wx2-tab-ico{width:22px;height:22px;margin-bottom:1px}
+#pkmn-phone-panel .wx2-idx-star{width:11px;height:11px;vertical-align:1px}
+#pkmn-phone-panel.pkmn-theme-night .wx2-entry-ico{background:#2c2c2c;color:#c8c8c8}
+#pkmn-phone-panel.pkmn-theme-night .wx2-index span:active{background:#3a3a3a;color:#fff}
+#pkmn-phone-panel.pkmn-theme-night .pkmn-contacts-icon .pkmn-contacts-logo{background:#2c2c2c;color:#e8e8e8}
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-arrow,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-ico,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-row b{color:#8a8a8a}
+
+/* ===== v0.17.6 头像升级：夜间压暗、图片头像占位底色 ===== */
+#pkmn-phone-panel.pkmn-theme-night .wx2-avatar,
+#pkmn-phone-panel.pkmn-theme-night .wechat-avatar,
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-avatar{filter:saturate(.8) brightness(.84)}
+#pkmn-phone-panel.pkmn-theme-night .wx2-av-img{background:#2a2a2a}
+#pkmn-phone-panel.pkmn-theme-night .contact-settings-icon{background:#2c2c2c;color:#c8c8c8}
+#pkmn-phone-panel.pkmn-theme-night .wx2-av-ico{color:#fff}
+
+/* ===== v0.17.6 星标 / 空状态图标 ===== */
+#pkmn-phone-panel .wx2-meta-star{width:13px;height:13px;fill:#f5c33b;stroke:#f5c33b;stroke-width:1.5;vertical-align:-1px}
+#pkmn-phone-panel .wx2-empty-ico .pkmn-ico{stroke-width:1.5}
+#pkmn-phone-panel.pkmn-theme-night .wx2-meta-star{fill:#8a7332;stroke:#8a7332}
+
+/* ===== v0.18.0 群聊 ===== */
+#pkmn-phone-panel .wx2-av-group{background:linear-gradient(145deg,#9FB2C6,#6C8098)}
+#pkmn-phone-panel .group-member-count{font-style:normal;font-weight:400;color:#8a8a8a;font-size:12px;margin-left:2px}
+
+/* 群聊导航栏有 4 个元素：返回 / 标题 / 刷新 / 更多，标题居中 */
+#pkmn-phone-panel #pkmn-group-chat-view .wechat-nav{padding:0 4px}
+#pkmn-phone-panel #pkmn-group-chat-view .wechat-nav-title{flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pkmn-phone-panel #pkmn-group-chat-view .wechat-nav button{width:38px}
+#pkmn-phone-panel #pkmn-group-chat-refresh{font-size:21px}
+#pkmn-phone-panel #pkmn-group-chat-refresh.is-busy{opacity:.5;animation:pkmn-group-spin .9s linear infinite}
+@keyframes pkmn-group-spin{to{transform:rotate(360deg)}}
+
+/* 成员多选 */
+#pkmn-phone-panel .group-member-pick{max-height:190px;overflow:auto;border:1px solid #ececec;border-radius:10px;padding:4px 0}
+#pkmn-phone-panel .group-member-row{display:flex;align-items:center;gap:8px;padding:8px 11px;font-size:14px;color:#333;cursor:pointer}
+#pkmn-phone-panel .group-member-row:active{background:#f4f5f7}
+#pkmn-phone-panel .group-member-row input{width:16px;height:16px;flex:none;accent-color:#1a1a1a}
+#pkmn-phone-panel .group-member-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 群聊里发送者昵称 */
+#pkmn-phone-panel #pkmn-group-messages .wechat-msg-name{font-size:11px;color:#8a8a8a;margin-bottom:3px}
+
+/* 夜间适配 */
+#pkmn-phone-panel.pkmn-theme-night .wx2-av-group{filter:saturate(.8) brightness(.84)}
+#pkmn-phone-panel.pkmn-theme-night .group-member-count{color:#8a8a8a}
+#pkmn-phone-panel.pkmn-theme-night .group-member-pick{border-color:#3a3a3a}
+#pkmn-phone-panel.pkmn-theme-night .group-member-row{color:#d5d5d5}
+#pkmn-phone-panel.pkmn-theme-night .group-member-row:active{background:#2c2c2c}
+#pkmn-phone-panel.pkmn-theme-night #pkmn-group-messages .wechat-msg-name{color:#8a8a8a}
+
+/* ===== v0.18.1 长按消息出 × 删除 ===== */
+#pkmn-phone-panel .msg-del-x{align-self:flex-start;margin-top:4px;width:22px;height:22px;border:none;border-radius:50%;background:#e5e5e5;color:#666;font-size:15px;line-height:20px;text-align:center;cursor:pointer;padding:0;flex:0 0 auto}
+#pkmn-phone-panel .msg-del-x:active{background:#e64340;color:#fff}
+#pkmn-phone-panel .wechat-msg-row.mine .msg-del-x{align-self:flex-end}
+#pkmn-phone-panel.pkmn-theme-night .msg-del-x{background:#2c2c2c;color:#8a8a8a}
+#pkmn-phone-panel.pkmn-theme-night .msg-del-x:active{background:#e64340;color:#fff}
