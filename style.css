@@ -2925,3 +2925,68 @@
 #pkmn-phone-panel .devon-bag-sell{flex:0 0 auto;background:#f2f7f3;border:1px solid #bcd9c4;color:#1f7a4d;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer}
 #pkmn-phone-panel .devon-bag-sell:active{transform:scale(.96)}
 #pkmn-phone-panel.pkmn-theme-night .devon-bag-sell{background:#15261c;border-color:#2c4a38;color:#5fbf85}
+
+/* ============================================================
+   v0.17.3 通讯录 · 2026 微信风格（拼音分组/字母索引/星标/入口卡）
+   ============================================================ */
+#pkmn-phone-panel .wx2-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;background:#ededed;position:relative;scrollbar-width:none}
+#pkmn-phone-panel .wx2-scroll::-webkit-scrollbar{display:none}
+#pkmn-phone-panel .wx2-search{position:sticky;top:0;z-index:4;background:#ededed;padding:8px 12px 6px}
+#pkmn-phone-panel .wx2-search-ico{position:absolute;left:22px;top:26px;font-size:15px;color:#8a8a8a;pointer-events:none;line-height:1}
+#pkmn-phone-panel .wx2-search input{width:100%;box-sizing:border-box;height:36px;border:0;outline:0;background:#f7f7f7;border-radius:10px;font-size:14px;color:#191919;padding:0 12px 0 32px}
+#pkmn-phone-panel .wx2-search input::placeholder{color:#a8a8a8}
+#pkmn-phone-panel .wx2-entries{background:#fff;margin:2px 0 8px}
+#pkmn-phone-panel .wx2-entry{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f2f2f2;padding:0 14px;height:54px;cursor:pointer;text-align:left;font-size:16px;color:#191919;box-sizing:border-box}
+#pkmn-phone-panel .wx2-entry:last-child{border-bottom:0}
+#pkmn-phone-panel .wx2-entry:active{background:#e5e5e5}
+#pkmn-phone-panel .wx2-entry-ico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;font-style:normal;flex:none;color:#fff}
+#pkmn-phone-panel .wx2-entry-ico.is-orange{background:linear-gradient(135deg,#FFB02E,#F0732C)}
+#pkmn-phone-panel .wx2-entry-ico.is-blue{background:linear-gradient(135deg,#4FC3FF,#1485EE)}
+#pkmn-phone-panel .wx2-entry-ico.is-indigo{background:linear-gradient(135deg,#8E7BFF,#5D4FE8)}
+#pkmn-phone-panel .wx2-entry-ico.is-green{background:linear-gradient(135deg,#3DDC84,#07C160)}
+#pkmn-phone-panel .wx2-entry-ico.is-gray{background:linear-gradient(135deg,#A9B4C0,#7D8B9A)}
+#pkmn-phone-panel .wx2-entry::after{content:'›';margin-left:auto;color:#c8c8c8;font-size:20px;line-height:1}
+#pkmn-phone-panel .wx2-group{background:#fff}
+#pkmn-phone-panel .wx2-letter{position:sticky;top:50px;z-index:2;background:#ededed;color:#808080;font-size:12px;font-weight:600;padding:3px 14px;letter-spacing:.5px}
+#pkmn-phone-panel .wx2-row{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f0f0f0;padding:0 14px;height:58px;cursor:pointer;text-align:left;box-sizing:border-box}
+#pkmn-phone-panel .wx2-row:last-child{border-bottom:0}
+#pkmn-phone-panel .wx2-row:active{background:#e5e5e5}
+#pkmn-phone-panel .wx2-avatar{width:40px;height:40px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:600;overflow:hidden}
+#pkmn-phone-panel .wx2-av-0{background:linear-gradient(135deg,#34D377,#08A95C)}
+#pkmn-phone-panel .wx2-av-1{background:linear-gradient(135deg,#4FC3FF,#1485EE)}
+#pkmn-phone-panel .wx2-av-2{background:linear-gradient(135deg,#FFB02E,#F0732C)}
+#pkmn-phone-panel .wx2-av-3{background:linear-gradient(135deg,#9E7BFF,#6C4DF0)}
+#pkmn-phone-panel .wx2-av-4{background:linear-gradient(135deg,#FF7AA2,#F04F7B)}
+#pkmn-phone-panel .wx2-av-5{background:linear-gradient(135deg,#2ED3B7,#0FA890)}
+#pkmn-phone-panel .wx2-av-6{background:linear-gradient(135deg,#FFC24B,#F09A26)}
+#pkmn-phone-panel .wx2-av-7{background:linear-gradient(135deg,#8FA3BC,#5F7391)}
+#pkmn-phone-panel .wx2-name{flex:1;min-width:0;font-size:16px;color:#191919;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .wx2-meta{font-size:12px;color:#b2b2b2;flex:none}
+#pkmn-phone-panel .wx2-count{background:#fff;padding:14px;text-align:center;color:#9a9a9a;font-size:13px}
+#pkmn-phone-panel .wx2-empty{padding:64px 20px;text-align:center;color:#9a9a9a}
+#pkmn-phone-panel .wx2-empty-ico{font-size:44px;margin-bottom:12px;opacity:.7}
+#pkmn-phone-panel .wx2-empty-t{font-size:15px;color:#666;margin-bottom:6px}
+#pkmn-phone-panel .wx2-empty-d{font-size:12px;color:#a0a0a0;line-height:1.7}
+#pkmn-phone-panel .wx2-index{position:absolute;right:2px;top:130px;bottom:110px;display:none;flex-direction:column;justify-content:center;align-items:center;z-index:6}
+#pkmn-phone-panel .wx2-index span{display:block;width:20px;height:17px;line-height:17px;text-align:center;font-size:10px;color:#7f7f7f;cursor:pointer;border-radius:8px;user-select:none}
+#pkmn-phone-panel .wx2-index span:active{background:#07c160;color:#fff}
+#pkmn-phone-panel .wx2-index-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);width:84px;height:84px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:700;z-index:9;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+#pkmn-phone-panel .wx2-index-hint.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#pkmn-phone-panel.pkmn-theme-night .wx2-scroll,
+#pkmn-phone-panel.pkmn-theme-night .wx2-search{background:#111}
+#pkmn-phone-panel.pkmn-theme-night .wx2-search input{background:#1e1e1e;color:#ececec}
+#pkmn-phone-panel.pkmn-theme-night .wx2-search input::placeholder{color:#5d5d5d}
+#pkmn-phone-panel.pkmn-theme-night .wx2-search-ico{color:#666}
+#pkmn-phone-panel.pkmn-theme-night .wx2-entries,
+#pkmn-phone-panel.pkmn-theme-night .wx2-group,
+#pkmn-phone-panel.pkmn-theme-night .wx2-row,
+#pkmn-phone-panel.pkmn-theme-night .wx2-count{background:#1e1e1e}
+#pkmn-phone-panel.pkmn-theme-night .wx2-entry{background:#1e1e1e;border-bottom-color:#2a2a2a;color:#ececec}
+#pkmn-phone-panel.pkmn-theme-night .wx2-entry:active,
+#pkmn-phone-panel.pkmn-theme-night .wx2-row:active{background:#2c2c2c}
+#pkmn-phone-panel.pkmn-theme-night .wx2-entry::after{color:#4a4a4a}
+#pkmn-phone-panel.pkmn-theme-night .wx2-letter{background:#111;color:#7f7f7f}
+#pkmn-phone-panel.pkmn-theme-night .wx2-row{border-bottom-color:#2a2a2a}
+#pkmn-phone-panel.pkmn-theme-night .wx2-name{color:#ececec}
+#pkmn-phone-panel.pkmn-theme-night .wx2-meta{color:#6e6e6e}
+#pkmn-phone-panel.pkmn-theme-night .wx2-empty-t{color:#9a9a9a}

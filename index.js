@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.17.0)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.17.3)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.17.0"; // 与 manifest.json / README 对齐
+    const VERSION = "0.17.3"; // 与 manifest.json / README 对齐
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -2082,15 +2082,26 @@
 
     </div>
 
-    <!-- 通讯录 -->
+    <!-- 通讯录（v0.17.3 · 2026 微信风格：分组/索引/星标/入口卡） -->
     <div id="pkmn-contacts" class="pkmn-view pkmn-chat-app">
         <div class="wechat-nav">
             <button id="pkmn-contacts-back">‹</button>
             <div class="wechat-nav-title">通讯录</div>
             <button id="pkmn-contacts-add">＋</button>
         </div>
-        <div class="wechat-search"><span>⌕</span><input id="pkmn-contact-search" placeholder="搜索"></div>
-        <div class="wechat-contact-list" id="pkmn-contact-list"></div>
+        <div class="wx2-scroll" id="wx2-scroll">
+            <div class="wx2-search"><span class="wx2-search-ico">⌕</span><input id="pkmn-contact-search" placeholder="搜索"></div>
+            <div class="wx2-entries">
+                <button class="wx2-entry" id="wx2-entry-add"><i class="wx2-entry-ico is-orange">👤</i><span>新的朋友</span></button>
+                <button class="wx2-entry" id="wx2-entry-groups"><i class="wx2-entry-ico is-blue">💬</i><span>群聊</span></button>
+                <button class="wx2-entry" id="wx2-entry-tags"><i class="wx2-entry-ico is-indigo">🔖</i><span>标签</span></button>
+                <button class="wx2-entry" id="wx2-entry-mp"><i class="wx2-entry-ico is-green">📢</i><span>公众号</span></button>
+                <button class="wx2-entry" id="wx2-entry-settings"><i class="wx2-entry-ico is-gray">⚙️</i><span>通讯录设置</span></button>
+            </div>
+            <div class="wx2-list" id="pkmn-contact-list"></div>
+        </div>
+        <div class="wx2-index" id="wx2-index"></div>
+        <div class="wx2-index-hint" id="wx2-index-hint">A</div>
         <div class="wechat-bottom-nav">
             <button class="active">👤<small>通讯录</small></button>
             <button id="pkmn-contact-settings">⚙️<small>设置</small></button>
@@ -6377,23 +6388,106 @@ ${blocks.join('\n\n')}
         if (chatBtn) chatBtn.onclick = () => { close(); openContact(existing.id); };
     }
 
+    // ===== v0.17.3 通讯录 · 2026 微信风格：拼音首字母分组 / 字母索引 / 星标朋友 / 人数统计 =====
+    const WX2_PINYIN_BOUNDS = [['a','阿'],['b','芭'],['c','擦'],['d','搭'],['e','蛾'],['f','发'],['g','噶'],['h','哈'],['j','击'],['k','喀'],['l','垃'],['m','妈'],['n','拿'],['o','哦'],['p','啪'],['q','期'],['r','然'],['s','撒'],['t','塌'],['w','挖'],['x','昔'],['y','压'],['z','匝']];
+    let wx2Collator = null;
+    try { wx2Collator = new Intl.Collator('zh-Hans-CN-u-co-pinyin'); } catch (_) { wx2Collator = null; }
+    function pinyinInitial(str) {
+        const ch = String(str || '').trim().charAt(0);
+        if (!ch) return '#';
+        if (/[a-z]/i.test(ch)) return ch.toUpperCase();
+        if (/[0-9]/.test(ch)) return '#';
+        if (!wx2Collator) return '#';
+        let cur = '#';
+        for (const pair of WX2_PINYIN_BOUNDS) {
+            if (wx2Collator.compare(pair[1], ch) <= 0) cur = pair[0].toUpperCase();
+            else break;
+        }
+        return cur;
+    }
+    function contactAvatarClass(c) {
+        const key = String((c && c.id) || '');
+        let h = 0;
+        for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+        return 'wx2-av-' + (h % 8);
+    }
+    function contactAvatarChar(c) {
+        const disp = contactDisplayName(c);
+        return disp ? disp.slice(0, 1).toUpperCase() : '匿';
+    }
+    function contactMoralStageShort(c) {
+        const s = Math.max(0, Math.min(100, Number.isFinite(Number(c && c.moralScore)) ? Number(c.moralScore) : 50));
+        return moralBehaviorProfile(s).stage;
+    }
+    function wx2IndexBar(listEl, letters) {
+        const bar = $('wx2-index'), hint = $('wx2-index-hint');
+        if (!bar) return;
+        if (!letters.length) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        bar.innerHTML = letters.map(L => `<span data-wx2-idx="${L}">${L === '★' ? '☆' : L}</span>`).join('');
+        bar.querySelectorAll('[data-wx2-idx]').forEach(el => {
+            el.onclick = () => {
+                const L = el.dataset.wx2Idx;
+                const g = listEl.querySelector('[data-wx2-letter="' + L + '"]');
+                if (g && g.scrollIntoView) g.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                if (hint) {
+                    hint.textContent = L;
+                    hint.classList.add('show');
+                    clearTimeout(hint.__t);
+                    hint.__t = setTimeout(() => hint.classList.remove('show'), 700);
+                }
+            };
+        });
+    }
     function renderContacts(filter='') {
         contactCfg();
         const list = $('pkmn-contact-list');
         if (!list) return;
+        const total = config.contacts.length;
+        const titleEl = $('pkmn-contacts')?.querySelector('.wechat-nav-title');
+        if (titleEl) titleEl.textContent = total ? `通讯录 (${total})` : '通讯录';
         const q = String(filter || '').trim().toLowerCase();
-        const items = config.contacts.filter(c => !q || [c.nickname,c.name,c.note,c.location].join(' ').toLowerCase().includes(q));
-        list.innerHTML = items.map(c => {
-            const chat = config.contactChats[c.id] || [];
-            const last = chat.length ? chat[chat.length-1].content : (c.note || '点击开始聊天');
-            const time = chat.length ? chat[chat.length-1].time : '';
-            return `<button class="wechat-contact" data-contact="${esc(c.id)}">
-                <span class="wechat-avatar">${esc(c.avatar || '👤')}</span>
-                <span class="wechat-contact-main"><b>${esc(contactDisplayName(c))}</b><small>${esc(last).slice(0,48)}</small></span>
-                <time>${esc(time)}</time>
-            </button>`;
-        }).join('') || '<div class="wechat-empty">没有找到联系人</div>';
+        const items = config.contacts.filter(c => !q || [c.nickname,c.name,c.note,c.location,c.bio].join(' ').toLowerCase().includes(q));
+        if (!total) {
+            list.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">👥</div><div class="wx2-empty-t">通讯录还是空的</div><div class="wx2-empty-d">点击右上角「＋」添加第一位联系人<br>或在论坛用户资料页加好友</div></div>`;
+            wx2IndexBar(list, []);
+            return;
+        }
+        if (!items.length) {
+            list.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">🔍</div><div class="wx2-empty-t">没有找到联系人</div><div class="wx2-empty-d">换个关键词试试</div></div>`;
+            wx2IndexBar(list, []);
+            return;
+        }
+        const groups = [];
+        const starred = items.filter(c => c.star);
+        if (starred.length) groups.push({ letter: '★', list: starred });
+        const bucket = new Map();
+        items.filter(c => !c.star).forEach(c => {
+            const L = pinyinInitial(contactDisplayName(c));
+            if (!bucket.has(L)) bucket.set(L, []);
+            bucket.get(L).push(c);
+        });
+        [...bucket.keys()].sort((a, b) => {
+            if (a === '#') return 1;
+            if (b === '#') return -1;
+            return a < b ? -1 : a > b ? 1 : 0;
+        }).forEach(L => {
+            const arr = bucket.get(L);
+            arr.sort((x, y) => (wx2Collator ? wx2Collator.compare(contactDisplayName(x), contactDisplayName(y)) : contactDisplayName(x).localeCompare(contactDisplayName(y), 'zh')));
+            groups.push({ letter: L, list: arr });
+        });
+        list.innerHTML = groups.map(g => `
+            <section class="wx2-group" data-wx2-letter="${g.letter}">
+                <div class="wx2-letter">${g.letter === '★' ? '★ 星标朋友' : g.letter}</div>
+                ${g.list.map(c => `
+                <button class="wx2-row" data-contact="${esc(c.id)}">
+                    <span class="wx2-avatar ${contactAvatarClass(c)}">${esc(contactAvatarChar(c))}</span>
+                    <span class="wx2-name">${esc(contactDisplayName(c))}</span>
+                    <span class="wx2-meta">${c.star ? '★ ' : ''}${esc(contactMoralStageShort(c))}</span>
+                </button>`).join('')}
+            </section>`).join('') + `<div class="wx2-count">${q ? '找到 ' + items.length + ' 位联系人' : items.length + ' 位联系人'}</div>`;
         list.querySelectorAll('[data-contact]').forEach(el => el.onclick = () => openContact(el.dataset.contact));
+        wx2IndexBar(list, groups.map(g => g.letter));
     }
 
     
@@ -6573,6 +6667,18 @@ function renderChat() {
             </section>
 
             <section class="contact-settings-card contact-settings-link-card">
+                <div class="contact-settings-section-title"><span class="contact-settings-icon">⭐</span> 星标联系人</div>
+                <label class="contact-settings-toggle-row" for="contact-person-star">
+                    <span>
+                        <b>星标联系人</b>
+                        <small>星标的朋友将在通讯录顶部「★ 星标朋友」分组置顶展示。</small>
+                    </span>
+                    <input type="checkbox" id="contact-person-star" ${c.star ? 'checked' : ''}>
+                    <i aria-hidden="true"></i>
+                </label>
+            </section>
+
+            <section class="contact-settings-card contact-settings-link-card">
                 <div class="contact-settings-section-title"><span class="contact-settings-icon">🔗</span> 论坛联动</div>
                 <label class="contact-settings-toggle-row" for="contact-person-link-forum">
                     <span>
@@ -6621,6 +6727,14 @@ function renderChat() {
             <button class="contact-settings-save" id="contact-person-save"><span>✓</span> 保存联系人设置</button>
             <button class="contact-settings-delete" id="contact-person-delete" type="button"><span>🗑</span> 删除联系人</button>
         `;
+
+        const starToggle = $('contact-person-star');
+        if (starToggle) starToggle.onchange = (e) => {
+            c.star = !!e.target.checked;
+            saveContactConfig();
+            showToast(c.star ? '✓ 已设为星标联系人' : '已取消星标联系人');
+            renderContacts($('pkmn-contact-search')?.value || '');
+        };
 
         const toggle = $('contact-person-link-forum');
         toggle.onchange = (e) => {
@@ -6976,6 +7090,8 @@ function renderChat() {
     const DEVON_TIER_OVERRIDES=[
         {t:4,kw:['大师球','究极球','超级石','Ｚ纯晶','Z纯晶','化石','彗星碎片','王冠','心之鳞片','神奇糖果','金刚宝珠','白玉宝珠','白金宝珠']},
         {t:3,kw:['讲究','专爱','气势披带','吃剩的东西','剩饭','生命宝珠','突击背心','弱点保险','金珠','星星碎片','大珍珠','龙之牙','龙之鳞片','灵界之符','深海之牙','深海鳞片','月之石','日之石','光之石','暗之石','觉醒之石','升级数据','金属膜','王者之证','破坏光线','剑舞','龙之舞','龙之波动','暴风','流星群','大字爆炎','打雷','暴风雪','水炮','日光烈焰','真气弹','恶之波动','精神强念','大地之力','逆鳞','近身战','闪焰冲锋','冰冻光束','暗影球','冲浪']},
+        // v0.17.2：黄金会员专供——普通/低阶招式学习器（关键词已对 229 个招式名做子串防误伤核对）
+        {t:1,kw:['猛撞','假哭','掷泥','鬼面','踢倒','酸液炸弹','小偷','虫扑','泼冷水','毒尾','重踏','高速星星','泥巴射击','岩石封锁','下盘踢','电球','跺脚','岩崩','吼叫','虫咬','冰锥','浊流','电网']},
         {t:1,kw:['精灵球','超级球','高级球','火之石','水之石','雷之石','叶之石']}
     ];
     function devonAssignTier(p){
@@ -7585,7 +7701,7 @@ function renderChat() {
         let cacheInfo='暂无本地缓存';
         try{
             const c=JSON.parse(localStorage.getItem(DEVON_CACHE_KEY)||'null');
-            if(c&&Array.isArray(c.items)) cacheInfo=`本地缓存 ${c.items.length} 件道具 · 更新于 ${new Date(c.time).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+            if(c&&Array.isArray(c.items)) cacheInfo=`本地缓存 ${c.items.length} 件道具 · 更新于 ${new Date(c.time).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}${(c.ver&&c.ver!==VERSION)?' · 版本过期，将自动重新同步':''}`;
         }catch(_){ }
         const mvuStatus=devonMvuStatusText();
         el.innerHTML=`
@@ -7698,8 +7814,9 @@ function renderChat() {
         if(!force){
             try{
                 const cache=JSON.parse(localStorage.getItem(DEVON_CACHE_KEY)||'null');
-                // v0.14.4：有效缓存阈值从 100 降到 40，避免部分同步永远不生效而反复请求
-                if(cache&&Array.isArray(cache.items)&&cache.items.length>=40){DEVON_PRODUCTS=cache.items;cache.items.forEach(devonAssignTier);devonInjectNursery();devonSetStatus('同步完成');renderDevonShop();return true;}
+                // v0.17.1：缓存必须与当前扩展版本匹配才使用——修复旧版本同步的不完整数据（如招式学习器只有概览 3 件）被永久复用的问题
+                if(cache&&cache.ver===VERSION&&Array.isArray(cache.items)&&cache.items.length>=40){DEVON_PRODUCTS=cache.items;cache.items.forEach(devonAssignTier);devonInjectNursery();devonSetStatus('同步完成');renderDevonShop();return true;}
+                if(cache&&cache.ver!==VERSION){try{localStorage.removeItem(DEVON_CACHE_KEY);}catch(_){ } }
             }catch(_){ }
             // 5 分钟内刚失败过则跳过自动同步，防止每次打开商店都重复请求
             if(devonRecentSyncFail()){devonSetStatus('同步失败');return false;}
@@ -7793,7 +7910,7 @@ function renderChat() {
                 devonAssignTier(p);
                 devonAssignPrice(p);
             });
-            DEVON_PRODUCTS=list; localStorage.setItem(DEVON_CACHE_KEY,JSON.stringify({time:Date.now(),items:list}));devonInjectNursery();devonClearSyncFail();devonSetStatus('同步完成');devonState.page=1;saveDevonStore();renderDevonShop();showToast(`已同步 52Poké：${list.length} 件道具`);return true;
+            DEVON_PRODUCTS=list; localStorage.setItem(DEVON_CACHE_KEY,JSON.stringify({time:Date.now(),ver:VERSION,items:list}));devonInjectNursery();devonClearSyncFail();devonSetStatus('同步完成');devonState.page=1;saveDevonStore();renderDevonShop();showToast(`已同步 52Poké：${list.length} 件道具`);return true;
         }catch(e){
             console.warn('[得文商店] 52Poké同步失败',e);devonMarkSyncFail();devonSetStatus('同步失败');renderDevonShop();showToast('52Poké同步失败，已保留本地道具库');return false;
         }
@@ -7832,6 +7949,10 @@ function renderChat() {
     $('pkmn-open-contacts')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
     $('pkmn-contacts-back')?.addEventListener('click', () => openView('home'));
     $('pkmn-contacts-add')?.addEventListener('click', addContact);
+    // v0.17.3 通讯录入口卡（微信 2026 风格）
+    $('wx2-entry-add')?.addEventListener('click', addContact);
+    $('wx2-entry-settings')?.addEventListener('click', () => { renderContactSettings(); openView('contactSettings'); });
+    ['wx2-entry-groups', 'wx2-entry-tags', 'wx2-entry-mp'].forEach(id => $(id)?.addEventListener('click', () => showToast('该功能正在筹备中，敬请期待')));
     $('pkmn-contact-search')?.addEventListener('input', e => renderContacts(e.target.value));
     $('pkmn-chat-back')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
     $('pkmn-chat-send')?.addEventListener('click', sendContactMessage);
