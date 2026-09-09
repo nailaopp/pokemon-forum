@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.17.3)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.17.5)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.17.3"; // 与 manifest.json / README 对齐
+    const VERSION = "0.17.5"; // 与 manifest.json / README 对齐
 
     // 必须尽早声明，否则严格模式下赋值会直接启动失败
     let chatState = null;
@@ -1885,7 +1885,7 @@
 
             <div class="pkmn-app-icon pkmn-contacts-icon" id="pkmn-open-contacts">
                 <div class="pkmn-app-image wechat-app-logo">💬</div>
-                通讯录
+                微信
             </div>
 
             <div
@@ -2082,29 +2082,38 @@
 
     </div>
 
-    <!-- 通讯录（v0.17.3 · 2026 微信风格：分组/索引/星标/入口卡） -->
+    <!-- 通讯录（v0.17.4 · 2026 微信风格：微信/通讯录/我 三栏） -->
     <div id="pkmn-contacts" class="pkmn-view pkmn-chat-app">
         <div class="wechat-nav">
             <button id="pkmn-contacts-back">‹</button>
-            <div class="wechat-nav-title">通讯录</div>
+            <div class="wechat-nav-title" id="wx2-nav-title">微信</div>
             <button id="pkmn-contacts-add">＋</button>
         </div>
         <div class="wx2-scroll" id="wx2-scroll">
-            <div class="wx2-search"><span class="wx2-search-ico">⌕</span><input id="pkmn-contact-search" placeholder="搜索"></div>
-            <div class="wx2-entries">
-                <button class="wx2-entry" id="wx2-entry-add"><i class="wx2-entry-ico is-orange">👤</i><span>新的朋友</span></button>
-                <button class="wx2-entry" id="wx2-entry-groups"><i class="wx2-entry-ico is-blue">💬</i><span>群聊</span></button>
-                <button class="wx2-entry" id="wx2-entry-tags"><i class="wx2-entry-ico is-indigo">🔖</i><span>标签</span></button>
-                <button class="wx2-entry" id="wx2-entry-mp"><i class="wx2-entry-ico is-green">📢</i><span>公众号</span></button>
-                <button class="wx2-entry" id="wx2-entry-settings"><i class="wx2-entry-ico is-gray">⚙️</i><span>通讯录设置</span></button>
+            <div class="wx2-pane" id="wx2-pane-chats">
+                <div class="wx2-list" id="wx2-chat-list"></div>
             </div>
-            <div class="wx2-list" id="pkmn-contact-list"></div>
+            <div class="wx2-pane" id="wx2-pane-contacts" style="display:none">
+                <div class="wx2-search"><span class="wx2-search-ico">⌕</span><input id="pkmn-contact-search" placeholder="搜索"></div>
+                <div class="wx2-entries">
+                    <button class="wx2-entry" id="wx2-entry-add"><i class="wx2-entry-ico is-orange">👤</i><span>新的朋友</span></button>
+                    <button class="wx2-entry" id="wx2-entry-groups"><i class="wx2-entry-ico is-blue">💬</i><span>群聊</span></button>
+                    <button class="wx2-entry" id="wx2-entry-tags"><i class="wx2-entry-ico is-indigo">🔖</i><span>标签</span></button>
+                    <button class="wx2-entry" id="wx2-entry-mp"><i class="wx2-entry-ico is-green">📢</i><span>公众号</span></button>
+                    <button class="wx2-entry" id="wx2-entry-settings"><i class="wx2-entry-ico is-gray">⚙️</i><span>通讯录设置</span></button>
+                </div>
+                <div class="wx2-list" id="pkmn-contact-list"></div>
+            </div>
+            <div class="wx2-pane" id="wx2-pane-me" style="display:none">
+                <div id="wx2-me-body"></div>
+            </div>
         </div>
         <div class="wx2-index" id="wx2-index"></div>
         <div class="wx2-index-hint" id="wx2-index-hint">A</div>
-        <div class="wechat-bottom-nav">
-            <button class="active">👤<small>通讯录</small></button>
-            <button id="pkmn-contact-settings">⚙️<small>设置</small></button>
+        <div class="wechat-bottom-nav" id="wx2-tabbar">
+            <button id="wx2-tab-chats" class="active">💬<small>微信</small></button>
+            <button id="wx2-tab-contacts">👤<small>通讯录</small></button>
+            <button id="wx2-tab-me">🙂<small>我</small></button>
         </div>
     </div>
 
@@ -5998,7 +6007,7 @@ ${esc(b.prompt)}
 
         // 当前正显示通讯录时立即刷新；新聊天没有档案时自然显示空通讯录。
         try {
-            if (document.getElementById('pkmn-contacts')?.classList.contains('active')) renderContacts();
+            if (document.getElementById('pkmn-contacts')?.classList.contains('active')) { renderContacts(); renderWx2Chats(); }
             if (document.getElementById('pkmn-chat')?.classList.contains('active')) openView('contacts');
         } catch (_) {}
         if (!options.silent) showToast(next ? '已恢复本聊天通讯录' : '新聊天：通讯录已清空');
@@ -6415,10 +6424,6 @@ ${blocks.join('\n\n')}
         const disp = contactDisplayName(c);
         return disp ? disp.slice(0, 1).toUpperCase() : '匿';
     }
-    function contactMoralStageShort(c) {
-        const s = Math.max(0, Math.min(100, Number.isFinite(Number(c && c.moralScore)) ? Number(c.moralScore) : 50));
-        return moralBehaviorProfile(s).stage;
-    }
     function wx2IndexBar(listEl, letters) {
         const bar = $('wx2-index'), hint = $('wx2-index-hint');
         if (!bar) return;
@@ -6439,13 +6444,108 @@ ${blocks.join('\n\n')}
             };
         });
     }
+    // ===== v0.17.4 微信三栏：微信(消息) / 通讯录 / 我 =====
+    let wx2ActiveTab = 'chats';
+    let wx2MeEdit = null;
+    function wx2SwitchTab(tab) {
+        wx2ActiveTab = tab;
+        const panes = { chats: 'wx2-pane-chats', contacts: 'wx2-pane-contacts', me: 'wx2-pane-me' };
+        Object.keys(panes).forEach(k => { const el = $(panes[k]); if (el) el.style.display = k === tab ? '' : 'none'; });
+        ['chats', 'contacts', 'me'].forEach(k => { const el = $('wx2-tab-' + k); if (el) el.classList.toggle('active', k === tab); });
+        const title = $('wx2-nav-title');
+        const addBtn = $('pkmn-contacts-add');
+        if (addBtn) addBtn.style.display = tab === 'me' ? 'none' : '';
+        const idx = $('wx2-index');
+        if (idx && tab !== 'contacts') idx.style.display = 'none';
+        if (tab === 'contacts') renderContacts($('pkmn-contact-search')?.value || '');
+        else if (tab === 'chats') { renderWx2Chats(); if (title) title.textContent = '微信'; }
+        else { renderWx2Me(); if (title) title.textContent = '我'; }
+    }
+    function renderWx2Chats() {
+        contactCfg();
+        const box = $('wx2-chat-list');
+        if (!box) return;
+        if (!config.contacts.length) {
+            box.innerHTML = `<div class="wx2-empty"><div class="wx2-empty-ico">💬</div><div class="wx2-empty-t">还没有会话</div><div class="wx2-empty-d">到「通讯录」添加联系人后即可开始私聊</div></div>`;
+            return;
+        }
+        const rows = config.contacts.map(c => {
+            const chat = Array.isArray(config.contactChats[c.id]) ? config.contactChats[c.id] : [];
+            const last = chat.length ? chat[chat.length - 1] : null;
+            const tm = last ? String(last.time || '').match(/(\d{1,2}):(\d{2})/) : null;
+            const ts = tm ? Number(tm[1]) * 60 + Number(tm[2]) : -1;
+            return { c, last, ts };
+        }).sort((a, b) => b.ts - a.ts);
+        box.innerHTML = rows.map(item => {
+            const c = item.c, last = item.last;
+            const preview = last ? esc(String(last.content || '').replace(/\s+/g, ' ')).slice(0, 40) : '暂无消息';
+            return `<button class="wx2-conv" data-conv="${esc(c.id)}">
+                <span class="wx2-avatar lg ${contactAvatarClass(c)}">${esc(contactAvatarChar(c))}</span>
+                <span class="wx2-conv-main"><b>${esc(contactDisplayName(c))}</b><small>${preview}</small></span>
+                <time>${esc((last && last.time) || '')}</time>
+            </button>`;
+        }).join('');
+        box.querySelectorAll('[data-conv]').forEach(el => el.onclick = () => openContact(el.dataset.conv));
+    }
+    function renderWx2Me() {
+        contactCfg();
+        const body = $('wx2-me-body');
+        if (!body) return;
+        const rawNick = getContactPlayerNickname().trim();
+        const nick = rawNick || '未设置昵称';
+        const identity = getContactPlayerIdentity().trim();
+        let editCard = '';
+        if (wx2MeEdit === 'nickname') {
+            editCard = `<div class="wx2-me-edit"><label>昵称<input class="pkmn-input" id="wx2-me-nick-input" value="${esc(rawNick)}" placeholder="例如：阿岚" maxlength="20"></label><div class="wx2-me-edit-btns"><button class="pkmn-btn pkmn-primary" id="wx2-me-nick-save">保存</button><button class="pkmn-btn pkmn-secondary" id="wx2-me-cancel">取消</button></div></div>`;
+        } else if (wx2MeEdit === 'identity') {
+            editCard = `<div class="wx2-me-edit"><label>介绍（AI 会作为你的身份读取）<textarea class="pkmn-textarea" id="wx2-me-identity-input" rows="3" placeholder="例如：宝可梦训练家、沼王饲养员……">${esc(identity)}</textarea></label><div class="wx2-me-edit-btns"><button class="pkmn-btn pkmn-primary" id="wx2-me-identity-save">保存</button><button class="pkmn-btn pkmn-secondary" id="wx2-me-cancel">取消</button></div></div>`;
+        }
+        body.innerHTML = `
+            <div class="wx2-me-card">
+                <span class="wx2-avatar xl ${contactAvatarClass({ id: 'player-me' })}">${rawNick ? esc(nick.slice(0, 1).toUpperCase()) : '🙂'}</span>
+                <div class="wx2-me-main">
+                    <div class="wx2-me-nick">${esc(nick)}</div>
+                    <div class="wx2-me-wxid">微信号：${identity ? esc(identity.replace(/\s+/g, ' ').slice(0, 22)) : '点击下方「介绍」设置'}</div>
+                </div>
+                <i class="wx2-me-arrow">›</i>
+            </div>
+            <div class="wx2-me-group">
+                <button class="wx2-me-row" id="wx2-me-nick-row"><i class="wx2-me-ico">✏️</i><span>昵称</span><em>${rawNick ? esc(nick) : '未设置'}</em><b>›</b></button>
+                <button class="wx2-me-row" id="wx2-me-identity-row"><i class="wx2-me-ico">📜</i><span>介绍</span><em>${identity ? esc(identity.replace(/\s+/g, ' ').slice(0, 12)) + (identity.length > 12 ? '…' : '') : '未设置'}</em><b>›</b></button>
+            </div>
+            ${editCard}
+            <div class="wx2-me-group">
+                <button class="wx2-me-row" id="pkmn-contact-settings"><i class="wx2-me-ico">⚙️</i><span>设置</span><b>›</b></button>
+            </div>
+            <div class="wx2-me-foot">宝可梦小手机 · 微信 v0.17.5</div>`;
+        const nickRow = $('wx2-me-nick-row'); if (nickRow) nickRow.onclick = () => { wx2MeEdit = 'nickname'; renderWx2Me(); };
+        const idRow = $('wx2-me-identity-row'); if (idRow) idRow.onclick = () => { wx2MeEdit = 'identity'; renderWx2Me(); };
+        const cancelBtn = $('wx2-me-cancel'); if (cancelBtn) cancelBtn.onclick = () => { wx2MeEdit = null; renderWx2Me(); };
+        const nickSave = $('wx2-me-nick-save');
+        if (nickSave) nickSave.onclick = () => {
+            const v = String($('wx2-me-nick-input').value || '').trim();
+            if (!v) { showToast('昵称不能为空'); return; }
+            setContactPlayerNickname(v);
+            wx2MeEdit = null; renderWx2Me(); renderWx2Chats();
+            showToast('✓ 昵称已保存');
+        };
+        const idSave = $('wx2-me-identity-save');
+        if (idSave) idSave.onclick = () => {
+            setContactPlayerIdentity(String($('wx2-me-identity-input').value || '').trim());
+            wx2MeEdit = null; renderWx2Me();
+            showToast('✓ 介绍已保存');
+        };
+        const st = $('pkmn-contact-settings');
+        if (st) st.onclick = () => { renderContactSettings(); openView('contactSettings'); };
+    }
+
     function renderContacts(filter='') {
         contactCfg();
         const list = $('pkmn-contact-list');
         if (!list) return;
         const total = config.contacts.length;
         const titleEl = $('pkmn-contacts')?.querySelector('.wechat-nav-title');
-        if (titleEl) titleEl.textContent = total ? `通讯录 (${total})` : '通讯录';
+        if (titleEl && wx2ActiveTab === 'contacts') titleEl.textContent = total ? `通讯录 (${total})` : '通讯录';
         const q = String(filter || '').trim().toLowerCase();
         const items = config.contacts.filter(c => !q || [c.nickname,c.name,c.note,c.location,c.bio].join(' ').toLowerCase().includes(q));
         if (!total) {
@@ -6483,7 +6583,7 @@ ${blocks.join('\n\n')}
                 <button class="wx2-row" data-contact="${esc(c.id)}">
                     <span class="wx2-avatar ${contactAvatarClass(c)}">${esc(contactAvatarChar(c))}</span>
                     <span class="wx2-name">${esc(contactDisplayName(c))}</span>
-                    <span class="wx2-meta">${c.star ? '★ ' : ''}${esc(contactMoralStageShort(c))}</span>
+                    ${c.star ? '<span class="wx2-meta">★</span>' : ''}
                 </button>`).join('')}
             </section>`).join('') + `<div class="wx2-count">${q ? '找到 ' + items.length + ' 位联系人' : items.length + ' 位联系人'}</div>`;
         list.querySelectorAll('[data-contact]').forEach(el => el.onclick = () => openContact(el.dataset.contact));
@@ -6631,10 +6731,12 @@ function renderChat() {
             await autoRefreshContactInjection(currentContactId);
             renderChat();
             renderContacts($('pkmn-contact-search')?.value || '');
+            renderWx2Chats();
         } catch (e) {
             typing.remove();
             chat.push({role:'assistant', content:'消息发送失败：'+(e.message||e), time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
             renderChat();
+            renderWx2Chats();
         } finally {
             contactSending = false;
         }
@@ -6815,6 +6917,7 @@ function renderChat() {
             saveContactConfig();
             showToast('✓ 联系人设置已保存');
             renderContacts();
+            renderWx2Chats();
             $('pkmn-chat-title').textContent = contactDisplayName(c);
             renderContactPersonSettings();
         };
@@ -6843,6 +6946,7 @@ function renderChat() {
                 applyContactInjectionToMainAI();
             } catch (_) {}
             renderContacts();
+            renderWx2Chats();
             openView('contacts');
             showToast(`✓ 已删除联系人：${name}`);
         };
@@ -6998,6 +7102,7 @@ function renderChat() {
             config.contactChats[id] = [];
             saveContactConfig();
             renderContacts();
+            renderWx2Chats();
             hideContactAddProgress();
             showToast(`已添加联系人：${name}`);
         } catch (e) {
@@ -7521,6 +7626,9 @@ function renderChat() {
         // 宝物（多世代官方价）
         '星星沙子':500,'星星碎片':4900,'珍珠':1400,'大珍珠':3750,'金珠':7500
     };
+    // v0.17.5：52Poké 全量購入价固化（朱紫优先；朱紫无价取其他世代最高有价世代）
+    // 键=道具中文名；值>0=可购購入价（网站价），值=0=全世代非卖品（归入怪力卡专区，不可下单）
+    const DEVON_WIKI_ITEM={"Bステンレスボトル":1500,"Rステンレスボトル":1500,"Yステンレスボトル":1500,"あおいはたピック":120,"あおぞらおはなピック":1000,"あおチェッククロス":3000,"あおボールピック":200,"あかいはたピック":120,"あかチェッククロス":3000,"あかボールピック":200,"あさやけおはなピック":1000,"うらめしクロス":4000,"おいわいはなびピック":1600,"かいじゅうクロス":2000,"きいろチェッククロス":3000,"くさむらモノクロス":0,"けいとボール":1000,"しょうぶクロス":4000,"たてストライプカップ":800,"はいたつぶつ２":0,"はいたつぶつ３":0,"ふるいポエム１０":0,"ふるいポエム１１":0,"ふるいポエム１２":0,"ふるいポエム１３":0,"ふるいポエム１４":0,"ふるいポエム１５":0,"ふるいポエム１６":0,"ふるいポエム１７":0,"ふるいポエム１８":0,"ふるいポエム１９":0,"ふるいポエム２":0,"ふるいポエム２０":0,"ふるいポエム３":0,"ふるいポエム４":0,"ふるいポエム５":0,"ふるいポエム６":0,"ふるいポエム７":0,"ふるいポエム８":0,"ふるいポエム９":0,"みずたまカップ":800,"みずたまクロス":1500,"みずたまボトル":1000,"みどりボールピック":200,"ゆうしゃのけんピック":2000,"ゆうやけおはなピック":1000,"よこストライプカップ":800,"イエローカップ":1500,"イエロークロス":5000,"イエロープレート":500,"イエローボトル":2000,"イーブイカップ":2000,"オレンジプレート":500,"クリティカッター":1000,"グリーンプレート":0,"ゲーミングボール":2000,"コレクレーのコイン":800,"ゴールドチタンカップ":15000,"ゴールドチタンボトル":30000,"ゴールドピック":400,"シルバーチタンカップ":10000,"シルバーチタンボトル":20000,"シルバーピック":40,"スクールカップ":0,"スクールクロス":0,"スクールボトル":0,"スクールボール":0,"ストライプクロス":1500,"ストライプボトル":1000,"ダイヤカップ":800,"ダイヤクロス":1500,"ダイヤボトル":1000,"ニコブイピック":1200,"ネイチャークロス":2000,"バランスボール":2000,"パチピカピック":1200,"パラソルピック":800,"パープルクロス":1000,"ピカチュウカップ":2000,"ピカピカピック":480,"ピンクカップ":1500,"ピンククロス":5000,"ピンクボトル":2000,"ファイヤーカップ":800,"ファンシークロス":2000,"フラワーカップ":800,"ブイブイピック":480,"ブルーカップ":1500,"ブルークロス":5000,"ブループレート":500,"ブルーベリークロス":0,"ブルーベリーチェア":0,"ブルーボトル":2000,"ブロンズチタンカップ":5000,"ブロンズチタンボトル":10000,"ベージュクロス":1000,"ホワイトプレート":500,"マジカルスターピック":600,"マジカルハートピック":600,"マリルボール":2000,"ミントクロス":1000,"メラメラピック":0,"ヤドンカップ":0,"レッドプレート":500,"一般太晶碎块":2000,"一般宝石":15000,"一般Ｚ":0,"一边的耳环":0,"七夕青鸟进化石":100000,"七彩通行船券":0,"万灵药":400,"万能伞":15000,"万能粉":300,"三岛通行船券":0,"上锁的容器":0,"不变之石":3000,"不融冰":3000,"丝绸围巾":3000,"丰缘的粗盐":0,"丸子珍珠":40000,"久久肥":400,"乌贼王进化石":0,"乐天薄荷":20000,"乐芭果":80,"乐队的签名":0,"亚克诺姆之牙":0,"亚开果":80,"亲密碰碰":0,"仓库钥匙":0,"他人的遗失物":0,"代币盒":0,"伊利马的一般Ｚ":0,"伊布邮件":0,"伊布Ｚ":0,"优惠碰碰":0,"会员卡":0,"传说石板":0,"传说笔记１":0,"伤药":200,"似珍石":0,"伽勒豆蔻手环":3000,"伽勒豆蔻枝":0,"伽勒豆蔻花圈":3000,"体力之羽":300,"体力粘糕":0,"佛柑果":80,"健康护符１":500,"健康护符２":500,"健康护符３":500,"健康护符４":500,"健康护符５":500,"元气根":1200,"元气粉":500,"元气糖果":0,"元气糖果L":0,"元气糖果XL":0,"充电电池":5000,"先制之爪":8000,"先机球":1000,"光之石":3000,"光之黏土":20000,"光明石":0,"光滑泥球":0,"光粉":30000,"光苔":5000,"光辉石":0,"光辉花瓣":0,"兌換券":0,"兑换券１":0,"兑换券２":0,"兑换券３":0,"全复药":3000,"全息影像通讯器":0,"全满药":2500,"公园球":0,"兰紫色花蜜":300,"兰萨果":80,"关都石板":0,"具甲武者进化石":0,"内敛薄荷":20000,"冒险笔记":0,"冰之宝石":0,"冰之石":3000,"冰冷岩石":8000,"冰冻卡带":0,"冰冻的果实":0,"冰太晶碎块":2000,"冰柱石板":1000,"冰萝卜":0,"冰雪存储碟":0,"冰鬼护进化石":0,"冰Ｚ":0,"冲浪邮件":50,"冷静薄荷":20000,"净空石板":0,"净空粘糕":0,"凡作茶碗":0,"凤梨片":250,"凯罗斯进化石":100000,"凰梨果":0,"凸凸头盔":50000,"列阵兵进化石":0,"初次邮件":50,"利木果":80,"刺耳果":80,"刺角果":0,"剑舞菇":0,"剧毒宝珠":15000,"剧毒石板":1000,"力量头带":8000,"力量强化":1000,"力量护腕":10000,"力量护踝":10000,"力量束带":10000,"力量糖果":0,"力量糖果L":0,"力量糖果XL":0,"力量腰带":10000,"力量负重":10000,"力量镜":10000,"加油碰碰":0,"劲劲肥":0,"劲爽汽水":300,"勇敢薄荷":20000,"勾魂眼进化石":100000,"勿花果":80,"包裹":0,"化妆包":0,"化石海兽":0,"化石翼龙进化石":100000,"化石鱼":0,"化石鸟":0,"化石龙":0,"匿声喷雾":0,"千香果":80,"升级数据":40000,"华丽大赛参加证":0,"南国贝壳":0,"博士的信":0,"博士的面罩":0,"博识眼镜":8000,"卡比兽Ｚ":0,"卡洛斯勋章":0,"卡璞Ｚ":0,"即时通讯器":0,"即食咖喱":950,"即食肉排":150,"即食面":150,"厉害中药":0,"厉害伤药":1500,"厉害密阿雷格雷派饼":0,"厉害耳塞":0,"厉害钓竿":0,"厚底靴":20000,"友友球":0,"双人票":0,"双倍腌菜":0,"发电厂通行证":0,"发电厂钥匙":0,"变身邮件":0,"古代之壶":0,"古代手镯":0,"古代护符":0,"古代王冠":0,"古代石像":0,"古代金币":0,"古代铜币":0,"古代银币":0,"古老日记":0,"古老诗文１":0,"古航海图":0,"可爱邮件":50,"可疑补丁":60000,"可达鸭喷壶":0,"叶之石":3000,"吃剩的东西":20000,"吃惊肥":0,"吉利拳":0,"同步器":0,"后攻之尾":20000,"吐司面包":150,"向尾喵的尾巴":15000,"吼吼鲸喷壶":0,"呆壳兽进化石":100000,"命中强化":1000,"咒术之铠":3000,"咖喱粉":450,"哈密果":80,"哞哞乳酪":2200,"哞哞鲜奶":600,"喜爱邮件":50,"喷火驼进化石":100000,"喷火龙进化石Ｘ":100000,"喷火龙进化石Ｙ":100000,"嘉珍果":80,"噼里啪啦糖果":0,"回复口袋":0,"回复邮件":50,"固执薄荷":20000,"圆庆票":0,"圆形护符":0,"土豆沙拉":110,"圣灰":0,"地下钥匙":0,"地面太晶碎块":2000,"地面宝石":0,"地面Ｚ":0,"坚坚矿":200,"城都石板":0,"城镇地图":0,"基因之楔":0,"基因石板":0,"基格尔德多面体":0,"基格尔德进化石":0,"墨莓果":600,"声弹":500,"声音记录器":0,"复古邮件":50,"复合金属":0,"复活草":2800,"多重强化":0,"大力鳄进化石":0,"大嘴娃进化石":100000,"大地存储碟":0,"大地石板":1000,"大地膜":15000,"大师球":0,"大师黄油":0,"大木的信":0,"大根茎":10000,"大比鸟进化石":100000,"大海石板":0,"大珍珠":16000,"大白宝玉":0,"大白金宝玉":0,"大竹笋":6000,"大竺葵进化石":0,"大胆薄荷":20000,"大葱":0,"大蘑菇":10000,"大金刚宝玉":0,"大针蜂进化石":100000,"大钢蛇进化石":70000,"大陆石板":0,"大食花进化石":0,"大马拉萨达":350,"天界之笛":0,"天真薄荷":20000,"天空石板":0,"天空邮件":50,"天蓝玉石":0,"太晶珠":0,"太阳之笛":0,"头巾混混进化石":0,"头盖化石":7000,"头领凭证":0,"奇异卡片":0,"奇异果片":180,"奇异球":0,"奇异薰香":9600,"奇秘果":80,"奇迹的果实":0,"奇迹种子":3000,"奇迹邮件":0,"奈克洛索尔合体器":0,"奈克洛露奈合体器":0,"奋斗岩":0,"奋斗沙":0,"奋斗石":0,"奋斗砾":0,"奖牌盒":0,"奥利瓦油":0,"奶油芝士":280,"好中药":0,"好伤药":700,"好胜毛蟹进化石":0,"好钓竿":0,"妖怪石板":1000,"妖火红狐进化石":0,"妖精之羽":3000,"妖精太晶碎块":2000,"妖精存储碟":0,"妖精宝石":0,"妖精石板":1000,"妖精Ｚ":0,"妙蛙花进化石":10000,"姆克鹰进化石":0,"娑罗沙布蕾":350,"子茄果":0,"学习装置":0,"孵蛋碰碰":0,"守护糖果":0,"守护糖果L":0,"守护糖果XL":0,"安全护符１":3000,"安全护符２":3000,"安全护符３":3000,"安全护符４":3000,"安全护符５":3000,"安抚之铃":5000,"定期月票":0,"宝可尾草":1000,"宝可方块套装":0,"宝可方块盒":0,"宝可梦之笛":0,"宝可梦木娃娃":0,"宝可梦的蛋兑换券":0,"宝可梦盒":0,"宝物袋":0,"宝石海星进化石":0,"宝芬盒":0,"客房服务":20000,"家乡玛芬":0,"密勒顿的球":0,"密探斗篷":20000,"密阿雷格雷派饼":350,"密阿雷黄油":0,"对战口袋":0,"对战搜寻器":0,"对战记录器":0,"对焦镜":10000,"小小花束":0,"小番茄块":120,"小石头":0,"小竹笋":1500,"小蘑菇":1000,"小辣椒":220,"小黄瓜片":130,"山之镇宝":0,"岩石太晶碎块":2000,"岩石存储碟":0,"岩石宝石":0,"岩石石板":1000,"岩石薰香":9600,"岩石Ｚ":0,"岳竹果":0,"巢穴球":1000,"工艺套组":0,"巧可果":80,"巨大金珠":80000,"巨沼怪进化石":1500,"巨牙鲨进化石":100000,"巨重球":0,"巨金怪进化石":100000,"巨钳螳螂进化石":50000,"差不多娃娃进化石":100000,"巴哈罐头":950,"布里卡隆进化石":0,"帅哥券":0,"席多蓝恩进化石":0,"常见石":0,"幸运草糖饰":0,"幸运薰香":11000,"幸运蛋":3000,"幻之桃桃果":0,"幽尾玄鱼丸":0,"幽灵太晶碎块":2000,"幽灵存储碟":0,"幽灵宝石":0,"幽灵Ｚ":0,"广角镜":20000,"庆祝之铠":3000,"异奇果":80,"异次元黄油":0,"引导石板":0,"引虫香水":400,"弯曲的汤匙":3000,"弱点保险":50000,"弹子萁":140,"弹珠":0,"强制锻炼器":0,"强力香草":30000,"强化口袋":0,"彗星碎片":50000,"彩嵌邮件":0,"彩色螺丝":0,"彩虹石板":0,"影分菇":0,"影子邮件":50,"得文侦测镜":0,"得文潜水装备":0,"得文的物品":0,"心之水滴":0,"心之石板":0,"心之鳞片":10000,"心形甜点":0,"心灵糖果":0,"心灵糖果L":0,"心灵糖果XL":0,"心灵香草":10000,"快龙进化石":0,"怕寂寞薄荷":20000,"急冻鸟的点心":0,"急躁薄荷":20000,"恰雷姆进化石":50000,"恶之宝石":0,"恶太晶碎块":2000,"恶颜石板":1000,"恶Ｚ":0,"悠闲薄荷":20000,"悠闲薰香":9600,"惊声藻":0,"惩戒之壶":0,"感谢邮件":50,"愤怒馒头":1000,"慎重薄荷":20000,"慢吞吞薄荷":20000,"战斗存储碟":0,"戟脊龙进化石":0,"房间钥匙":0,"扁樱果":80,"打空保险":30000,"折价券":0,"护具":10000,"护符金币":30000,"抵抗之羽":300,"抵抗粘糕":0,"拉帝亚斯进化石":0,"拉帝欧斯进化石":0,"招式学习器盒":0,"拳击手套":15000,"拳头石板":1000,"挖洞钻":0,"捕捉口袋":0,"捕捉碰碰":0,"捕网球":1000,"换装箱":0,"捷拉奥拉进化石":0,"探宝器":0,"探测器":0,"探险套装":0,"探险心得":0,"推荐函":0,"推荐邮件":50,"摔角鹰人进化石":0,"攻击增强剂":10000,"故勒顿的球":0,"敏捷糖果":0,"敏捷糖果L":0,"敏捷糖果XL":0,"教学电视":0,"文柚果":80,"新月之羽":0,"无限之笛":0,"无限船票":0,"无青果":0,"日之石":3000,"时之镇宝":0,"时尚名人卡":0,"旺旺谷":200,"星星沙子":6000,"星星碎片":24000,"星星糖饰":0,"星晶太晶碎块":0,"星桃果":80,"晶光花进化石":0,"晶晶蜜":200,"晶耀护符":0,"智力之羽":300,"智力粘糕":0,"智皮卡Ｚ":0,"暗之石":3000,"暴雪王进化石":50000,"暴雪邮件":50,"暴风石板":0,"暴飞龙进化石":100000,"暴鲤龙进化石":100000,"替身护符１":3000,"替身护符２":3000,"替身护符３":3000,"替身护符４":3000,"替身护符５":3000,"月之石":3000,"月亮之笛":0,"月亮球":0,"朋友手册":0,"木子果":80,"木材":0,"木炭":3000,"木箱":0,"木纹邮件":50,"木雕王冠":0,"未知图腾笔记":0,"朱之书":0,"朱红色宝珠":10000,"朱红色花蜜":300,"机变骰子":20000,"机械邮件":50,"机械零件":0,"杏仔果":80,"材料袋":0,"杖尾鳞甲龙Ｚ":0,"杰作茶碗":0,"杰尼龟喷壶":0,"松掉的弹簧":0,"极光船票":0,"极巨甜蜜":0,"极巨糖果":0,"极巨腕带":0,"极巨菇菇":0,"极矿石":0,"果汁牛奶":400,"枝荔果":80,"柔软沙子":3000,"柿仔果":80,"标靶":10000,"树叶信":0,"树果汁":1500,"树果种植盆":0,"树果袋":0,"根状化石":7000,"格斗太晶碎块":2000,"格斗宝石":0,"格斗Ｚ":0,"桃桃果":80,"桃粉色花蜜":300,"桐木箱":0,"桔色徽章":0,"桥梁邮件Ｃ":50,"桥梁邮件Ｈ":50,"桥梁邮件Ｓ":50,"桥梁邮件Ｖ":50,"桥梁邮件Ｗ":50,"梦境球":0,"梦境邮件":50,"梦幻邮件":0,"梦幻Ｚ":0,"森之羊羹":500,"森之镇宝":0,"棱瓜果":80,"椰奶":950,"椰木果":0,"楔石":2100,"榴石果":80,"模仿香草":30000,"樱子果":80,"橄榄油":300,"橘子酱":260,"橙橙果":80,"橙色花瓣":0,"橙色邮件":50,"檬柠果":0,"毁坏石板":0,"毒之宝石":0,"毒太晶碎块":2000,"毒存储碟":0,"毒藻龙进化石":0,"毒Ｚ":0,"比巴果":80,"毛崖蟹棒":500,"气势头带":10000,"气势披带":50000,"气球":15000,"水之宝石":0,"水之石":3000,"水井面具":0,"水太晶碎块":2000,"水晶灯火灵进化石":0,"水流卡带":0,"水滴石板":1000,"水煮蛋":2200,"水煮蛋片":80,"水玉色之带":0,"水箭龟进化石":100000,"水色邮件":50,"水蓝邮件":50,"水边香草":950,"水Ｚ":0,"永恒之冰":0,"汉堡排":380,"沉重球":0,"沙奈朵进化石":100000,"沙沙岩石":8000,"沙滩萝卜":0,"沙鳞果":80,"治愈球":300,"沼之镇宝":0,"泡沫奶油":3000,"波士可多拉进化石":100000,"波涛邮件":50,"泥丸":0,"泥偶巨人进化石":0,"泥炭块":10000,"洁净之符":5000,"洁净薰香":9600,"洋葱片":130,"洛托姆型录":0,"洛托姆自行车":0,"洛拍棒":0,"洛玫果":80,"活力块":5000,"活力小树枝":0,"活力碎片":2000,"活力蕾":400,"浅滩海盐":20,"浅滩贝壳":20,"浑圆之石":2000,"海声铃铛":0,"海岱的钱包":0,"海洋装":0,"海潮薰香":9600,"海边的玻璃":0,"消除麻痹的果实":0,"涟漪薰香":9600,"淘气薄荷":20000,"深海之牙":1000,"深海鳞片":2000,"深灰米果":500,"清净坠饰":30000,"清水存储碟":0,"温和薄荷":20000,"温顺薄荷":20000,"港口邮件":50,"湿湿肥":400,"滚滚豆":200,"演出礼服":0,"演出礼裙":0,"潜水球":1000,"潮湿岩石":8000,"火之宝石":0,"火之石":3000,"火太晶碎块":2000,"火山镇宝":0,"火山镇石":0,"火灶面具":0,"火炎狮进化石":0,"火焰卡带":0,"火焰存储碟":0,"火焰宝珠":15000,"火焰邮件":50,"火焰鸡进化石":1500,"火球石板":1000,"火腿片":170,"火Ｚ":0,"灯浆果":80,"灵界之布":0,"灼伤药":200,"炎武王进化石":0,"炸物拼盘":150,"炸鱼片":360,"点数卡":0,"炽热岩石":8000,"炽焰咆哮虎Ｚ":0,"烈咬陆鲨进化石":70000,"烈咬陆鲨进化石Ｚ":0,"烘蛋":250,"烛木果":80,"烟弹":400,"烟熏尾巴":2200,"烟熏鱼片":330,"烟芋":0,"烟雾球":15000,"烧烤的果实":0,"热带邮件":0,"热椒果":0,"焦点镜":15000,"煎培根":150,"煎辣香肠":150,"熔岩增幅器":0,"熔岩标志":0,"熔岩装":0,"爪子化石":7000,"爱心糖饰":0,"爽喉喷雾":20000,"爽朗薄荷":20000,"牛油果":180,"物品箱":0,"牵绊缰绳":0,"特性护具":20000,"特性胶囊":100000,"特性膏药":500000,"特攻增强剂":10000,"特攻强化":1000,"特选苹果":2200,"特防增强剂":10000,"特防强化":2000,"狙射树枭Ｚ":0,"狠辣椒进化石":0,"狩猎球":0,"玉石":0,"玉虫石板":1000,"玉黍果":0,"王冠车票":0,"王者之证":10000,"玛夏多Ｚ":0,"玛机雅娜进化石":0,"现形镜":0,"玳萝的遗忘物":0,"珍珠":4000,"珠宝邮件":0,"班基拉斯进化石":100000,"球果果":0,"球果盒":0,"球根":5000,"瓜西果":0,"甜松露":0,"甜甜苹果":2200,"甜甜蜜":900,"甜蜜球":0,"甜蜜邮件":50,"生命宝珠":50000,"生火腿":200,"生花果":0,"生菜":90,"由克希之爪":0,"甲壳化石":7000,"甲贺忍蛙进化石":0,"电之宝石":0,"电力增幅器":0,"电太晶碎块":2000,"电子存储碟":0,"电梯钥匙":0,"电气球":3000,"电气种子":20000,"电龙进化石":100000,"电Ｚ":0,"留下的精灵球":0,"番茄片":100,"番茄酱":110,"番荔果":80,"疗草":0,"白玉宝珠":10000,"白球果":200,"白色玻璃哨":0,"白色香草":20000,"白色鬃毛":0,"白金宝珠":10000,"白银喷雾":700,"白银香水":700,"皇叶":0,"皮卡丘Ｚ":0,"皮可西进化石":0,"皮皮玩偶":300,"盐":90,"盔甲鸟进化石":0,"相册":0,"相遇碰碰":0,"盾甲化石":7000,"瞬发之羽":300,"瞬发粘糕":0,"知识糖果":0,"知识糖果L":0,"知识糖果XL":0,"石板碎块":0,"矿诱团":400,"研究所的钥匙卡Ａ":0,"研究所的钥匙卡Ｂ":0,"研究所的钥匙卡Ｃ":0,"研究所的钥匙卡Ｍ":0,"研究所的钥匙卡Ｘ":0,"砖块邮件":0,"破坏基因":0,"破损日记":0,"破旧钓竿":0,"破裂的茶壶":1600,"础石面具":0,"硕果肥":0,"硬石头":3000,"碎瓦片":0,"碎铁":0,"碧之时尚名人卡":0,"碧绿石板":1000,"碧草面具":0,"磁浮列车自由票":0,"磁铁":3000,"祝庆玛芬":0,"神奇的果实":0,"神奇石板":1000,"神奇糖果":10000,"神奇蛋":0,"神石":0,"神秘摆设":3000,"神秘水滴":3000,"神秘船票":0,"神阖之笛":0,"福禄果":80,"离洞绳":1000,"秘传之药":0,"秘传：咸味料":0,"秘传：甜味料":0,"秘传：苦味料":0,"秘传：辣味料":0,"秘传：酸味料":0,"秘密琥珀":30000,"秘密钥匙":0,"究极奈克洛Ｚ":0,"究极球":1000,"究极黄油":0,"空之镇宝":0,"空间邮件":50,"突击背心":50000,"竞赛球":0,"等离子卡":0,"等级球":0,"签名玩偶":0,"米立龙进化石":0,"米饭":280,"粉末瓶":0,"粉球果":200,"粉笔石":0,"粉红头巾":0,"粉红色丝带":0,"粉红色卡娜莉玩偶":0,"粉红花瓣":0,"粗枝大葱":2200,"粗绞肉香肠":400,"粗骨头":0,"粘粘肥":400,"精灵球":200,"精神之羽":300,"精神存储碟":0,"精神种子":20000,"精神粘糕":0,"精通种子":0,"糖果罐":0,"糯糯菇":200,"索妮亚的书":0,"索尔迦雷欧Ｚ":0,"紧绑束带":20000,"紧缠钩爪":10000,"紫之书":0,"紫色花瓣":0,"红宝石":0,"红椒片":240,"红洋葱":230,"红牌":30000,"红球果":200,"红线":20000,"红色卡娜莉玩偶":0,"红色头巾":0,"红色玻璃哨":0,"红色碎片":3000,"红色花瓣":0,"红色锁链":0,"红色鳞片":0,"纪念戒指":0,"纪念球":20,"细骨":950,"经验护符":0,"经验碰碰":0,"经验糖果Ｌ":3000,"经验糖果Ｍ":1000,"经验糖果Ｓ":240,"经验糖果ＸＬ":10000,"经验糖果ＸＳ":20,"结晶碎片":0,"给大吾的信":0,"绽放邮件":50,"绿球果":200,"绿色卡娜莉玩偶":0,"绿色头巾":0,"绿色碎片":3000,"绿色花瓣":0,"缺损的茶壶":38000,"罗勒":280,"罗子果":80,"美丽之羽":2000,"美丽空壳":20000,"美丽鳞片":0,"美味之水":200,"美味垃圾":0,"美味尾巴":9800,"羽毛化石":7000,"老翁龙进化石":0,"耿鬼进化石":50000,"联系绳":8000,"肌力之羽":300,"肌力粘糕":0,"肖像邮件":50,"胆小薄荷":20000,"胆怯球":5000,"背盖化石":7000,"胡地进化石":100000,"胡椒":100,"能力防守":1500,"脏围巾":0,"脏手帕":0,"腐朽的剑":0,"腐朽的盾":0,"腰木果":80,"自大薄荷":20000,"自由船票":0,"自行车":0,"船票":0,"艾姆利多之翅":0,"艾路雷朵进化石":100000,"节拍器":15000,"芒芒果":80,"芝士片":120,"芥末酱":330,"芭亚果":80,"花叶蒂进化石":0,"花啤果":300,"花朵糖饰":0,"花朵薰香":9600,"花案邮件":50,"花生酱":300,"芳香蘑菇":30000,"苦凉果":0,"苦涩的果实":0,"苹果片":130,"苹野果":80,"茄番果":80,"茶":0,"茸丹果":0,"草之宝石":0,"草太晶碎块":2000,"草绿色宝珠":0,"草莓片":140,"草莓糖饰":0,"草蚕果":80,"草Ｚ":0,"莓果酱":120,"莓榴果":80,"莓莓果":80,"莲叶童子喷壶":0,"莲蒲果":80,"菇诱团":400,"萄葡果":80,"萝卜种子":0,"葛拉西蒂亚花":0,"葱首果":0,"葵秋果":0,"蒂安希进化石":0,"蒜蒜果":0,"蓝之光碟":0,"蓝之时尚名人卡":0,"蓝卡":0,"蓝天石板":1000,"蓝天邮件":0,"蓝宝石":0,"蓝球果":200,"蓝色卡娜莉玩偶":0,"蓝色头巾":0,"蓝色玻璃哨":0,"蓝色碎片":3000,"蓝色花瓣":0,"蔓莓果":600,"蕉香果":0,"薄荷的果实":0,"薄雾种子":20000,"藻根果":80,"虫之宝石":0,"虫太晶碎块":2000,"虫子存储碟":0,"虫Ｚ":0,"虹色之羽":0,"虹色之花":0,"蛀球果":0,"蛋黄酱":120,"蜈蚣王进化石":0,"蜜汁苹果":500,"蜜诱团":400,"蜥蜴王进化石":1500,"蝴蝶结糖饰":0,"衣物箱":0,"袋兽进化石":70000,"袋装土豆":400,"袋装果实":2200,"袋装蔬菜":400,"袋装蕈菇":400,"西尔佛检视镜":0,"西梨果":0,"西狮海壬Ｚ":0,"要害攻击":1000,"要害松露":0,"规则书":0,"觉醒之石":3000,"解冻药":200,"解毒的果实":0,"解毒药":200,"解眠药":200,"解麻药":200,"计时球":1000,"认真薄荷":20000,"讲究围巾":100000,"讲究头带":100000,"讲究眼镜":100000,"讲究粽":0,"许可证":0,"许愿星块":0,"证章护符":0,"诅咒之符":3000,"诅咒娃娃进化石":100000,"询问邮件":50,"诱团原料":0,"诱饵球":0,"谜之水晶":0,"谜之碎片Ｌ":0,"谜之碎片Ｓ":0,"谜拟ＱＺ":0,"谜芝果":80,"谷诱团":400,"豆子罐头":400,"豆瓣菜":270,"豆腐":260,"豆诱团":400,"豪华球":3000,"贝壳之铃":20000,"贝壳化石":7000,"贴纸盒":0,"贴纸袋":0,"贵重球":0,"贵重骨头":10000,"赫拉克罗斯进化石":100000,"起源球":0,"起源矿石":0,"超效肥":0,"超极粉":0,"超梦进化石Ｘ":100000,"超梦进化石Ｙ":100000,"超级吊坠":0,"超级坠饰":0,"超级头冠":0,"超级手套":0,"超级手镯":0,"超级护腕":0,"超级环":0,"超级球":600,"超级眼镜":0,"超级碎片":0,"超级脚镯":0,"超级船锚":0,"超级领针":0,"超级黄油":0,"超能力太晶碎块":2000,"超能力宝石":0,"超能力Ｚ":0,"超能妙喵进化石":0,"超重球":320,"越野自行车":0,"路卡利欧进化石":100000,"路卡利欧进化石Ｚ":0,"轮滑鞋":0,"轻石":10000,"辣根":410,"辣酱":320,"达人带":30000,"达克莱伊进化石":0,"进化奇石":50000,"进攻药丸":0,"逃脱按键":30000,"透明铃铛":0,"通心粉":150,"通通果":80,"速度增强剂":10000,"速度强化":1000,"速度球":0,"速度粉":0,"速速肥":400,"遗失物":0,"遗忘物":0,"避难背包":30000,"邀请邮件":50,"部位护具":15000,"配送物品１":0,"酸奶":140,"酸酸苹果":2200,"酸黄瓜片":90,"醋":300,"释出之玉":0,"释陀果":80,"重复球":1000,"重要信件":0,"野莓糖饰":0,"野餐组合":0,"金假牙":0,"金刚宝珠":10000,"金南果":0,"金属粉":0,"金属膜":3000,"金枕果":0,"金珠":20000,"金色凰梨果":0,"金色卡娜莉玩偶":0,"金色叶子":0,"金色王冠":60000,"金色蔓莓果":0,"金色蕉香果":0,"金黄色花蜜":300,"釜炎仙贝":500,"钓竿":0,"钢之宝石":0,"钢太晶碎块":2000,"钢铁存储碟":0,"钢铁石板":1000,"钢铁邮件":50,"钢Ｚ":0,"钥匙卡":0,"钥石":0,"铁壁木耳":0,"铃薯果":0,"铠甲矿石":0,"铠甲车票":0,"银河队钥匙":0,"银粉":3000,"银色之羽":0,"银色凰梨果":0,"银色叶子":0,"银色王冠":20000,"银色蔓莓果":0,"银色蕉香果":0,"锐利之爪":15000,"锐利之牙":10000,"锐利鸟嘴":3000,"长棍面包":0,"长耳兔进化石":100000,"闪亮邮件":0,"闪电卡带":0,"闪耀护符":0,"闪避强化":0,"防守药丸":0,"防尘护目镜":20000,"防御增强剂":10000,"防御强化":2000,"防晃护符":0,"阿克罗玛机器":0,"阿勃梭鲁进化石":100000,"阿勃梭鲁进化石Ｚ":0,"阿罗雷Ｚ":0,"附着针":10000,"陈旧的信":0,"除虫喷雾":400,"除虫草":0,"陨石碎片":0,"隐形眼镜盒":0,"隐身碰碰":0,"隧道邮件":50,"集灰袋":0,"雪丸":0,"雪之镇宝":0,"雪妖女进化石":0,"雪球":5000,"零余果":80,"零花钱碰碰":0,"雷丘进化石Ｘ":0,"雷丘进化石Ｙ":0,"雷之石":3000,"雷电兽进化石":100000,"雷电石板":1000,"雾莲果":80,"露奈雅拉Ｚ":0,"露营组合":0,"霹霹果":80,"青椒片":230,"青草存储碟":0,"青草种子":20000,"青草邮件":50,"青豌果":0,"靛莓果":0,"靛蓝色宝珠":10000,"面条":280,"音符邮件":0,"音速自行车":0,"顽皮薄荷":20000,"颚之化石":20000,"颠倒烧":0,"风铃铃进化石":0,"飞云冰淇淋":200,"飞梭球":0,"飞羽球":140,"飞翔存储碟":0,"飞翼球":340,"飞行太晶碎块":2000,"飞行宝石":0,"飞行Ｚ":0,"饰品盒":0,"饱伯罐头":950,"饱腹薰香":9600,"香料组合":400,"香罗果":80,"香草香肠":400,"香蕉片":80,"香袋":3000,"马志士的签名":0,"马虎薄荷":20000,"驱劲能量":0,"骑行装置":0,"高级球":800,"高级黄油":0,"鬃岩狼人Ｚ":0,"鲜奶油":200,"鲜鲜奶油":950,"鳍之化石":20000,"麻麻鳗鱼王进化石":0,"黄椒片":240,"黄油":250,"黄球果":200,"黄色头巾":0,"黄色玻璃哨":0,"黄色碎片":3000,"黄色花瓣":0,"黄芥末酱":130,"黄金喷雾":900,"黄金的果实":0,"黄金香水":900,"黏丸":800,"黑奇石":0,"黑带":3000,"黑暗存储碟":0,"黑暗球":1000,"黑暗石":0,"黑玉石":0,"黑球果":200,"黑色污泥":10000,"黑色玻璃哨":0,"黑色眼镜":3000,"黑色铁球":20000,"黑色鬃毛":0,"黑萝卜":0,"黑香料":0,"黑鲁加进化石":100000,"龙之宝石":0,"龙之牙":3000,"龙之石板":1000,"龙之骨":0,"龙之鳞片":4000,"龙太晶碎块":2000,"龙头地鼠进化石":0,"龙存储碟":0,"龙火果":80,"龙睛果":80,"龙Ｚ":0,"龟足巨铠进化石":0,"１号客房的钥匙":0,"２号客房的钥匙":0,"２０２号客房的钥匙":0,"４号客房的钥匙":0,"６号客房的钥匙":0,"ＤＳ播放器":0,"ＧＢ播放器":0,"ＧＯＧＯ护目镜":0,"ＧＳ球":0,"ＨＰ回复碰碰":0,"ＨＰ增强剂":10000,"ＰＰ单项全补剂":2000,"ＰＰ单项小补剂":1200,"ＰＰ回复碰碰":0,"ＰＰ多项全补剂":4500,"ＰＰ多项小补剂":3000,"ＰＰ提升剂":10000,"ＰＰ极限提升剂":10000,"ＰＰ草":0,"ＴＭＶ自由票":0,"Ｚ强力手环":0,"Ｚ手环":0};
     // 按分类给出参考估值（无官方价时的兜底）
     function devonEstimatePrice(cat,name){
         const n=String(name||'');
@@ -7572,9 +7680,18 @@ function renderChat() {
                 return 2000;
         }
     }
-    // 命中官方价表或按分类估值；priceSource: 'official'=官方价 / 'ref'=参考估值
+    // v0.17.5 价格优先级：已定价(策展兜底) > 52Poké 購入价(朱紫优先) > 官方价表 > 分类估值
+    // priceSource: 'official'=官方价 / 'wiki'=网站价(朱紫) / 'ref'=参考估值 / 'non-sellable'=非卖品(怪力卡)
     function devonAssignPrice(p){
-        if(p.price!=null)return p;
+        if(p.price!=null)return p; // 策展兜底价（手验正确）最高优先级，保护精选清单
+        if(p.name!=null){
+            const _wp=DEVON_WIKI_ITEM[p.name];
+            if(_wp!==undefined){ // 命中 52Poké 固化价
+                if(_wp>0){ p.price=_wp; p.priceSource='wiki'; }
+                else { p.price=null; p.priceSource='non-sellable'; p.tier=4; } // 非卖品 → 怪力卡专区
+                return p;
+            }
+        }
         const t=DEVON_PRICE_TABLE[p.name]??DEVON_PRICE_TABLE[p.en]??null;
         if(t){p.price=t;p.priceSource='official';return p;}
         p.price=devonEstimatePrice(p.cat||((p.cats&&p.cats[0])||'misc'),p.name);
@@ -7619,7 +7736,7 @@ function renderChat() {
         }
         const ownN=(devonState.mvu&&devonState.mvu.bag&&devonState.mvu.bag[p.name])?Number(devonState.mvu.bag[p.name].数量)||0:0; // v0.17.0 持有角标
         const ownTxt=ownN>0?`<i class="devon-own-badge">持有 ×${ownN}</i>`:'';
-        return `<article class="devon-product" data-devon-product="${esc(p.id)}"><div class="devon-product-pic">${devonPicHTML(p,'devon-item-img')}<em>${esc(devonCatName(p.cat))}</em>${ownTxt}</div><div class="devon-product-name">${esc(p.name)}</div><div class="devon-product-en">${esc(p.en||p.ja||'')}</div><div class="devon-product-bottom"><b>${devonMoney(p.price)}</b><button data-devon-add="${esc(p.id)}" aria-label="加入购物车" ${p.price==null?'disabled':''}>${p.price==null?'?':'＋'}</button></div></article>`;
+        return `<article class="devon-product" data-devon-product="${esc(p.id)}"><div class="devon-product-pic">${devonPicHTML(p,'devon-item-img')}<em>${esc(devonCatName(p.cat))}</em>${ownTxt}</div><div class="devon-product-name">${esc(p.name)}</div><div class="devon-product-en">${esc(p.en||p.ja||'')}</div><div class="devon-product-bottom"><b>${p.priceSource==='non-sellable'?'非卖品':devonMoney(p.price)}</b><button data-devon-add="${esc(p.id)}" aria-label="加入购物车" ${p.price==null?'disabled':''}>${p.price==null?'?':'＋'}</button></div></article>`;
     }
     function renderDevonShop(){
         renderDevonCategories();
@@ -7653,8 +7770,8 @@ function renderChat() {
         const cats=(p.cats||[p.cat]).map(c=>DEVON_CATEGORIES.find(x=>x[0]===c)?.[1]).filter(Boolean).join(' / ');
         const isEgg=p.cat==='nursery'; // v0.16.0 培育屋蛋：✨闪光版开关
         const shinyBtn=isEgg?`<button class="devon-shiny-toggle ${p.shiny?'devon-shiny-on':''}" id="devon-shiny-switch"><i>✨</i><span>闪光版${p.shiny?' · 已选':''}</span><small>${p.shiny?'点击切回普通版 · 价格×3':'点击选择闪光版 · 价格×3（封顶 1,000 万 ₽）'}</small></button>`:'';
-        const priceBadge=p.priceSource==='nursery'?'<span class="devon-price-badge devon-price-nursery">培育屋定价</span>':(p.priceSource==='ref'?'<span class="devon-price-badge">参考价</span>':(p.priceSource==='official'?'<span class="devon-price-badge devon-price-official">官方价</span>':''));
-        el.innerHTML=`<div class="devon-detail-card"><div class="devon-detail-pic">${devonPicHTML(p,'devon-item-img-lg')}</div><div class="devon-detail-tag">${esc(devonCatName(p.cat))}</div><h1>${esc(p.name)}</h1><div class="devon-detail-en">${esc(p.en||'')}</div><div class="devon-detail-price">${devonMoney(p.price)}${priceBadge}</div><p>${esc(p.desc||'神奇宝贝系列道具。')}</p><div class="devon-detail-meta"><span>${esc(cats||'道具')}</span>${isEgg?'<span>稀有度 · 怪力卡</span>':'<span>52Poké 数据</span>'}${p.ja?`<span>${esc(p.ja)}</span>`:''}</div>${shinyBtn}<div class="devon-buy-row"><button id="devon-detail-minus">−</button><b id="devon-detail-qty">${qty}</b><button id="devon-detail-plus">＋</button></div><button class="devon-buy" id="devon-detail-add" ${p.price==null?'disabled':''}>${p.price==null?'暂无购买价':'加入购物车'}</button><button class="devon-buy devon-buy-main" id="devon-detail-now" ${p.price==null?'disabled':''}>${p.price==null?'价格待核实':'立即购买'}</button>${p.source?`<a class="devon-source" href="${esc(p.source)}" target="_blank" rel="noopener noreferrer">查看52Poké道具资料</a>`:''}</div>`;
+        const priceBadge=p.priceSource==='nursery'?'<span class="devon-price-badge devon-price-nursery">培育屋定价</span>':(p.priceSource==='wiki'?'<span class="devon-price-badge devon-price-wiki">网站价</span>':(p.priceSource==='non-sellable'?'<span class="devon-price-badge devon-price-locked">怪力卡专供</span>':(p.priceSource==='ref'?'<span class="devon-price-badge">参考价</span>':(p.priceSource==='official'?'<span class="devon-price-badge devon-price-official">官方价</span>':''))));
+        el.innerHTML=`<div class="devon-detail-card"><div class="devon-detail-pic">${devonPicHTML(p,'devon-item-img-lg')}</div><div class="devon-detail-tag">${esc(devonCatName(p.cat))}</div><h1>${esc(p.name)}</h1><div class="devon-detail-en">${esc(p.en||'')}</div><div class="devon-detail-price">${devonMoney(p.price)}${priceBadge}</div><p>${esc(p.desc||'神奇宝贝系列道具。')}</p><div class="devon-detail-meta"><span>${esc(cats||'道具')}</span>${isEgg?'<span>稀有度 · 怪力卡</span>':'<span>52Poké 数据</span>'}${p.ja?`<span>${esc(p.ja)}</span>`:''}</div>${shinyBtn}<div class="devon-buy-row"><button id="devon-detail-minus">−</button><b id="devon-detail-qty">${qty}</b><button id="devon-detail-plus">＋</button></div><button class="devon-buy" id="devon-detail-add" ${p.price==null?'disabled':''}>${p.priceSource==='non-sellable'?'怪力卡专供':(p.price==null?'暂无购买价':'加入购物车')}</button><button class="devon-buy devon-buy-main" id="devon-detail-now" ${p.price==null?'disabled':''}>${p.priceSource==='non-sellable'?'非卖品':(p.price==null?'价格待核实':'立即购买')}</button>${p.source?`<a class="devon-source" href="${esc(p.source)}" target="_blank" rel="noopener noreferrer">查看52Poké道具资料</a>`:''}</div>`;
         if(isEgg)$('devon-shiny-switch').onclick=()=>openDevonDetail(p.shiny?p.shinyOf:(p.id+'-shiny'));
         $('devon-detail-minus').onclick=()=>{if((devonState.cart[id]||0)>0){devonState.cart[id]--;if(devonState.cart[id]<=0)delete devonState.cart[id];saveDevonStore();openDevonDetail(id);}};
         $('devon-detail-plus').onclick=()=>addDevonCart(id);
@@ -7751,7 +7868,7 @@ function renderChat() {
                 <div class="devon-set-info"><b>清空交易记录</b><p>删除全部待同步交易并清空注入，AI 不再收到本批交易提醒。</p></div>
                 <button class="devon-set-btn devon-set-danger" id="pkmn-devon-trade-clear">清空</button>
             </div>
-            <div class="devon-set-note">道具与图片数据来源：52Poké 百科《道具列表》《招式学习器》。价格策略：朱紫官方价 → 其他世代官方价 → 分类参考估值。</div>`;
+            <div class="devon-set-note">道具与图片数据来源：52Poké 百科《道具列表》《招式学习器》。价格策略（v0.17.5）：52Poké 購入价（朱紫优先）→ 官方价表 → 分类参考估值；全世代非卖品归入「怪力卡」专区，不可下单。</div>`;
         el.querySelectorAll('[data-devon-vip]').forEach(c=>c.onclick=()=>{
             const k=c.dataset.devonVip; if(!DEVON_TIERS[k]||devonState.membership===k)return;
             devonState.membership=k; saveDevonStore(); renderDevonSettings(); renderDevonShop();
@@ -7946,7 +8063,7 @@ function renderChat() {
     // ============================================================
 
     $('pkmn-open-devon-shop')?.addEventListener('click', () => { renderDevonShop(); openView('devonShop'); });
-    $('pkmn-open-contacts')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
+    $('pkmn-open-contacts')?.addEventListener('click', () => { wx2SwitchTab('chats'); renderContacts($('pkmn-contact-search')?.value || ''); openView('contacts'); });
     $('pkmn-contacts-back')?.addEventListener('click', () => openView('home'));
     $('pkmn-contacts-add')?.addEventListener('click', addContact);
     // v0.17.3 通讯录入口卡（微信 2026 风格）
@@ -7954,14 +8071,20 @@ function renderChat() {
     $('wx2-entry-settings')?.addEventListener('click', () => { renderContactSettings(); openView('contactSettings'); });
     ['wx2-entry-groups', 'wx2-entry-tags', 'wx2-entry-mp'].forEach(id => $(id)?.addEventListener('click', () => showToast('该功能正在筹备中，敬请期待')));
     $('pkmn-contact-search')?.addEventListener('input', e => renderContacts(e.target.value));
-    $('pkmn-chat-back')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
+    $('pkmn-chat-back')?.addEventListener('click', () => { wx2SwitchTab('chats'); openView('contacts'); });
     $('pkmn-chat-send')?.addEventListener('click', sendContactMessage);
     $('pkmn-chat-input')?.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendContactMessage(); }
     });
-    $('pkmn-contact-settings')?.addEventListener('click', () => { renderContactSettings(); openView('contactSettings'); });
+    // v0.17.4 微信三栏 tab + 初始渲染（设置入口移至「我」页，由 renderWx2Me 动态绑定）
+    $('wx2-tab-chats')?.addEventListener('click', () => wx2SwitchTab('chats'));
+    $('wx2-tab-contacts')?.addEventListener('click', () => wx2SwitchTab('contacts'));
+    $('wx2-tab-me')?.addEventListener('click', () => wx2SwitchTab('me'));
     $('pkmn-chat-more')?.addEventListener('click', () => openCurrentContactSettings());
-    $('pkmn-contact-settings-back')?.addEventListener('click', () => { renderContacts(); openView('contacts'); });
+    $('pkmn-contact-settings-back')?.addEventListener('click', () => { wx2SwitchTab(wx2ActiveTab || 'chats'); openView('contacts'); });
+    renderContacts();
+    renderWx2Chats();
+    renderWx2Me();
     $('pkmn-contact-person-settings-back')?.addEventListener('click', () => { renderChat(); openView('chat'); });
 
     $('pkmn-open-safe').onclick =

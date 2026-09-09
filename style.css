@@ -2830,6 +2830,13 @@
 #pkmn-phone-panel .devon-price-badge.devon-price-official{
   background:#e8f4ec!important;color:#2f7a45!important;border-color:#c4e2cd!important;
 }
+/* v0.17.5：网站价（蓝）/ 怪力卡专供（琥珀金）徽章 */
+#pkmn-phone-panel .devon-price-badge.devon-price-wiki{
+  background:#e7f0ff!important;color:#1f5fbf!important;border-color:#bcd4f5!important;
+}
+#pkmn-phone-panel .devon-price-badge.devon-price-locked{
+  background:#fbf0d8!important;color:#9a6a12!important;border-color:#e9cf9a!important;
+}
 /* 夜间适配 */
 #pkmn-phone-panel.pkmn-theme-night .devon-item-img,
 #pkmn-phone-panel.pkmn-theme-night .devon-item-img-lg{
@@ -2840,6 +2847,12 @@
 }
 #pkmn-phone-panel.pkmn-theme-night .devon-price-badge.devon-price-official{
   background:#1c3324!important;color:#7fd694!important;border-color:#2f5a3b!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-price-badge.devon-price-wiki{
+  background:#15294a!important;color:#79a9ef!important;border-color:#27406b!important;
+}
+#pkmn-phone-panel.pkmn-theme-night .devon-price-badge.devon-price-locked{
+  background:#3a2c10!important;color:#e6b75a!important;border-color:#5e4716!important;
 }
 /* ===== v0.16.0 培育屋 / 锁定卡 / 闪光开关 ===== */
 /* 越级锁定卡：灰显、半透明、名称隐藏 */
@@ -2990,3 +3003,58 @@
 #pkmn-phone-panel.pkmn-theme-night .wx2-name{color:#ececec}
 #pkmn-phone-panel.pkmn-theme-night .wx2-meta{color:#6e6e6e}
 #pkmn-phone-panel.pkmn-theme-night .wx2-empty-t{color:#9a9a9a}
+
+/* ============================================================
+   v0.17.4 微信三栏（微信/通讯录/我）
+   ============================================================ */
+#pkmn-phone-panel .wx2-pane{display:flex;flex-direction:column;min-height:0;flex:1}
+#pkmn-phone-panel #wx2-pane-chats{display:flex}
+#pkmn-phone-panel .wx2-scroll{display:flex;flex-direction:column}
+#pkmn-phone-panel .wx2-pane{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+#pkmn-phone-panel .wx2-pane::-webkit-scrollbar{display:none}
+#pkmn-phone-panel .wx2-tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;font-size:20px;color:#7f7f7f;height:100%;cursor:pointer;padding:4px 0 0}
+#pkmn-phone-panel .wx2-tabbar button small{font-size:10px;transform:scale(.92)}
+#pkmn-phone-panel .wx2-tabbar button.active{color:#07c160}
+#pkmn-phone-panel .wx2-conv{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f0f0f0;padding:0 14px;height:64px;cursor:pointer;text-align:left;box-sizing:border-box}
+#pkmn-phone-panel .wx2-conv:active{background:#e5e5e5}
+#pkmn-phone-panel .wx2-avatar.lg{width:48px;height:48px;border-radius:10px;font-size:20px}
+#pkmn-phone-panel .wx2-conv-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+#pkmn-phone-panel .wx2-conv-main b{font-size:16px;color:#191919;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .wx2-conv-main small{font-size:13px;color:#9a9a9a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .wx2-conv time{font-size:11px;color:#b2b2b2;flex:none;align-self:flex-start;margin-top:4px}
+#pkmn-phone-panel .wx2-avatar.xl{width:60px;height:60px;border-radius:12px;font-size:26px}
+#pkmn-phone-panel .wx2-me-card{background:#fff;display:flex;align-items:center;gap:14px;padding:22px 16px;border-bottom:1px solid #f0f0f0}
+#pkmn-phone-panel .wx2-me-main{flex:1;min-width:0}
+#pkmn-phone-panel .wx2-me-nick{font-size:19px;font-weight:700;color:#191919;margin-bottom:5px}
+#pkmn-phone-panel .wx2-me-wxid{font-size:13px;color:#9a9a9a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .wx2-me-arrow{color:#c8c8c8;font-size:22px;font-style:normal}
+#pkmn-phone-panel .wx2-me-group{background:#fff;margin-top:8px}
+#pkmn-phone-panel .wx2-me-row{width:100%;display:flex;align-items:center;gap:12px;background:#fff;border:0;border-bottom:1px solid #f2f2f2;padding:0 16px;height:52px;cursor:pointer;text-align:left;box-sizing:border-box;font-size:15px;color:#191919}
+#pkmn-phone-panel .wx2-me-row:last-child{border-bottom:0}
+#pkmn-phone-panel .wx2-me-row:active{background:#e5e5e5}
+#pkmn-phone-panel .wx2-me-ico{font-style:normal;font-size:17px;width:24px;text-align:center;flex:none}
+#pkmn-phone-panel .wx2-me-row span{flex:none}
+#pkmn-phone-panel .wx2-me-row em{flex:1;text-align:right;font-style:normal;color:#9a9a9a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkmn-phone-panel .wx2-me-row b{color:#c8c8c8;font-weight:400;font-size:18px}
+#pkmn-phone-panel .wx2-me-edit{background:#fff;margin-top:8px;padding:14px 16px}
+#pkmn-phone-panel .wx2-me-edit label{display:block;font-size:13px;color:#666}
+#pkmn-phone-panel .wx2-me-edit .pkmn-input,
+#pkmn-phone-panel .wx2-me-edit .pkmn-textarea{width:100%;margin-top:8px;box-sizing:border-box}
+#pkmn-phone-panel .wx2-me-edit-btns{display:flex;gap:10px;margin-top:12px}
+#pkmn-phone-panel .wx2-me-edit-btns .pkmn-btn{flex:1}
+#pkmn-phone-panel .wx2-me-foot{padding:26px 0 30px;text-align:center;color:#b2b2b2;font-size:12px}
+#pkmn-phone-panel.pkmn-theme-night .wx2-conv,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-card,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-group,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-row,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-edit{background:#1e1e1e}
+#pkmn-phone-panel.pkmn-theme-night .wx2-conv:active,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-row:active{background:#2c2c2c}
+#pkmn-phone-panel.pkmn-theme-night .wx2-conv{border-bottom-color:#2a2a2a}
+#pkmn-phone-panel.pkmn-theme-night .wx2-conv-main b,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-nick,
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-row{color:#ececec}
+#pkmn-phone-panel.pkmn-theme-night .wx2-me-row em{color:#6e6e6e}
+#pkmn-phone-panel.pkmn-theme-night .wx2-tabbar{background:#1e1e1e;border-top-color:#2a2a2a}
+#pkmn-phone-panel.pkmn-theme-night .wx2-tabbar button{color:#6e6e6e}
+#pkmn-phone-panel.pkmn-theme-night .wx2-tabbar button.active{color:#07c160}
