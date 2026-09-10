@@ -3132,14 +3132,24 @@
 #pkmn-phone-panel .pkmn-thread-card {
     border-radius: 12px !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    transform: translateZ(0) !important;
 }
 
 #pkmn-phone-panel .pkmn-thread-card:active {
-    transform: scale(0.985) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
     background: #f8fafc !important;
+}
+
+#pkmn-phone-panel #pkmn-thread-list,
+#pkmn-phone-panel .pkmn-posts,
+#pkmn-phone-panel .pkmn-list {
+    -webkit-overflow-scrolling: touch !important;
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    will-change: scroll-position !important;
+    contain: layout paint !important;
 }
 
 #pkmn-phone-panel .pkmn-thread-title {
@@ -3181,4 +3191,25 @@
 
 #pkmn-phone-panel.pkmn-theme-night .pkmn-thread-snippet {
     color: #9aa5b8 !important;
+}
+
+#pkmn-phone-panel .pkmn-thread-card {
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    transform: translateZ(0) !important;
+    will-change: auto !important;
+}
+
+#pkmn-phone-panel .pkmn-thread-card:active {
+    background: #f8fafc !important;
+}
+
+
+#pkmn-phone-panel .pkmn-view {
+    will-change: transform !important;
+}
+#pkmn-phone-panel #pkmn-thread-list,
+#pkmn-phone-panel .pkmn-posts,
+#pkmn-phone-panel .pkmn-view-scroll {
+    -webkit-overflow-scrolling: touch !important;
 }
