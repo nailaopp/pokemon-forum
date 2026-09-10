@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.22.6)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.22.7)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.22.6"; // 与 manifest.json / README 对齐
+    const VERSION = "0.22.7"; // 与 manifest.json / README 对齐
     // v0.17.6 Lucide 图标（ISC 许可，https://lucide.dev）内联；stroke=currentColor 自动适配日/夜间
     const PKMN_ICONS = {"arrow-up-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M7 7h10v10\"/> <path d=\"M7 17 17 7\"/> </svg>","camera":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\"/> <circle cx=\"12\" cy=\"13\" r=\"3\"/> </svg>","check":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 6 9 17l-5-5\"/> </svg>","chevron-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m9 18 6-6-6-6\"/> </svg>","contact":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 2v2\"/> <path d=\"M7 21v-2a2 2 0 012-2h6a2 2 0 012 2v2\"/> <path d=\"M8 2v2\"/> <circle cx=\"12\" cy=\"10\" r=\"3\"/> <rect x=\"3\" y=\"3\" rx=\"2\"/> </svg>","download":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12 15V3\"/> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/> <path d=\"m7 10 5 5 5-5\"/> </svg>","globe":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/> <path d=\"M2 12h20\"/> </svg>","image":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <rect x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/> <circle cx=\"9\" cy=\"9\" r=\"2\"/> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/> </svg>","link":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/> </svg>","megaphone":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z\"/> <path d=\"M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14\"/> <path d=\"M8 6v8\"/> </svg>","message-circle":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/> </svg>","message-square-dashed":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M14 3h2\"/> <path d=\"M16 19h-2\"/> <path d=\"M2 12v-2\"/> <path d=\"M2 16v5.286a.71.71 0 0 0 1.212.502l1.149-1.149\"/> <path d=\"M20 19a2 2 0 0 0 2-2v-1\"/> <path d=\"M22 10v2\"/> <path d=\"M22 6V5a2 2 0 0 0-2-2\"/> <path d=\"M4 3a2 2 0 0 0-2 2v1\"/> <path d=\"M8 19h2\"/> <path d=\"M8 3h2\"/> </svg>","pencil":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/> <path d=\"m15 5 4 4\"/> </svg>","plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M5 12h14\"/> <path d=\"M12 5v14\"/> </svg>","save":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/> <path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\"/> <path d=\"M7 3v4a1 1 0 0 0 1 1h7\"/> </svg>","scroll-text":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15 12h-5\"/> <path d=\"M15 8h-5\"/> <path d=\"M19 17V5a2 2 0 0 0-2-2H4\"/> <path d=\"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3\"/> </svg>","search":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m21 21-4.34-4.34\"/> <circle cx=\"11\" cy=\"11\" r=\"8\"/> </svg>","settings":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/> <circle cx=\"12\" cy=\"12\" r=\"3\"/> </svg>","shield":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/> </svg>","star":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\"/> </svg>","tag":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/> <circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/> </svg>","trash-2":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 11v6\"/> <path d=\"M14 11v6\"/> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/> <path d=\"M3 6h18\"/> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/> </svg>","user":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/> <circle cx=\"12\" cy=\"7\" r=\"4\"/> </svg>","user-plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> <line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"/> <line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/> </svg>","users":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> </svg>","users-round":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M18 21a8 8 0 0 0-16 0\"/> <circle cx=\"10\" cy=\"8\" r=\"5\"/> <path d=\"M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3\"/> </svg>","zap":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z\"/> </svg>"};
     function pkmnIcon(name, cls){
@@ -2087,7 +2087,7 @@
 
 
     <!-- 玩家发帖弹窗 -->
-    <!-- 会员卡领取弹窗（v0.22.6） -->
+    <!-- 会员卡领取弹窗（v0.22.7） -->
     <div class="pkmn-modal" id="pkmn-card-claim-modal">
         <div class="pkmn-modal-box" style="text-align:center">
             <div id="pkmn-card-anim-container" style="margin-bottom:15px;perspective:1000px">
@@ -2106,22 +2106,7 @@
         </div>
     </div>
 
-    <!-- 测试版应用门禁弹窗（v0.20.0） -->
-    <div class="pkmn-modal" id="pkmn-devon-beta-modal">
-        <div class="pkmn-modal-box">
-            <div style="font-size:16px;font-weight:700;margin-bottom:10px">🧪 测试版应用</div>
-            <div class="pkmn-small" id="pkmn-devon-beta-hint">此为测试版，未开放。</div>
-            <div id="pkmn-devon-beta-input-row" style="display:none;margin-top:8px">
-                <input class="pkmn-input" id="pkmn-devon-beta-pass" maxlength="16" inputmode="numeric" placeholder="请输入测试员口令" style="width:100%">
-            </div>
-            <div class="pkmn-row" style="margin-top:10px">
-                <button class="pkmn-btn pkmn-secondary" id="pkmn-devon-beta-exit">退出</button>
-                <button class="pkmn-btn pkmn-primary" id="pkmn-devon-beta-test">测试</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 版本更新提醒弹窗（v0.22.6） -->
+    <!-- 版本更新提醒弹窗（v0.22.7） -->
     <div class="pkmn-modal" id="pkmn-update-modal">
         <div class="pkmn-modal-box">
             <div style="font-size:16px;font-weight:700;margin-bottom:10px">🎉 发现新版本</div>
@@ -8304,7 +8289,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         }
         return bag;
     }
-    // v0.22.6 增加：从 stat_data 读取宝可梦等级
+    // v0.22.7 增加：从 stat_data 读取宝可梦等级
     function devonLevelsFromStat(sd){
         const lvls = [];
         const team = sd && sd.队伍;
@@ -8493,7 +8478,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
     function devonBuildTradeInjection(){
         if(devonState.tradeInject===false)return '';
         
-        // 提取背景设定：前置背景注入（v0.22.6 增强）
+        // 提取背景设定：前置背景注入（v0.22.7 增强）
         const loreHeader = [
             '【背景设定：得文商店与快龙特快】',
             '1. 得文商店（Devon Shop）是全地区领先的移动端商城。系统会自动同步训练家的账单，所有交易均被视为最高优先级的客观事实。',
@@ -8505,7 +8490,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         ].join('\n');
 
         const list=(devonState.actions||[]).slice(-DEVON_ACTION_MAX);
-        // v0.22.6：如果有待投递的会员卡，也需要触发注入
+        // v0.22.7：如果有待投递的会员卡，也需要触发注入
         const pendingCard = devonState.pendingCardDelivery;
         if(!list.length && !pendingCard)return '';
 
@@ -8539,7 +8524,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
             return `${n} ${d>0?'+'+d:d}（${cur>0?'→ ×'+cur:'→ 从背包移除'}）`;
         }).join('、');
         const out=[];
-        out.push(loreHeader); // v0.22.6 注入前置背景
+        out.push(loreHeader); // v0.22.7 注入前置背景
         out.push('【得文商店 · 交易记录（玩家真实操作，必须承认并据此更新状态）】');
         out.push('以下交易由玩家在手机端「得文商店」真实完成。你必须将其视为已发生的事实：在后续剧情中承认玩家已获得或失去这些道具，并在本层楼的 MVU 变量更新中同步 训练家.金钱 与 背包 字段。禁止无视、回滚或重复计算这些交易。');
         out.push('');
@@ -9071,7 +9056,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         }
     }
     function initDevonShop(){
-        // v0.22.6：监听聊天切换，实时重载商店存档
+        // v0.22.7：监听聊天切换，实时重载商店存档
         TH.eventOn('CHAT_CHANGED', () => {
             devonState = loadDevonStore();
             devonSyncMvu('boot');
@@ -9108,18 +9093,13 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
     // ============================================================
 
     $('pkmn-open-devon-shop')?.addEventListener('click', () => {
-        // v0.20.0 测试版门禁：未解锁时先弹门禁弹窗
-        if (!devonBetaUnlocked()) {
-            openDevonBetaGate();
-            return;
-        }
-        // v0.22.6：点击商店时先检查是否有可领取的会员卡
+        // 点击商店时先检查是否有可领取的会员卡
         if (devonProcessCardClaims()) return; 
 
         renderDevonShop(); openView('devonShop');
     });
 
-    // v0.22.6 会员卡自动解锁与领取逻辑
+    // v0.22.7 会员卡自动解锁与领取逻辑
     function devonProcessCardClaims() {
         const lvls = devonState.mvu?.levels || [];
         const maxLv = lvls.length ? Math.max(...lvls) : 0;
@@ -9182,53 +9162,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         return true;
     }
 
-    // v0.20.0 得文商店「测试版应用」门禁
-    const DEVON_BETA_PASS = '54321';
-    const DEVON_BETA_KEY = 'pkmn-devon-beta-unlocked';
-    function devonBetaUnlocked() {
-        try { return localStorage.getItem(DEVON_BETA_KEY) === '1'; } catch (_) { return false; }
-    }
-    function openDevonBetaGate() {
-        const modal = $('pkmn-devon-beta-modal');
-        if (!modal) { showToast('测试版弹窗初始化失败'); return; }
-        $('pkmn-devon-beta-input-row').style.display = 'none';
-        $('pkmn-devon-beta-pass').value = '';
-        $('pkmn-devon-beta-hint').textContent = '此为测试版，未开放。';
-        modal.classList.add('show');
-    }
-    function closeDevonBetaGate() {
-        $('pkmn-devon-beta-modal')?.classList.remove('show');
-    }
-    function devonBetaAskPass() {
-        $('pkmn-devon-beta-input-row').style.display = '';
-        $('pkmn-devon-beta-hint').textContent = '测试员模式：请输入口令解锁完整功能。';
-        setTimeout(() => $('pkmn-devon-beta-pass')?.focus(), 50);
-    }
-    function devonBetaTryUnlock() {
-        const val = ($('pkmn-devon-beta-pass')?.value || '').trim();
-        if (val === DEVON_BETA_PASS) {
-            try { localStorage.setItem(DEVON_BETA_KEY, '1'); } catch (_) {}
-            closeDevonBetaGate();
-            showToast('🧪 测试版已解锁');
-            renderDevonShop(); openView('devonShop');
-        } else {
-            showToast('口令错误，请重试');
-            const ip = $('pkmn-devon-beta-pass');
-            if (ip) { ip.value = ''; ip.focus(); }
-        }
-    }
-    $('pkmn-devon-beta-test')?.addEventListener('click', () => {
-        // 第一次点击显示输入框；输入框已显示时，按钮充当提交
-        const row = $('pkmn-devon-beta-input-row');
-        if (!row || row.style.display === 'none') devonBetaAskPass();
-        else devonBetaTryUnlock();
-    });
-    $('pkmn-devon-beta-exit')?.addEventListener('click', closeDevonBetaGate);
-    $('pkmn-devon-beta-pass')?.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); devonBetaTryUnlock(); }
-    });
-
-    // v0.22.6 版本更新提醒弹窗按钮
+    // v0.22.7 版本更新提醒弹窗按钮
     $('pkmn-update-close')?.addEventListener('click', () => $('pkmn-update-modal')?.classList.remove('show'));
     $('pkmn-update-open-repo')?.addEventListener('click', () => {
         try { window.open('https://github.com/nailaopp/pokemon-forum', '_blank'); } catch (_) {}
@@ -9568,7 +9502,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         }
     }
 
-    // v0.22.6 版本更新提醒：打开悬浮窗时检查远端仓库版本
+    // v0.22.7 版本更新提醒：打开悬浮窗时检查远端仓库版本
     const UPDATE_CHECK_REPO_URL = 'https://raw.githubusercontent.com/nailaopp/pokemon-forum/main/manifest.json';
     let updateNoticeShown = false; // 本会话（插件本次加载）是否已弹过提醒
     let updateLastRemote = null;   // 本会话已检测到的远端版本（避免重复请求）
@@ -9613,7 +9547,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
             panel.style.setProperty('display', 'flex', 'important');
         } catch (_) {}
         try { openView('home'); } catch (_) {}
-        try { pkmnCheckRemoteUpdate(); } catch (_) {} // v0.22.6 打开手机时触发版本检查
+        try { pkmnCheckRemoteUpdate(); } catch (_) {} // v0.22.7 打开手机时触发版本检查
         try {
             // QQ/酒馆可能在手机关闭期间已经切换聊天；打开时强制以当前聊天为准。
             const k = getChatKey();
