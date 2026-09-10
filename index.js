@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.22.3)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.22.6)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.22.3"; // 与 manifest.json / README 对齐
+    const VERSION = "0.22.6"; // 与 manifest.json / README 对齐
     // v0.17.6 Lucide 图标（ISC 许可，https://lucide.dev）内联；stroke=currentColor 自动适配日/夜间
     const PKMN_ICONS = {"arrow-up-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M7 7h10v10\"/> <path d=\"M7 17 17 7\"/> </svg>","camera":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\"/> <circle cx=\"12\" cy=\"13\" r=\"3\"/> </svg>","check":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 6 9 17l-5-5\"/> </svg>","chevron-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m9 18 6-6-6-6\"/> </svg>","contact":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 2v2\"/> <path d=\"M7 21v-2a2 2 0 012-2h6a2 2 0 012 2v2\"/> <path d=\"M8 2v2\"/> <circle cx=\"12\" cy=\"10\" r=\"3\"/> <rect x=\"3\" y=\"3\" rx=\"2\"/> </svg>","download":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12 15V3\"/> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/> <path d=\"m7 10 5 5 5-5\"/> </svg>","globe":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/> <path d=\"M2 12h20\"/> </svg>","image":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <rect x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/> <circle cx=\"9\" cy=\"9\" r=\"2\"/> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/> </svg>","link":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/> </svg>","megaphone":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z\"/> <path d=\"M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14\"/> <path d=\"M8 6v8\"/> </svg>","message-circle":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/> </svg>","message-square-dashed":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M14 3h2\"/> <path d=\"M16 19h-2\"/> <path d=\"M2 12v-2\"/> <path d=\"M2 16v5.286a.71.71 0 0 0 1.212.502l1.149-1.149\"/> <path d=\"M20 19a2 2 0 0 0 2-2v-1\"/> <path d=\"M22 10v2\"/> <path d=\"M22 6V5a2 2 0 0 0-2-2\"/> <path d=\"M4 3a2 2 0 0 0-2 2v1\"/> <path d=\"M8 19h2\"/> <path d=\"M8 3h2\"/> </svg>","pencil":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/> <path d=\"m15 5 4 4\"/> </svg>","plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M5 12h14\"/> <path d=\"M12 5v14\"/> </svg>","save":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/> <path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\"/> <path d=\"M7 3v4a1 1 0 0 0 1 1h7\"/> </svg>","scroll-text":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15 12h-5\"/> <path d=\"M15 8h-5\"/> <path d=\"M19 17V5a2 2 0 0 0-2-2H4\"/> <path d=\"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3\"/> </svg>","search":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m21 21-4.34-4.34\"/> <circle cx=\"11\" cy=\"11\" r=\"8\"/> </svg>","settings":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/> <circle cx=\"12\" cy=\"12\" r=\"3\"/> </svg>","shield":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/> </svg>","star":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\"/> </svg>","tag":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/> <circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/> </svg>","trash-2":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 11v6\"/> <path d=\"M14 11v6\"/> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/> <path d=\"M3 6h18\"/> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/> </svg>","user":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/> <circle cx=\"12\" cy=\"7\" r=\"4\"/> </svg>","user-plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> <line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"/> <line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/> </svg>","users":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> </svg>","users-round":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M18 21a8 8 0 0 0-16 0\"/> <circle cx=\"10\" cy=\"8\" r=\"5\"/> <path d=\"M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3\"/> </svg>","zap":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z\"/> </svg>"};
     function pkmnIcon(name, cls){
@@ -2087,6 +2087,25 @@
 
 
     <!-- 玩家发帖弹窗 -->
+    <!-- 会员卡领取弹窗（v0.22.6） -->
+    <div class="pkmn-modal" id="pkmn-card-claim-modal">
+        <div class="pkmn-modal-box" style="text-align:center">
+            <div id="pkmn-card-anim-container" style="margin-bottom:15px;perspective:1000px">
+                <!-- 动态生成的卡片图片会放在这里 -->
+                <div id="pkmn-claimed-card-display" style="width:200px;height:120px;margin:0 auto;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.3);background:linear-gradient(135deg,#eee,#ccc);display:flex;align-items:center;justify-content:center;font-weight:bold;color:#333;transform-style:preserve-3d;transition:transform 0.6s">
+                    DEVON CARD
+                </div>
+            </div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:8px" id="pkmn-card-claim-title">发现可领取的会员卡！</div>
+            <div class="pkmn-small" id="pkmn-card-claim-desc" style="line-height:1.5;margin-bottom:15px">检测到您的宝可梦成长记录，得文公司为您准备了专属会员卡。</div>
+            <div class="pkmn-row">
+                <button class="pkmn-btn pkmn-secondary" id="pkmn-card-claim-later">稍后</button>
+                <button class="pkmn-btn pkmn-primary" id="pkmn-card-claim-ok">立即领取</button>
+            </div>
+            <div class="pkmn-small" style="margin-top:10px;opacity:0.7">领取后，实体卡将由「快龙特快」投递送达</div>
+        </div>
+    </div>
+
     <!-- 测试版应用门禁弹窗（v0.20.0） -->
     <div class="pkmn-modal" id="pkmn-devon-beta-modal">
         <div class="pkmn-modal-box">
@@ -2102,7 +2121,7 @@
         </div>
     </div>
 
-    <!-- 版本更新提醒弹窗（v0.22.3） -->
+    <!-- 版本更新提醒弹窗（v0.22.6） -->
     <div class="pkmn-modal" id="pkmn-update-modal">
         <div class="pkmn-modal-box">
             <div style="font-size:16px;font-weight:700;margin-bottom:10px">🎉 发现新版本</div>
@@ -8115,17 +8134,41 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         for(const o of DEVON_TIER_OVERRIDES){ if(o.kw.some(k=>hay.includes(k))){t=o.t;break;} }
         p.tier=t; return p;
     }
+    const DEVON_STORE_KEY_PREFIX = 'pkmn_devon_chat_v3_';
+
+    function saveDevonStore(){ 
+        try{
+            const ck = getChatKey();
+            if(!ck || ck === 'fallback:unknown') return;
+            if(!Array.isArray(devonState.claimedCards)) devonState.claimedCards = [];
+            localStorage.setItem(DEVON_STORE_KEY_PREFIX + ck, JSON.stringify(devonState));
+        }catch(_){} 
+    }
+
+    function loadDevonStore() {
+        const ck = getChatKey();
+        let state = { 
+            category:'all', query:'', page:1, cart:{}, orders:[], balance:100000, 
+            selected:null, membership:'gold', 
+            mvu:{money:null,bag:{},levels:[],source:'none',floor:null,updatedAt:0}, 
+            mvuSync:true, actions:[], tradeInject:true, tradeSnapshot:false, tipRate:0.3,
+            claimedCards: [],
+            pendingCardDelivery: null
+        };
+        if(!ck || ck === 'fallback:unknown') return state;
+        try {
+            const raw = localStorage.getItem(DEVON_STORE_KEY_PREFIX + ck);
+            if(raw) {
+                const parsed = JSON.parse(raw);
+                state = { ...state, ...parsed };
+            }
+        } catch (_) { }
+        if(!DEVON_TIERS[state.membership]) state.membership = 'gold';
+        return state;
+    }
+
+    let devonState = loadDevonStore();
     function devonMemberTier(){ const m=DEVON_TIERS[devonState.membership]; return m||1; }
-    let devonState = { category:'all', query:'', page:1, cart:{}, orders:[], balance:100000, selected:null, membership:'gold', mvu:{money:null,bag:{},source:'none',floor:null,updatedAt:0}, mvuSync:true, actions:[], tradeInject:true, tradeSnapshot:false };
-    try { const raw=localStorage.getItem(DEVON_STORE_KEY); if(raw) devonState={...devonState,...JSON.parse(raw)}; } catch(_){ }
-    if(!DEVON_TIERS[devonState.membership]) devonState.membership='gold'; // v0.15.0 旧存档兼容
-    // v0.17.0 MVU 读取状态兜底（旧存档浅合并后可能缺字段）
-    if(!devonState.mvu||typeof devonState.mvu!=='object') devonState.mvu={money:null,bag:{},source:'none',floor:null,updatedAt:0};
-    if(!devonState.mvu.bag||typeof devonState.mvu.bag!=='object') devonState.mvu.bag={};
-    if(devonState.mvuSync===undefined) devonState.mvuSync=true;
-    if(!Array.isArray(devonState.actions)) devonState.actions=[];
-    if(devonState.tradeInject===undefined) devonState.tradeInject=true;
-    if(devonState.tradeSnapshot===undefined) devonState.tradeSnapshot=false;
     DEVON_PRODUCTS.forEach(devonAssignTier); // v0.15.0 兜底道具补算稀有度（需在常量定义后执行）
     // ===== v0.16.0 培育屋：47 只稀有宝可梦的蛋（全怪力卡解锁；闪光版 ×3 封顶 1000 万）=====
     const DEVON_EGG_MAX = 10000000;
@@ -8200,11 +8243,9 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         return added;
     }
     devonInjectNursery(); // v0.16.0 培育屋蛋注入（缓存恢复/同步完成后会再次调用，幂等）
-    function saveDevonStore(){ try{localStorage.setItem(DEVON_STORE_KEY,JSON.stringify(devonState));}catch(_){} }
 
     // ===== v0.17.0 模块A：MVU/正文读取层（每层楼自动同步金钱与背包） =====
     function devonMvuApi(){
-        // 扩展可能运行在 iframe 中，MVU 对象挂在 SillyTavern 主窗口
         for(const w of [window,window.parent,window.top]){
             try{ if(w&&w.Mvu&&typeof w.Mvu.getMvuData==='function')return w.Mvu; }catch(_){ }
         }
@@ -8263,6 +8304,21 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         }
         return bag;
     }
+    // v0.22.6 增加：从 stat_data 读取宝可梦等级
+    function devonLevelsFromStat(sd){
+        const lvls = [];
+        const team = sd && sd.队伍;
+        if(team && typeof team === 'object'){
+            for(let i=1; i<=6; i++){
+                const p = team[String(i)];
+                if(p && p.名字 && p.名字 !== '空' && p.等级 != null){
+                    lvls.push(parseInt(p.等级, 10) || 0);
+                }
+            }
+        team.levels = lvls;
+        }
+        return lvls;
+    }
     async function devonReadMvuSnapshot(){
         // ① MVU 框架：从最新楼层倒序找含 stat_data 的最终状态
         try{
@@ -8278,7 +8334,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
                     const sd=d&&(d.stat_data||(d.data&&d.data.stat_data));
                     if(sd&&sd.训练家&&(sd.训练家.金钱!=null||Object.keys(devonBagFromStat(sd)).length)){
                         const money=sd.训练家.金钱!=null?Number(sd.训练家.金钱):null;
-                        return {money:(money==null||isNaN(money))?null:money,bag:devonBagFromStat(sd),source:'mvu',floor:floors[i].id};
+                        return {money:(money==null||isNaN(money))?null:money,bag:devonBagFromStat(sd),levels:devonLevelsFromStat(sd),source:'mvu',floor:floors[i].id};
                     }
                 }
             }
@@ -8306,9 +8362,9 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         try{
             const snap=await devonReadMvuSnapshot();
             if(snap){
-                const m=devonState.mvu||{money:null,bag:{},source:'none',floor:null,updatedAt:0};
-                changed=(snap.money!==m.money)||JSON.stringify(snap.bag)!==JSON.stringify(m.bag||{})||snap.floor!==m.floor;
-                devonState.mvu={money:snap.money,bag:snap.bag,source:snap.source,floor:snap.floor,updatedAt:Date.now()};
+                const m=devonState.mvu||{money:null,bag:{},levels:[],source:'none',floor:null,updatedAt:0};
+                changed=(snap.money!==m.money)||JSON.stringify(snap.bag)!==JSON.stringify(m.bag||{})||JSON.stringify(snap.levels)!==JSON.stringify(m.levels||[])||snap.floor!==m.floor;
+                devonState.mvu={money:snap.money,bag:snap.bag,levels:snap.levels||[],source:snap.source,floor:snap.floor,updatedAt:Date.now()};
                 devonConfirmActions(snap.floor); // v0.17.0：更新到更高楼层 = AI 已有机会处理此前交易
                 if(changed){
                     saveDevonStore();
@@ -8407,11 +8463,18 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         else m.bag[name]={类型:cat||'道具',数量:n,图标:icon||''};
         saveDevonStore();
     }
-    function devonRecordAction(kind,name,q,unit){
+    function devonRecordAction(kind,name,q,unit, shipping=0, tip=0){
         const qN=Number(q)||0,uN=Number(unit)||0;
         if(!qN)return;
         if(!Array.isArray(devonState.actions))devonState.actions=[];
-        devonState.actions.push({t:Date.now(),kind,name,q:qN,unit:uN,total:qN*uN,base:devonWalletMoney().val,floor:(devonState.mvu&&devonState.mvu.floor!=null)?devonState.mvu.floor:null});
+        devonState.actions.push({
+            t:Date.now(),kind,name,q:qN,unit:uN,
+            shipping: Number(shipping)||0,
+            tip: Number(tip)||0,
+            total:qN*(uN + (Number(shipping)||0) + (Number(tip)||0)),
+            base:devonWalletMoney().val,
+            floor:(devonState.mvu&&devonState.mvu.floor!=null)?devonState.mvu.floor:null
+        });
         if(devonState.actions.length>DEVON_ACTION_MAX)devonState.actions=devonState.actions.slice(-DEVON_ACTION_MAX);
         saveDevonStore();
         devonApplyTradeInjection();
@@ -8429,17 +8492,45 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
     }
     function devonBuildTradeInjection(){
         if(devonState.tradeInject===false)return '';
+        
+        // 提取背景设定：前置背景注入（v0.22.6 增强）
+        const loreHeader = [
+            '【背景设定：得文商店与快龙特快】',
+            '1. 得文商店（Devon Shop）是全地区领先的移动端商城。系统会自动同步训练家的账单，所有交易均被视为最高优先级的客观事实。',
+            '2. 📦 物流规范：所有订单由得文公司专属「快龙特快」承运。一只英姿飒爽的快龙及其专业快递训练家，将在下单后 10 分钟内抵达玩家位置送达货物。',
+            '3. 💸 配送酬劳反馈：送货员对「配送小费」非常敏感。若小费丰厚（50%-100%），快龙和训练家会表现出极高的热情和感激，甚至提供额外的服务礼仪；若小费普通，则维持标准礼貌。',
+            '4. 剧情与物流：交易完成后，请在剧情中体现签收过程及快龙送货的描写。务必根据下文中记录的小费数额，生动描写送货员的情绪反馈。',
+            '5. 交易权威性：出现带有【得文商店 · 交易记录】的系统注入时，视为已发生的客观事实，AI 必须更新 MVU 变量（金钱与背包）。',
+            ''
+        ].join('\n');
+
         const list=(devonState.actions||[]).slice(-DEVON_ACTION_MAX);
-        if(!list.length)return '';
+        // v0.22.6：如果有待投递的会员卡，也需要触发注入
+        const pendingCard = devonState.pendingCardDelivery;
+        if(!list.length && !pendingCard)return '';
+
         const tm=t=>new Date(t).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
         const fmt=n=>'₽'+Number(n||0).toLocaleString('zh-CN');
-        const before=Math.max(0,list[0].base||0);
+        const before=Math.max(0, (list.length ? list[0].base : (devonState.mvu?.money || 0)));
         let spend=0,income=0; const delta={};
         const lines=list.map((a,i)=>{
-            if(a.kind==='buy'){spend+=a.total;delta[a.name]=(delta[a.name]||0)+a.q;return `${i+1}. ${tm(a.t)} 购买　${a.name} ×${a.q}　单价 ${fmt(a.unit)}　支出 −${fmt(a.total)}`;}
+            if(a.kind==='buy'){
+                spend+=a.total;delta[a.name]=(delta[a.name]||0)+a.q;
+                let feeInfo = `（含必要运费 ${fmt(a.shipping || 10000)} + 配送小费 ${fmt(a.tip || Math.floor(a.unit * 0.3))}）`;
+                return `${i+1}. ${tm(a.t)} 购买　${a.name} ×${a.q}　单价 ${fmt(a.unit)}　支出 −${fmt(a.total)} ${feeInfo}`;
+            }
             income+=a.total;delta[a.name]=(delta[a.name]||0)-a.q;
             return `${i+1}. ${tm(a.t)} 出售　${a.name} ×${a.q}　单价 ${fmt(a.unit)}　收入 +${fmt(a.total)}`;
         });
+
+        // 处理会员卡附加行
+        if(pendingCard){
+            const cardName = DEVON_TIER_NAMES[pendingCard];
+            lines.push(`【特别投递】配送包含一份「得文${cardName}」实体卡。请致以祝贺并举行简单的签收仪式。`);
+            devonState.pendingCardDelivery = null; // 注入后标记已处理
+            saveDevonStore();
+        }
+
         const after=Math.max(0,before-spend+income);
         const bag=(devonState.mvu&&devonState.mvu.bag)||{};
         const bagLines=Object.keys(delta).map(n=>{
@@ -8448,6 +8539,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
             return `${n} ${d>0?'+'+d:d}（${cur>0?'→ ×'+cur:'→ 从背包移除'}）`;
         }).join('、');
         const out=[];
+        out.push(loreHeader); // v0.22.6 注入前置背景
         out.push('【得文商店 · 交易记录（玩家真实操作，必须承认并据此更新状态）】');
         out.push('以下交易由玩家在手机端「得文商店」真实完成。你必须将其视为已发生的事实：在后续剧情中承认玩家已获得或失去这些道具，并在本层楼的 MVU 变量更新中同步 训练家.金钱 与 背包 字段。禁止无视、回滚或重复计算这些交易。');
         out.push('');
@@ -8691,11 +8783,37 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
     function openDevonCart(){
         const items=Object.entries(devonState.cart).map(([id,q])=>({p:DEVON_PRODUCTS.find(x=>x.id===id),q})).filter(x=>x.p&&x.q>0);
         const body=$('pkmn-devon-detail-body'); if(!body)return;
-        body.innerHTML=`<div class="devon-cart-page"><div class="devon-wallet">${devonMvuActive()?"<span class='devon-wallet-src'>MVU</span>":""}可用金钱 <b>${devonMoney(devonWalletMoney().val)}</b></div>${items.length?items.map(({p,q})=>`<div class="devon-cart-item"><div class="devon-cart-pic">${devonPicHTML(p,'devon-item-img')}</div><div class="devon-cart-info"><b>${esc(p.name)}</b><small>${devonMoney(p.price)} × ${q}</small></div><div class="devon-cart-controls"><button data-cart-minus="${esc(p.id)}">−</button><b>${q}</b><button data-cart-plus="${esc(p.id)}">＋</button></div></div>`).join(''):'<div class="devon-empty">购物车还是空的</div>'}<div class="devon-cart-total"><span>合计</span><b>${devonMoney(devonCartTotal())}</b></div><button class="devon-buy devon-buy-main" id="devon-checkout" ${items.length?'':'disabled'}>提交订单</button><button class="devon-buy" id="devon-recharge">补充 10,000 ₽ 余额（测试）</button></div>`;
+        
+        const subtotal = items.reduce((s, {p,q}) => s + (p.price||0)*q, 0);
+        const shipping = items.reduce((s, {q}) => s + 10000*q, 0);
+        const tip = Math.floor(subtotal * (devonState.tipRate || 0.3));
+        const total = subtotal + shipping + tip;
+
+        const shippingHtml = `
+            <div class="devon-shipping-box" style="margin:10px 0;padding:12px;background:rgba(0,0,0,0.04);border-radius:10px;border:1px solid rgba(0,0,0,0.05)">
+                <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:#2c3e50;display:flex;align-items:center;gap:5px">🐲 快龙特快物流</div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;opacity:0.8">
+                    <span>基础运费（必要）</span>
+                    <b>${devonMoney(shipping)}</b>
+                </div>
+                <div style="font-size:11px;margin-bottom:8px;font-weight:bold">配送小费（必要）：</div>
+                <div class="devon-tip-options" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+                    ${[0.2, 0.3, 0.5, 1.0].map(r => `<button class="devon-tip-btn ${devonState.tipRate===r?'active':''}" data-tip="${r}">${r*100}%</button>`).join('')}
+                </div>
+            </div>`;
+
+        body.innerHTML=`<div class="devon-cart-page"><div class="devon-wallet">${devonMvuActive()?"<span class='devon-wallet-src'>MVU</span>":""}可用金钱 <b>${devonMoney(devonWalletMoney().val)}</b></div>${items.length?items.map(({p,q})=>`<div class="devon-cart-item"><div class="devon-cart-pic">${devonPicHTML(p,'devon-item-img')}</div><div class="devon-cart-info"><b>${esc(p.name)}</b><small>${devonMoney(p.price)} × ${q}</small></div><div class="devon-cart-controls"><button data-cart-minus="${esc(p.id)}">−</button><b>${q}</b><button data-cart-plus="${esc(p.id)}">＋</button></div></div>`).join(''):'<div class="devon-empty">购物车还是空的</div>'}${items.length ? shippingHtml : ''}<div class="devon-cart-total"><span>商品小计</span><b>${devonMoney(subtotal)}</b></div><div class="devon-cart-total"><span>物流费用</span><b>${devonMoney(shipping + tip)}</b></div><div class="devon-cart-total" style="border-top:1px solid #eee;padding-top:10px;margin-top:5px"><span style="font-size:16px;font-weight:bold">合计</span><b style="font-size:18px;color:#e67e22">${devonMoney(total)}</b></div><button class="devon-buy devon-buy-main" id="devon-checkout" ${items.length?'':'disabled'}>提交订单</button></div>`;
+        
+        body.querySelectorAll('.devon-tip-btn').forEach(btn => {
+            btn.onclick = () => {
+                devonState.tipRate = parseFloat(btn.dataset.tip);
+                saveDevonStore(); openDevonCart();
+            };
+        });
+
         body.querySelectorAll('[data-cart-minus]').forEach(b=>b.onclick=()=>{const id=b.dataset.cartMinus;devonState.cart[id]--;if(devonState.cart[id]<=0)delete devonState.cart[id];saveDevonStore();openDevonCart();});
         body.querySelectorAll('[data-cart-plus]').forEach(b=>b.onclick=()=>{addDevonCart(b.dataset.cartPlus);openDevonCart();});
         $('devon-checkout').onclick=checkoutDevon;
-        $('devon-recharge').onclick=()=>{devonState.balance+=10000;saveDevonStore();openDevonCart();showToast('余额已补充');};
         openView('devonDetail');
     }
     function checkoutDevon(){
@@ -8703,16 +8821,27 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         if(invalid){showToast('购物车中存在暂无朱紫购买价的道具，请移除后再结算');return;}
         const forbidden=Object.keys(devonState.cart).find(id=>{const p=DEVON_PRODUCTS.find(x=>x.id===id);return p&&(p.tier??1)>devonMemberTier();});
         if(forbidden){showToast('购物车中存在未解锁商品，请移除后再结算');return;}
-        const total=devonCartTotal(); if(!total)return;
+        
+        const itemsList = Object.entries(devonState.cart).map(([id,q])=>({p:DEVON_PRODUCTS.find(x=>x.id===id),q})).filter(x=>x.p&&x.q>0);
+        const subtotal = itemsList.reduce((s, {p,q}) => s + (p.price||0)*q, 0);
+        const shipping = itemsList.reduce((s, {q}) => s + 10000*q, 0);
+        const tip = Math.floor(subtotal * (devonState.tipRate || 0.3));
+        const total = subtotal + shipping + tip;
+
+        if(!total)return;
         const mvuMode=devonMvuActive(); // v0.17.0 方案1A：已对接 MVU 时按训练家金钱判定
         if((mvuMode?devonWalletMoney().val:devonState.balance)<total){showToast(mvuMode?'金钱不足（以 MVU 训练家金钱为准）':'余额不足，请先补充余额');return;}
         const items=Object.entries(devonState.cart).map(([id,q])=>({id,q,name:DEVON_PRODUCTS.find(p=>p.id===id)?.name||id}));
-        const order={id:'DV'+Date.now().toString().slice(-8),time:new Date().toLocaleString('zh-CN'),total,items,status:'已下单'};
+        const order={id:'DV'+Date.now().toString().slice(-8),time:new Date().toLocaleString('zh-CN'),total,items,status:'已下单', shipping, tip};
         devonState.orders.unshift(order);
         items.forEach(({id,q,name})=>{ // v0.17.0：交易记录 + 注入；乐观更新背包（MVU 模式下金钱由 AI 更新）
             const p=DEVON_PRODUCTS.find(x=>x.id===id);
+            // 基础运费和小费按总额分摊到每件商品记录中，便于 AI 理解
+            const itemSub = (p?.price || 0);
+            const itemShipping = 10000;
+            const itemTip = Math.floor(itemSub * (devonState.tipRate || 0.3));
             devonAdjustBag(name,q,devonMvuCatOf(p),p&&(p.icon||''));
-            devonRecordAction('buy',name,q,p?p.price:0);
+            devonRecordAction('buy',name,q,itemSub, itemShipping, itemTip);
         });
         if(!mvuMode)devonState.balance-=total;
         devonState.cart={};saveDevonStore();showToast('得文商店订单已提交，交易已同步给 AI');renderDevonOrders();openView('devonOrders');
@@ -8733,8 +8862,8 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         el.innerHTML=`
             <div class="devon-wallet">数据概览：${esc(cacheInfo)}</div>
             <div class="devon-set-head">💳 会员卡包 <small>点击卡片切换体验（升级功能暂未开放）</small></div>
-            <div class="devon-vip-cards">${Object.keys(DEVON_TIERS).map(k=>`
-                <div class="devon-vip-card devon-vip-${k} ${devonState.membership===k?'devon-vip-active':''}" data-devon-vip="${k}">
+            <div class="devon-vip-cards">${Object.keys(DEVON_TIERS).filter(k => DEVON_TIERS[k] <= devonMemberTier()).map(k=>`
+                <div class="devon-vip-card devon-vip-${k} ${devonState.membership===k?'devon-vip-active':''}">
                     ${devonState.membership===k?'<i class="devon-vip-cur">✔ 使用中</i>':''}
                     <small>DEVON ${k.toUpperCase()}</small>
                     <b>${esc(DEVON_TIER_NAMES[k])}</b>
@@ -8778,11 +8907,11 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
                 <button class="devon-set-btn devon-set-danger" id="pkmn-devon-trade-clear">清空</button>
             </div>
             <div class="devon-set-note">道具与图片数据来源：52Poké 百科《道具列表》《招式学习器》。价格策略（v0.17.5）：52Poké 購入价（朱紫优先）→ 官方价表 → 分类参考估值；全世代非卖品归入「怪力卡」专区，不可下单。</div>`;
-        el.querySelectorAll('[data-devon-vip]').forEach(c=>c.onclick=()=>{
-            const k=c.dataset.devonVip; if(!DEVON_TIERS[k]||devonState.membership===k)return;
-            devonState.membership=k; saveDevonStore(); renderDevonSettings(); renderDevonShop();
-            showToast(`已切换为${DEVON_TIER_NAMES[k].replace(/^\S+\s/,'')}`);
-        });
+        // el.querySelectorAll('[data-devon-vip]').forEach(c=>c.onclick=()=>{
+        //     const k=c.dataset.devonVip; if(!DEVON_TIERS[k]||devonState.membership===k)return;
+        //     devonState.membership=k; saveDevonStore(); renderDevonSettings(); renderDevonShop();
+        //     showToast(`已切换为${DEVON_TIER_NAMES[k].replace(/^\S+\s/,'')}`);
+        // });
         $('pkmn-devon-settings-sync')?.addEventListener('click',async e=>{
             const b=e.currentTarget; b.disabled=true; b.textContent='同步中…';
             await syncDevonFrom52Poke(true);
@@ -8942,6 +9071,13 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         }
     }
     function initDevonShop(){
+        // v0.22.6：监听聊天切换，实时重载商店存档
+        TH.eventOn('CHAT_CHANGED', () => {
+            devonState = loadDevonStore();
+            devonSyncMvu('boot');
+            renderDevonShop();
+        });
+
         $('pkmn-devon-search')?.addEventListener('input',e=>{devonState.query=e.target.value;devonState.page=1;renderDevonShop();});
         $('pkmn-devon-back')?.addEventListener('click',()=>openView('home'));
         $('pkmn-devon-cart')?.addEventListener('click',openDevonCart);
@@ -8977,8 +9113,74 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
             openDevonBetaGate();
             return;
         }
+        // v0.22.6：点击商店时先检查是否有可领取的会员卡
+        if (devonProcessCardClaims()) return; 
+
         renderDevonShop(); openView('devonShop');
     });
+
+    // v0.22.6 会员卡自动解锁与领取逻辑
+    function devonProcessCardClaims() {
+        const lvls = devonState.mvu?.levels || [];
+        const maxLv = lvls.length ? Math.max(...lvls) : 0;
+        const all100 = lvls.length === 6 && lvls.every(l => l >= 100);
+        
+        let target = null;
+        if (all100 && !devonState.claimedCards.includes('machamp')) target = 'machamp';
+        else if (maxLv >= 100 && !devonState.claimedCards.includes('blackgold')) target = 'blackgold';
+        else if (maxLv >= 50 && !devonState.claimedCards.includes('platinum')) target = 'platinum';
+        else if (!devonState.claimedCards.includes('gold')) target = 'gold';
+
+        if (!target) return false;
+
+        const modal = $('pkmn-card-claim-modal');
+        if (!modal) return false;
+
+        // 设置显示内容
+        const cardDisplay = $('pkmn-claimed-card-display');
+        if (cardDisplay) {
+            const cardInnerName = DEVON_TIER_NAMES[target].replace(/^[^ ]+ /, '');
+            cardDisplay.innerHTML = `
+                <div style="font-size:10px;opacity:0.8;position:absolute;top:10px;left:12px">DEVON CORPORATION</div>
+                <div style="font-size:18px;font-weight:900;text-shadow:0 2px 4px rgba(0,0,0,0.2)">${cardInnerName}</div>
+                <div style="font-size:9px;position:absolute;bottom:10px;right:12px;opacity:0.6">T${DEVON_TIERS[target]} MEMBER</div>
+            `;
+            cardDisplay.className = `devon-vip-card devon-vip-${target}`;
+            cardDisplay.style.cssText = `
+                width:220px;height:130px;margin:0 auto;border-radius:12px;
+                display:flex;align-items:center;justify-content:center;flex-direction:column;
+                position:relative;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.4);
+                color:white;text-transform:uppercase;border:1px solid rgba(255,255,255,0.2);
+            `;
+            // 为不同卡片添加特定渐变（兜底样式冲突）
+            const gradients = {
+                gold: 'linear-gradient(135deg, #f1c40f, #f39c12)',
+                platinum: 'linear-gradient(135deg, #bdc3c7, #2c3e50)',
+                blackgold: 'linear-gradient(135deg, #2c3e50, #000000)',
+                machamp: 'linear-gradient(135deg, #e74c3c, #c0392b)'
+            };
+            cardDisplay.style.background = gradients[target] || gradients.gold;
+        }
+        $('pkmn-card-claim-title').textContent = `解锁：${DEVON_TIER_NAMES[target]}`;
+        
+        // 绑定领取按钮
+        $('pkmn-card-claim-ok').onclick = () => {
+            devonState.claimedCards.push(target);
+            devonState.membership = target; // 自动设为当前
+            devonState.pendingCardDelivery = target; // 标记待投递
+            saveDevonStore();
+            modal.classList.remove('show');
+            showToast(`已领取${DEVON_TIER_NAMES[target]}，实体卡投递中`);
+            renderDevonShop(); openView('devonShop');
+        };
+        $('pkmn-card-claim-later').onclick = () => {
+            modal.classList.remove('show');
+            renderDevonShop(); openView('devonShop');
+        };
+
+        modal.classList.add('show');
+        return true;
+    }
 
     // v0.20.0 得文商店「测试版应用」门禁
     const DEVON_BETA_PASS = '54321';
@@ -9026,7 +9228,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         if (e.key === 'Enter') { e.preventDefault(); devonBetaTryUnlock(); }
     });
 
-    // v0.22.3 版本更新提醒弹窗按钮
+    // v0.22.6 版本更新提醒弹窗按钮
     $('pkmn-update-close')?.addEventListener('click', () => $('pkmn-update-modal')?.classList.remove('show'));
     $('pkmn-update-open-repo')?.addEventListener('click', () => {
         try { window.open('https://github.com/nailaopp/pokemon-forum', '_blank'); } catch (_) {}
@@ -9366,7 +9568,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
         }
     }
 
-    // v0.22.3 版本更新提醒：打开悬浮窗时检查远端仓库版本
+    // v0.22.6 版本更新提醒：打开悬浮窗时检查远端仓库版本
     const UPDATE_CHECK_REPO_URL = 'https://raw.githubusercontent.com/nailaopp/pokemon-forum/main/manifest.json';
     let updateNoticeShown = false; // 本会话（插件本次加载）是否已弹过提醒
     let updateLastRemote = null;   // 本会话已检测到的远端版本（避免重复请求）
@@ -9411,7 +9613,7 @@ ${context ? '\n【当前世界/剧情资料】\n' + context : ''}${forumContext}
             panel.style.setProperty('display', 'flex', 'important');
         } catch (_) {}
         try { openView('home'); } catch (_) {}
-        try { pkmnCheckRemoteUpdate(); } catch (_) {} // v0.22.3 打开手机时触发版本检查
+        try { pkmnCheckRemoteUpdate(); } catch (_) {} // v0.22.6 打开手机时触发版本检查
         try {
             // QQ/酒馆可能在手机关闭期间已经切换聊天；打开时强制以当前聊天为准。
             const k = getChatKey();

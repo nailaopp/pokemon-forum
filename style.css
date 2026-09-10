@@ -3213,3 +3213,6 @@
 #pkmn-phone-panel .pkmn-view-scroll {
     -webkit-overflow-scrolling: touch !important;
 }
+/* v0.22.3 小费系统样式 */
+#pkmn-phone-panel .devon-tip-btn { padding: 5px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; background: white; font-size: 10px; cursor: pointer; transition: all 0.1s; color:#333; }
+#pkmn-phone-panel .devon-tip-btn.active { background: #f39c12 !important; color: white !important; border-color: #e67e22 !important; font-weight: bold; }
