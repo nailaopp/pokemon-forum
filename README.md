@@ -1,12 +1,3 @@
-## v0.22.0（2026-09-10）
-
-- **修复「设置中读取世界书数量为 0」**：`getWorldbookNames()` 此前只探测旧版 `ctx.getWorldInfoNames()` / `world_names` 全局变量 / 旧版下拉框，新版酒馆世界书列表实际存放在 `ctx.worldInfo`（对象映射或数组）中，三个来源全部落空导致书名列表为空。
-  - 新增兼容多种方法名（`getWorldInfoNames` / `getWorldInfoList` / `listWorldInfo`），并支持返回对象映射或数组两种格式；
-  - 新增读取 `ctx.worldInfo` / `ctx.world_info`（数组取 `.name/.key/.comment`，对象取键名）；
-  - 全局兜底增强：除 `world_names` 外新增 `world_info`、`world_info_data`；
-  - DOM 兜底下拉框补充 `select.world_info` 选择器；
-  - 兼容新旧多个酒馆版本，世界书书名列表可稳定读取。
-
 ## v0.21.0（2026-09-10）
 
 - **新增「版本更新提醒」**：每次打开洛托姆悬浮窗时自动检测 GitHub 仓库（pokemon-forum）的最新版本：
