@@ -3124,3 +3124,61 @@
 #pkmn-phone-panel .wechat-msg-row.mine .msg-del-x{align-self:flex-end}
 #pkmn-phone-panel.pkmn-theme-night .msg-del-x{background:#2c2c2c;color:#8a8a8a}
 #pkmn-phone-panel.pkmn-theme-night .msg-del-x:active{background:#e64340;color:#fff}
+
+/* ============================================================
+ * v0.22.0 论坛经典格式轻量质感美化
+ * 保持经典纵向流式排版，微调字体行高、阴影、层级与点击反馈
+ * ============================================================ */
+#pkmn-phone-panel .pkmn-thread-card {
+    border-radius: 12px !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+#pkmn-phone-panel .pkmn-thread-card:active {
+    transform: scale(0.985) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    background: #f8fafc !important;
+}
+
+#pkmn-phone-panel .pkmn-thread-title {
+    font-size: 15.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.42 !important;
+    letter-spacing: 0.2px !important;
+}
+
+#pkmn-phone-panel .pkmn-thread-snippet {
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+    color: #5a6578 !important;
+    margin-top: 4px !important;
+}
+
+#pkmn-phone-panel .pkmn-thread-avatar {
+    border-radius: 10px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06) !important;
+    font-weight: 600 !important;
+}
+
+#pkmn-phone-panel .pkmn-bottom .pkmn-btn {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.12s ease !important;
+}
+
+#pkmn-phone-panel .pkmn-bottom .pkmn-btn:active {
+    transform: scale(0.96) !important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-card {
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+#pkmn-phone-panel.pkmn-theme-night .pkmn-thread-snippet {
+    color: #9aa5b8 !important;
+}
