@@ -1,5 +1,5 @@
 /**
- * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.21.0)
+ * 宝可梦小手机论坛 - SillyTavern 扩展版 (v0.22.0)
  * 基于酒馆助手脚本「测试论坛0.331」完整转换，脱离 Tavern Helper。
  * 使用 SillyTavern.getContext() / setExtensionPrompt / eventSource / loadWorldInfo。
  *
@@ -44,7 +44,7 @@
         const NS = 'pkmn_phone_forum_v9';
     const LEGACY_NS = 'pkmn_phone_forum_v7';
     const LEGACY_NS_2 = 'pkmn_phone_forum_v5';
-    const VERSION = "0.21.0"; // 与 manifest.json / README 对齐
+    const VERSION = "0.22.0"; // 与 manifest.json / README 对齐
     // v0.17.6 Lucide 图标（ISC 许可，https://lucide.dev）内联；stroke=currentColor 自动适配日/夜间
     const PKMN_ICONS = {"arrow-up-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M7 7h10v10\"/> <path d=\"M7 17 17 7\"/> </svg>","camera":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\"/> <circle cx=\"12\" cy=\"13\" r=\"3\"/> </svg>","check":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 6 9 17l-5-5\"/> </svg>","chevron-right":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m9 18 6-6-6-6\"/> </svg>","contact":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 2v2\"/> <path d=\"M7 21v-2a2 2 0 012-2h6a2 2 0 012 2v2\"/> <path d=\"M8 2v2\"/> <circle cx=\"12\" cy=\"10\" r=\"3\"/> <rect x=\"3\" y=\"3\" rx=\"2\"/> </svg>","download":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12 15V3\"/> <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/> <path d=\"m7 10 5 5 5-5\"/> </svg>","globe":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/> <path d=\"M2 12h20\"/> </svg>","image":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <rect x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/> <circle cx=\"9\" cy=\"9\" r=\"2\"/> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/> </svg>","link":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/> </svg>","megaphone":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z\"/> <path d=\"M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14\"/> <path d=\"M8 6v8\"/> </svg>","message-circle":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\"/> </svg>","message-square-dashed":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M14 3h2\"/> <path d=\"M16 19h-2\"/> <path d=\"M2 12v-2\"/> <path d=\"M2 16v5.286a.71.71 0 0 0 1.212.502l1.149-1.149\"/> <path d=\"M20 19a2 2 0 0 0 2-2v-1\"/> <path d=\"M22 10v2\"/> <path d=\"M22 6V5a2 2 0 0 0-2-2\"/> <path d=\"M4 3a2 2 0 0 0-2 2v1\"/> <path d=\"M8 19h2\"/> <path d=\"M8 3h2\"/> </svg>","pencil":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/> <path d=\"m15 5 4 4\"/> </svg>","plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M5 12h14\"/> <path d=\"M12 5v14\"/> </svg>","save":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/> <path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\"/> <path d=\"M7 3v4a1 1 0 0 0 1 1h7\"/> </svg>","scroll-text":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15 12h-5\"/> <path d=\"M15 8h-5\"/> <path d=\"M19 17V5a2 2 0 0 0-2-2H4\"/> <path d=\"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3\"/> </svg>","search":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"m21 21-4.34-4.34\"/> <circle cx=\"11\" cy=\"11\" r=\"8\"/> </svg>","settings":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/> <circle cx=\"12\" cy=\"12\" r=\"3\"/> </svg>","shield":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/> </svg>","star":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\"/> </svg>","tag":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/> <circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/> </svg>","trash-2":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M10 11v6\"/> <path d=\"M14 11v6\"/> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/> <path d=\"M3 6h18\"/> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/> </svg>","user":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/> <circle cx=\"12\" cy=\"7\" r=\"4\"/> </svg>","user-plus":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> <line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"/> <line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/> </svg>","users":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/> <path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/> <circle cx=\"9\" cy=\"7\" r=\"4\"/> </svg>","users-round":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M18 21a8 8 0 0 0-16 0\"/> <circle cx=\"10\" cy=\"8\" r=\"5\"/> <path d=\"M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3\"/> </svg>","zap":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"> <path d=\"M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z\"/> </svg>"};
     function pkmnIcon(name, cls){
@@ -175,13 +175,38 @@
 
         getWorldbookNames() {
             const names = new Set();
+
+            // 1) 新版酒馆：SillyTavern.getContext() 返回的 ctx 上应有 worldInfo，但不同版本 API 命名不一，
+            //    兼容多种方法名 / 属性名，避免取不到列表导致“数量 0”。
             try {
                 const ctx = getSTContext();
-                if (ctx && typeof ctx.getWorldInfoNames === 'function') {
-                    const list = ctx.getWorldInfoNames();
-                    if (Array.isArray(list)) list.forEach(n => n && names.add(String(n)));
+                if (ctx) {
+                    // listWorldInfo / getWorldInfoNames / getWorldInfoList 任意一种方法
+                    const fn = ctx.getWorldInfoNames || ctx.getWorldInfoList || ctx.listWorldInfo || ctx.getWorldInfoList;
+                    if (typeof fn === 'function') {
+                        const list = fn.call(ctx);
+                        if (Array.isArray(list)) {
+                            list.forEach(n => n && names.add(String(n)));
+                        } else if (list && typeof list === 'object') {
+                            // 有些版本返回 { name: {...} } 或 { name: true } 之类的对象
+                            Object.keys(list).forEach(n => n && names.add(String(n)));
+                        }
+                    }
+                    // worldInfo 可能是数组（[{name}...]）或对象映射
+                    const wi = ctx.worldInfo || ctx.world_info;
+                    if (Array.isArray(wi)) {
+                        wi.forEach(x => {
+                            if (!x) return;
+                            const n = (typeof x === 'string') ? x : (x.name || x.key || x.comment);
+                            if (n) names.add(String(n));
+                        });
+                    } else if (wi && typeof wi === 'object') {
+                        Object.keys(wi).forEach(n => n && names.add(String(n)));
+                    }
                 }
             } catch (_) {}
+
+            // 2) 旧版酒馆暴露的全局 world_names / world_info / world_info_data
             try {
                 const g = (typeof world_names !== 'undefined' && world_names)
                     || (typeof window !== 'undefined' && window.world_names)
@@ -189,13 +214,44 @@
                 if (Array.isArray(g)) g.forEach(n => n && names.add(String(n)));
             } catch (_) {}
             try {
-                document.querySelectorAll('#world_info, select[name="world_info"], #world_info_select, #world_editor_select').forEach(select => {
+                const wi = (typeof world_info !== 'undefined' && world_info)
+                    || (typeof window !== 'undefined' && window.world_info)
+                    || null;
+                if (Array.isArray(wi)) {
+                    wi.forEach(x => {
+                        if (!x) return;
+                        const n = (typeof x === 'string') ? x : (x.name || x.key || x.comment);
+                        if (n) names.add(String(n));
+                    });
+                } else if (wi && typeof wi === 'object') {
+                    Object.keys(wi).forEach(n => n && names.add(String(n)));
+                }
+            } catch (_) {}
+            try {
+                const wd = (typeof world_info_data !== 'undefined' && world_info_data)
+                    || (typeof window !== 'undefined' && window.world_info_data)
+                    || null;
+                if (Array.isArray(wd)) {
+                    wd.forEach(x => {
+                        if (!x) return;
+                        const n = (typeof x === 'string') ? x : (x.name || x.key || x.comment);
+                        if (n) names.add(String(n));
+                    });
+                } else if (wd && typeof wd === 'object') {
+                    Object.keys(wd).forEach(n => n && names.add(String(n)));
+                }
+            } catch (_) {}
+
+            // 3) 旧版设置页下拉框（DOM 兜底）
+            try {
+                document.querySelectorAll('#world_info, select[name="world_info"], select.world_info, #world_info_select, #world_editor_select').forEach(select => {
                     Array.from(select.options || []).forEach(o => {
                         const v = (o.value || o.text || '').trim();
                         if (v && v !== '---' && !/^select/i.test(v)) names.add(v);
                     });
                 });
             } catch (_) {}
+
             return [...names];
         },
 
